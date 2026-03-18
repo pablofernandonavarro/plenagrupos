@@ -25,6 +25,17 @@
                 <p class="text-red-500 text-sm mt-1">Contactá a tu coordinador.</p>
             </div>
 
+        @elseif($alreadyCheckedIn)
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                <div class="text-3xl mb-2">✓</div>
+                <p class="text-amber-800 font-semibold">Ya registraste tu asistencia hoy</p>
+                <p class="text-amber-600 text-sm mt-1">Tu visita de hoy a este grupo ya fue registrada.</p>
+                <a href="{{ route('patient.dashboard') }}"
+                   class="mt-4 inline-block text-sm text-teal-600 hover:underline">
+                    Ir a mi perfil
+                </a>
+            </div>
+
         @else
             @if(session('error'))
                 <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">

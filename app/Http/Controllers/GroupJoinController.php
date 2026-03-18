@@ -25,7 +25,12 @@ class GroupJoinController extends Controller
             return view('group.join', ['group' => $group, 'groupClosed' => true]);
         }
 
-        return view('group.join', ['group' => $group, 'groupClosed' => false]);
+        $alreadyCheckedIn = GroupAttendance::where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->whereDate('attended_at', today())
+            ->exists();
+
+        return view('group.join', ['group' => $group, 'groupClosed' => false, 'alreadyCheckedIn' => $alreadyCheckedIn]);
     }
 
     public function join(string $token)
@@ -44,6 +49,16 @@ class GroupJoinController extends Controller
 
         if (!$group->active) {
             return back()->with('error', 'Este grupo no está activo.');
+        }
+
+        $alreadyCheckedIn = GroupAttendance::where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->whereDate('attended_at', today())
+            ->exists();
+
+        if ($alreadyCheckedIn) {
+            return redirect()->route('patient.dashboard')
+                ->with('info', 'Ya registraste tu asistencia a este grupo hoy.');
         }
 
         // Register attendance for this visit
