@@ -29,12 +29,9 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
       - name: Deploy via rsync
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
+          PORT="${{ secrets.SSH_PORT }}"
+          PORT="${PORT:-22}"
           rsync -avzr --delete \
             --exclude='.env' \
             --exclude='.git' \
@@ -45,22 +42,20 @@ jobs:
             --exclude='storage/framework/cache' \
             --exclude='storage/framework/sessions' \
             --exclude='storage/framework/views' \
-            -e "ssh -i ~/.ssh/id_rsa -p ${SSH_PORT} -o StrictHostKeyChecking=no" \
-            ./ "${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH}"
+            -e "ssh -i ~/.ssh/id_rsa -p ${PORT} -o StrictHostKeyChecking=no" \
+            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}"
 
       - name: Run post-deploy commands
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh -i ~/.ssh/id_rsa -p "${SSH_PORT}" -o StrictHostKeyChecking=no "${SSH_USER}@${SSH_HOST}" "
-            cd ${DEPLOY_PATH} &&
-            mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs &&
-            php artisan migrate --force &&
-            php artisan config:cache &&
-            php artisan route:cache &&
-            php artisan view:cache &&
+          PORT="${{ secrets.SSH_PORT }}"
+          PORT="${PORT:-22}"
+          ssh -i ~/.ssh/id_rsa -p "${PORT}" -o StrictHostKeyChecking=no \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash << 'ENDSSH'
+            cd ${{ secrets.DEPLOY_PATH }}
+            mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
             php artisan storage:link
-          "
+          ENDSSH
