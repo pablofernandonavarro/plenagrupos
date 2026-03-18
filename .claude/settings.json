@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer require:*)",
+      "Bash(/c/Users/stock/.config/herd/bin/php.bat /c/composer/composer.phar require simplesoftwareio/simple-qrcode)",
+      "Bash(/c/Users/stock/.config/herd/bin/php.bat artisan:*)",
+      "Bash(/c/Users/stock/.config/herd/bin/php.bat /c/Users/stock/Herd/plenagrupos/artisan migrate)",
+      "Bash(herd secure:*)",
+      "Bash(\"/c/Users/stock/AppData/Local/Programs/Herd/resources/app/bin/herd\" secure:*)",
+      "Bash(\"/c/Program Files/Herd/herd\" secure plenagrupos)",
+      "Read(//c/Users/stock/AppData/Local/Programs//**)",
+      "Read(//c/Users/stock/AppData/Roaming//**)",
+      "Read(//c/Users/stock/AppData/Local/**)",
+      "Bash(find /c/Users/stock/AppData/Local/Herd -name herd* -maxdepth 4)"
+    ]
+  }
+}
