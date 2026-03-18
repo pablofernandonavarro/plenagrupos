@@ -39,6 +39,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::resource('groups', Admin\GroupController::class)->except(['edit', 'update']);
     Route::post('/groups/{group}/toggle', [Admin\GroupController::class, 'toggle'])->name('groups.toggle');
+    Route::get('/groups/{group}/live', [Admin\GroupController::class, 'liveAttendances'])->name('groups.live');
     Route::post('/groups/{group}/coordinators', [Admin\GroupController::class, 'addCoordinator'])->name('groups.coordinators.add');
     Route::delete('/groups/{group}/coordinators', [Admin\GroupController::class, 'removeCoordinator'])->name('groups.coordinators.remove');
     Route::post('/groups/{group}/patients', [Admin\GroupController::class, 'addPatient'])->name('groups.patients.add');

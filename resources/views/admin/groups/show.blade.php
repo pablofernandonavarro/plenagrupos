@@ -152,32 +152,42 @@
 
     {{-- Attendance & Weight History --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-800">Historial de visitas y pesos</h2>
+        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+            <h2 class="font-semibold text-gray-800">
+                Historial de visitas y pesos
+                @if($group->active)
+                    <span class="ml-2 inline-flex items-center gap-1 text-xs text-green-600 font-normal">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                        En vivo
+                    </span>
+                @endif
+            </h2>
+            @if($group->active)
+                <span id="last-update" class="text-xs text-gray-400"></span>
+            @endif
         </div>
-        <div class="overflow-x-auto">
+
+        <div id="attendance-table" class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
                     <tr>
                         <th class="px-5 py-3 text-left">Paciente</th>
-                        <th class="px-5 py-3 text-left">Fecha y hora</th>
+                        <th class="px-5 py-3 text-left">Hora</th>
                         <th class="px-5 py-3 text-right">Peso (kg)</th>
-                        <th class="px-5 py-3 text-left">Notas</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-50">
+                <tbody id="attendance-body" class="divide-y divide-gray-50">
                     @forelse($attendances as $att)
                         <tr>
                             <td class="px-5 py-3 font-medium text-gray-800">{{ $att->user->name }}</td>
                             <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
                             <td class="px-5 py-3 text-right font-semibold {{ $att->weightRecord ? 'text-teal-600' : 'text-gray-300' }}">
-                                {{ $att->weightRecord ? $att->weightRecord->weight : '—' }}
+                                {{ $att->weightRecord ? $att->weightRecord->weight . ' kg' : '—' }}
                             </td>
-                            <td class="px-5 py-3 text-gray-400 text-xs">{{ $att->weightRecord?->notes ?? '—' }}</td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="4" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td>
+                        <tr id="empty-row">
+                            <td colspan="3" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -186,4 +196,40 @@
     </div>
 
 </div>
+
+@if($group->active)
+<script>
+const liveUrl  = '{{ route('admin.groups.live', $group) }}';
+const tbody    = document.getElementById('attendance-body');
+const updateEl = document.getElementById('last-update');
+
+async function fetchAttendances() {
+    try {
+        const res  = await fetch(liveUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const data = await res.json();
+
+        if (data.attendances.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td></tr>';
+        } else {
+            tbody.innerHTML = data.attendances.map(a => `
+                <tr>
+                    <td class="px-5 py-3 font-medium text-gray-800">${a.name}</td>
+                    <td class="px-5 py-3 text-gray-500">${a.attended_at}</td>
+                    <td class="px-5 py-3 text-right font-semibold ${a.weight ? 'text-teal-600' : 'text-gray-300'}">
+                        ${a.weight ? a.weight + ' kg' : '—'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        const now = new Date();
+        updateEl.textContent = 'Act. ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+    } catch(e) {}
+}
+
+fetchAttendances();
+setInterval(fetchAttendances, 4000);
+</script>
+@endif
+
 @endsection

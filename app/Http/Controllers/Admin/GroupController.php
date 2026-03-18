@@ -111,6 +111,26 @@ class GroupController extends Controller
         return back()->with('success', 'Paciente removido.');
     }
 
+    public function liveAttendances(Group $group)
+    {
+        $attendances = $group->attendances()
+            ->with(['user', 'weightRecord'])
+            ->whereDate('attended_at', today())
+            ->latest('attended_at')
+            ->get()
+            ->map(fn($a) => [
+                'id'          => $a->user_id,
+                'name'        => $a->user->name,
+                'attended_at' => $a->attended_at->format('H:i'),
+                'weight'      => $a->weightRecord?->weight,
+            ]);
+
+        return response()->json([
+            'count'       => $attendances->count(),
+            'attendances' => $attendances,
+        ]);
+    }
+
     public function toggle(Group $group)
     {
         if (!$group->active) {
