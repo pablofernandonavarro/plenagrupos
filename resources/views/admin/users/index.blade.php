@@ -4,15 +4,25 @@
 @section('content')
 <div class="space-y-6">
     {{-- Search --}}
-    <form method="GET" action="{{ route('admin.users.index') }}">
-        <div class="relative">
+    <form method="GET" action="{{ route('admin.users.index') }}" id="search-form" class="flex gap-2">
+        <div class="relative flex-1">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
             </svg>
-            <input type="text" name="search" value="{{ request('search') }}"
+            <input type="text" name="search" id="search-input" value="{{ request('search') }}"
                 placeholder="Buscar por nombre o email..."
                 class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
         </div>
+        <button type="submit"
+            class="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition">
+            Buscar
+        </button>
+        @if(request('search'))
+            <a href="{{ route('admin.users.index') }}"
+               class="px-4 py-2.5 border border-gray-200 text-gray-500 text-sm rounded-xl hover:bg-gray-50 transition">
+                ✕
+            </a>
+        @endif
     </form>
 
     <div class="flex justify-between items-center">
