@@ -39,7 +39,7 @@
                         <h2 class="font-semibold text-gray-800">{{ $group->name }}</h2>
                         @if($group->meeting_day || $group->meeting_time)
                             <p class="text-xs text-teal-600 font-medium mt-0.5">
-                                {{ $group->meeting_day }}{{ $group->meeting_day && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? substr($group->meeting_time, 0, 5) . ' hs' : '' }}
+                                {{ $group->meeting_day }}{{ $group->meeting_day && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
                             </p>
                         @endif
                     </div>

@@ -23,7 +23,7 @@
                     @endif
                     @if($group->meeting_day || $group->meeting_time)
                         <span class="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full">
-                            {{ $group->meeting_day }}{{ $group->meeting_day && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? substr($group->meeting_time, 0, 5) . ' hs' : '' }}
+                            {{ $group->meeting_day }}{{ $group->meeting_day && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
                         </span>
                     @endif
                 </div>

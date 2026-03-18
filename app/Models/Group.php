@@ -14,6 +14,12 @@ class Group extends Model
 
     protected $casts = ['active' => 'boolean'];
 
+    public function getMeetingTimeFormattedAttribute(): ?string
+    {
+        if (!$this->meeting_time) return null;
+        return date('H:i', strtotime($this->meeting_time));
+    }
+
     protected static function boot(): void
     {
         parent::boot();
