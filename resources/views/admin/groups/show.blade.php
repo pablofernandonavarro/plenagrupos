@@ -173,21 +173,44 @@
                     <tr>
                         <th class="px-5 py-3 text-left">Paciente</th>
                         <th class="px-5 py-3 text-left">Hora</th>
-                        <th class="px-5 py-3 text-right">Peso (kg)</th>
+                        <th class="px-5 py-3 text-right">Peso</th>
+                        <th class="px-5 py-3 text-right">Peso ideal</th>
+                        <th class="px-5 py-3 text-right">Dif.</th>
                     </tr>
                 </thead>
                 <tbody id="attendance-body" class="divide-y divide-gray-50">
                     @forelse($attendances as $att)
+                        @php
+                            $rw   = $att->weightRecord?->weight;
+                            $iw   = $att->user->ideal_weight;
+                            $diff = ($rw && $iw) ? round($rw - $iw, 2) : null;
+                        @endphp
                         <tr>
                             <td class="px-5 py-3 font-medium text-gray-800">{{ $att->user->name }}</td>
                             <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
-                            <td class="px-5 py-3 text-right font-semibold {{ $att->weightRecord ? 'text-teal-600' : 'text-gray-300' }}">
-                                {{ $att->weightRecord ? $att->weightRecord->weight . ' kg' : '—' }}
+                            <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
+                                {{ $rw ? $rw . ' kg' : '—' }}
+                            </td>
+                            <td class="px-5 py-3 text-right text-gray-400">
+                                {{ $iw ? $iw . ' kg' : '—' }}
+                            </td>
+                            <td class="px-5 py-3 text-right font-semibold">
+                                @if($diff !== null)
+                                    @if($diff > 0)
+                                        <span class="text-red-500">↑ +{{ $diff }} kg</span>
+                                    @elseif($diff < 0)
+                                        <span class="text-green-600">↓ {{ $diff }} kg</span>
+                                    @else
+                                        <span class="text-gray-400">= ideal</span>
+                                    @endif
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr id="empty-row">
-                            <td colspan="3" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td>
+                            <td colspan="5" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -209,17 +232,27 @@ async function fetchAttendances() {
         const data = await res.json();
 
         if (data.attendances.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td></tr>';
         } else {
-            tbody.innerHTML = data.attendances.map(a => `
-                <tr>
+            tbody.innerHTML = data.attendances.map(a => {
+                const rw   = a.weight;
+                const iw   = a.ideal_weight;
+                const diff = (rw && iw) ? Math.round((rw - iw) * 100) / 100 : null;
+                const diffHtml = diff !== null
+                    ? (diff > 0
+                        ? `<span class="text-red-500">↑ +${diff} kg</span>`
+                        : diff < 0
+                            ? `<span class="text-green-600">↓ ${diff} kg</span>`
+                            : `<span class="text-gray-400">= ideal</span>`)
+                    : '<span class="text-gray-300">—</span>';
+                return `<tr>
                     <td class="px-5 py-3 font-medium text-gray-800">${a.name}</td>
                     <td class="px-5 py-3 text-gray-500">${a.attended_at}</td>
-                    <td class="px-5 py-3 text-right font-semibold ${a.weight ? 'text-teal-600' : 'text-gray-300'}">
-                        ${a.weight ? a.weight + ' kg' : '—'}
-                    </td>
-                </tr>
-            `).join('');
+                    <td class="px-5 py-3 text-right font-semibold ${rw ? 'text-teal-600' : 'text-gray-300'}">${rw ? rw + ' kg' : '—'}</td>
+                    <td class="px-5 py-3 text-right text-gray-400">${iw ? iw + ' kg' : '—'}</td>
+                    <td class="px-5 py-3 text-right font-semibold">${diffHtml}</td>
+                </tr>`;
+            }).join('');
         }
 
         const now = new Date();

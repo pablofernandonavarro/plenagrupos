@@ -119,10 +119,11 @@ class GroupController extends Controller
             ->latest('attended_at')
             ->get()
             ->map(fn($a) => [
-                'id'          => $a->user_id,
-                'name'        => $a->user->name,
-                'attended_at' => $a->attended_at->format('H:i'),
-                'weight'      => $a->weightRecord?->weight,
+                'id'           => $a->user_id,
+                'name'         => $a->user->name,
+                'attended_at'  => $a->attended_at->format('H:i'),
+                'weight'       => $a->weightRecord?->weight,
+                'ideal_weight' => $a->user->ideal_weight,
             ]);
 
         return response()->json([
