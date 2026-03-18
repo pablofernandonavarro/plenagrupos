@@ -10,10 +10,24 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $coordinators = User::where('role', 'coordinator')->latest()->get();
-        $patients = User::where('role', 'patient')->latest()->get();
+        $search = $request->input('search');
+
+        $coordinators = User::where('role', 'coordinator')
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%")
+            ))
+            ->latest()->get();
+
+        $patients = User::where('role', 'patient')
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%")
+            ))
+            ->latest()->get();
+
         return view('admin.users.index', compact('coordinators', 'patients'));
     }
 
