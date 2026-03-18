@@ -2,87 +2,128 @@
 @section('title', 'Grupos')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-5">
+
+    {{-- Header --}}
     <div class="flex justify-between items-center">
         <h1 class="text-2xl font-bold text-gray-800">Grupos</h1>
-        <a href="{{ route('admin.groups.create') }}" class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+        <a href="{{ route('admin.groups.create') }}"
+            class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition">
             + Nuevo grupo
         </a>
     </div>
 
     {{-- Search & filter --}}
-    <form method="GET" action="{{ route('admin.groups.index') }}" class="flex flex-col sm:flex-row gap-3">
+    <form method="GET" action="{{ route('admin.groups.index') }}" class="flex flex-col sm:flex-row gap-2">
         <div class="relative flex-1">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
             </svg>
             <input type="text" name="search" value="{{ request('search') }}"
                 placeholder="Buscar grupo..."
-                class="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
         </div>
         <div class="flex gap-2">
             @foreach([''=>'Todos', 'active'=>'Activos', 'closed'=>'Finalizados'] as $val => $label)
                 <button type="submit" name="status" value="{{ $val }}"
-                    class="px-4 py-2.5 rounded-lg text-sm font-medium border transition
+                    class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium border transition
                         {{ request('status', '') === $val
                             ? 'bg-teal-600 text-white border-teal-600'
-                            : 'bg-white text-gray-600 border-gray-300 hover:border-teal-400' }}">
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-teal-400' }}">
                     {{ $label }}
                 </button>
             @endforeach
         </div>
     </form>
 
-    <div class="grid gap-4">
+    {{-- Groups list --}}
+    <div class="space-y-3">
         @forelse($groups as $group)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="font-semibold text-gray-800">{{ $group->name }}</h2>
-                            <span class="text-xs px-2 py-0.5 rounded-full {{ $group->active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                                {{ $group->active ? 'Activo' : 'Inactivo' }}
-                            </span>
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
+                {{-- Main row --}}
+                <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
+
+                    {{-- Info --}}
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <h2 class="font-semibold text-gray-900 text-base">{{ $group->name }}</h2>
+                            @if($group->active)
+                                <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                    Activo
+                                </span>
+                            @else
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
+                                    Finalizado
+                                </span>
+                            @endif
                         </div>
+
                         @if($group->description)
-                            <p class="text-sm text-gray-500 mt-1">{{ $group->description }}</p>
+                            <p class="text-sm text-gray-500 mb-1">{{ $group->description }}</p>
                         @endif
+
                         @if($group->meeting_day || $group->meeting_time)
-                            <p class="text-xs text-teal-600 mt-1">
+                            <p class="text-xs text-teal-600 font-medium mb-2">
+                                <svg class="inline w-3 h-3 mr-0.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
                                 {{ $group->meeting_day }}{{ $group->meeting_day && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? substr($group->meeting_time, 0, 5) . ' hs' : '' }}
                             </p>
                         @endif
-                        <div class="flex gap-4 mt-3 text-xs text-gray-500">
-                            <span>{{ $group->coordinators->count() }} coordinador(es)</span>
-                            <span>{{ $group->patients->count() }} paciente(s)</span>
+
+                        <div class="flex gap-3 text-xs text-gray-400">
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                {{ $group->coordinators->count() }} coordinador(es)
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                {{ $group->patients->count() }} paciente(s)
+                            </span>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-2 justify-end">
+
+                    {{-- Actions --}}
+                    <div class="flex items-center gap-2 sm:shrink-0">
                         @if($group->active)
-                        <form action="{{ route('admin.groups.toggle', $group) }}" method="POST">
-                            @csrf
-                            <button type="submit"
-                                class="text-sm font-semibold px-4 py-1.5 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
-                                Finalizar
-                            </button>
-                        </form>
-                        @else
-                            <span class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400">Finalizado</span>
+                            <form action="{{ route('admin.groups.toggle', $group) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                    class="text-sm font-medium px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition">
+                                    Finalizar
+                                </button>
+                            </form>
                         @endif
-                        <a href="{{ route('admin.groups.show', $group) }}" class="text-sm text-teal-600 hover:underline self-center">Gestionar</a>
-                        <form action="{{ route('admin.groups.destroy', $group) }}" method="POST" onsubmit="return confirm('¿Eliminar grupo?')">
+                        <a href="{{ route('admin.groups.show', $group) }}"
+                            class="text-sm font-medium px-4 py-2 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition">
+                            Gestionar
+                        </a>
+                        <form action="{{ route('admin.groups.destroy', $group) }}" method="POST"
+                              onsubmit="return confirm('¿Eliminar grupo?')">
                             @csrf @method('DELETE')
-                            <button class="text-sm text-red-400 hover:text-red-600">Eliminar</button>
+                            <button class="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
                         </form>
                     </div>
                 </div>
             </div>
         @empty
-            <div class="bg-white rounded-xl p-12 text-center text-gray-400">
-                <p class="text-lg">No hay grupos creados.</p>
-                <a href="{{ route('admin.groups.create') }}" class="mt-4 inline-block text-teal-600 hover:underline text-sm">Crear el primer grupo</a>
+            <div class="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400">
+                <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <p class="font-medium text-gray-500">No hay grupos creados</p>
+                <a href="{{ route('admin.groups.create') }}" class="mt-2 inline-block text-teal-600 hover:underline text-sm">
+                    Crear el primer grupo
+                </a>
             </div>
         @endforelse
     </div>
+
 </div>
 @endsection
