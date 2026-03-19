@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\Coordinator;
 
 use App\Http\Controllers\Controller;
+use App\Models\Group;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DashboardController extends Controller
 {
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = auth()->user()->coordinatorGroups()
-            ->with(['patients'])
+        $query = Group::with(['patients'])
             ->withCount(['attendances', 'weightRecords'])
-            ->orderBy('groups.created_at', 'desc');
+            ->orderBy('created_at', 'desc');
 
         if ($search = $request->input('search')) {
             $query->where('name', 'like', '%' . $search . '%');
@@ -35,19 +35,13 @@ class DashboardController extends Controller
         return view('coordinator.dashboard', ['groups' => $groups]);
     }
 
-    public function showGroup(\App\Models\Group $group)
+    public function showGroup(Group $group)
     {
-        $coordinator = auth()->user();
-        if (!$coordinator->coordinatorGroups()->where('groups.id', $group->id)->exists()) {
-            abort(403);
-        }
-
         $group->load(['patients', 'coordinators']);
         $attendances = $group->attendances()->with(['user', 'weightRecord'])->latest('attended_at')->paginate(20);
         $avgWeight = $group->weightRecords()->avg('weight');
         $totalVisits = $group->attendances()->count();
 
-        // Stats: today's range breakdown
         $todayAttendances = $group->attendances()
             ->with(['user', 'weightRecord'])
             ->whereDate('attended_at', today())
@@ -71,13 +65,8 @@ class DashboardController extends Controller
         return view('coordinator.group', compact('group', 'attendances', 'avgWeight', 'totalVisits', 'todayVisits', 'stats'));
     }
 
-    public function updateMaintenanceWeight(\App\Models\Group $group, \Illuminate\Http\Request $request)
+    public function updateMaintenanceWeight(Group $group, \Illuminate\Http\Request $request)
     {
-        $coordinator = auth()->user();
-        if (!$coordinator->coordinatorGroups()->where('groups.id', $group->id)->exists()) {
-            abort(403);
-        }
-
         $data = $request->validate([
             'user_id'            => 'required|exists:users,id',
             'maintenance_weight' => 'nullable|numeric|min:1|max:300',
@@ -90,13 +79,8 @@ class DashboardController extends Controller
         return back()->with('success', 'Peso de mantenimiento actualizado.');
     }
 
-    public function liveAttendances(\App\Models\Group $group)
+    public function liveAttendances(Group $group)
     {
-        $coordinator = auth()->user();
-        if (!$coordinator->coordinatorGroups()->where('groups.id', $group->id)->exists()) {
-            abort(403);
-        }
-
         $attendances = $group->attendances()
             ->with(['user', 'weightRecord'])
             ->latest('attended_at')
@@ -114,25 +98,17 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function toggleGroup(\App\Models\Group $group)
+    public function toggleGroup(Group $group)
     {
-        $coordinator = auth()->user();
-        if (!$coordinator->coordinatorGroups()->where('groups.id', $group->id)->exists()) {
-            abort(403);
-        }
-
-        // Already finalized — cannot reopen
         if (!$group->active && $group->started_at) {
             return back()->with('error', 'Un grupo finalizado no puede volver a iniciarse.');
         }
 
         if ($group->active) {
-            // Finalize
             $group->update(['active' => false, 'ended_at' => now()]);
             return back()->with('success', 'Grupo finalizado.');
         }
 
-        // Start
         $group->update(['active' => true, 'started_at' => now()]);
         return back()->with('success', 'Grupo iniciado.');
     }

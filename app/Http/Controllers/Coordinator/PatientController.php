@@ -8,18 +8,10 @@ use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
-    private function coordinatorGroupIds(): array
-    {
-        return auth()->user()->coordinatorGroups()->pluck('groups.id')->toArray();
-    }
-
     public function index(Request $request)
     {
-        $groupIds = $this->coordinatorGroupIds();
-
         $query = User::where('role', 'patient')
-            ->whereHas('patientGroups', fn($q) => $q->whereIn('groups.id', $groupIds))
-            ->with(['patientGroups' => fn($q) => $q->whereIn('groups.id', $groupIds)]);
+            ->with(['patientGroups']);
 
         if ($search = $request->input('search')) {
             $query->where(fn($q) => $q
@@ -35,16 +27,7 @@ class PatientController extends Controller
 
     public function show(User $patient)
     {
-        $groupIds = $this->coordinatorGroupIds();
-
-        // Verify patient belongs to at least one of coordinator's groups
-        if (!$patient->patientGroups()->whereIn('groups.id', $groupIds)->exists()) {
-            abort(403);
-        }
-
-        $groups = $patient->patientGroups()
-            ->whereIn('groups.id', $groupIds)
-            ->get();
+        $groups = $patient->patientGroups()->get();
 
         $weightRecords = $patient->weightRecords()
             ->with('group')
@@ -53,11 +36,9 @@ class PatientController extends Controller
 
         $attendances = $patient->attendances()
             ->with('group')
-            ->whereIn('group_id', $groupIds)
             ->latest('attended_at')
             ->get();
 
-        // Weight stats
         $firstWeight = $weightRecords->last()?->weight;
         $lastWeight  = $weightRecords->first()?->weight;
         $totalChange = ($firstWeight && $lastWeight) ? round($lastWeight - $firstWeight, 2) : null;
