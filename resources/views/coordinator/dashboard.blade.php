@@ -48,17 +48,20 @@
                     </span>
                 </div>
                 <div class="flex gap-2">
-                    @if($group->active)
                     <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
                         @csrf
-                        <button type="submit"
-                            class="text-sm font-semibold px-4 py-1.5 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
-                            Finalizar grupo
-                        </button>
+                        @if($group->active)
+                            <button type="submit"
+                                class="text-sm font-semibold px-4 py-1.5 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
+                                Finalizar
+                            </button>
+                        @else
+                            <button type="submit"
+                                class="text-sm font-semibold px-4 py-1.5 rounded-lg transition border border-teal-400 text-teal-600 hover:bg-teal-50">
+                                Iniciar
+                            </button>
+                        @endif
                     </form>
-                    @else
-                        <span class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400">Finalizado</span>
-                    @endif
                     <a href="{{ route('coordinator.groups.show', $group) }}"
                         class="text-sm bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg transition">
                         Ver detalle
@@ -96,5 +99,10 @@
             <p>No tenés grupos asignados aún.</p>
         </div>
     @endforelse
+
+    @if($groups->hasPages())
+        <div>{{ $groups->links() }}</div>
+    @endif
+
 </div>
 @endsection

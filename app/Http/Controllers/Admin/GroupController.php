@@ -24,7 +24,7 @@ class GroupController extends Controller
             $query->where('active', false);
         }
 
-        $groups = $query->get();
+        $groups = $query->paginate(10)->withQueryString();
         return view('admin.groups.index', compact('groups'));
     }
 

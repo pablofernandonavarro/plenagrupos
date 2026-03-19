@@ -11,7 +11,8 @@ class DashboardController extends Controller
     {
         $query = auth()->user()->coordinatorGroups()
             ->with(['patients'])
-            ->withCount(['attendances', 'weightRecords']);
+            ->withCount(['attendances', 'weightRecords'])
+            ->orderBy('groups.created_at', 'desc');
 
         if ($search = $request->input('search')) {
             $query->where('name', 'like', '%' . $search . '%');
@@ -23,7 +24,8 @@ class DashboardController extends Controller
             $query->where('active', false);
         }
 
-        $groups = $query->get()->map(function ($group) {
+        $groups = $query->paginate(10)->withQueryString();
+        $groups->getCollection()->transform(function ($group) {
             $group->qrSvg = QrCode::size(180)->generate(route('group.join', $group->qr_token));
             return $group;
         });
@@ -117,11 +119,8 @@ class DashboardController extends Controller
             abort(403);
         }
 
-        if (!$group->active) {
-            return back()->with('error', 'Un grupo finalizado no puede volver a iniciarse.');
-        }
-
-        $group->update(['active' => false]);
-        return back()->with('success', 'Grupo finalizado.');
+        $group->update(['active' => !$group->active]);
+        $msg = $group->active ? 'Grupo iniciado.' : 'Grupo finalizado.';
+        return back()->with('success', $msg);
     }
 }

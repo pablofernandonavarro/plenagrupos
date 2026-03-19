@@ -125,5 +125,9 @@
         @endforelse
     </div>
 
+    @if($groups->hasPages())
+        <div>{{ $groups->links() }}</div>
+    @endif
+
 </div>
 @endsection
