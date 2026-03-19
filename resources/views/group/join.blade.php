@@ -19,9 +19,17 @@
         <h1 class="text-2xl font-bold text-gray-800 mb-1">{{ $group->name }}</h1>
         <p class="text-gray-400 text-sm mb-6">{{ now()->format('d/m/Y') }}</p>
 
-        @if($groupClosed)
+        @if($groupStatus === 'pending')
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+                <div class="text-3xl mb-2">⏳</div>
+                <p class="text-yellow-800 font-semibold">El grupo aún no fue iniciado</p>
+                <p class="text-yellow-600 text-sm mt-1">El coordinador debe iniciar la sesión antes de que puedas registrarte.</p>
+            </div>
+
+        @elseif($groupStatus === 'closed')
             <div class="bg-red-50 border border-red-200 rounded-xl p-6">
-                <p class="text-red-700 font-medium">Este grupo no está activo.</p>
+                <div class="text-3xl mb-2">🔒</div>
+                <p class="text-red-700 font-semibold">Este grupo está finalizado.</p>
                 <p class="text-red-500 text-sm mt-1">Contactá a tu coordinador.</p>
             </div>
 

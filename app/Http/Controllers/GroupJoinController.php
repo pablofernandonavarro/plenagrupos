@@ -21,8 +21,8 @@ class GroupJoinController extends Controller
             return redirect()->route('admin.dashboard')->with('info', 'Solo los pacientes pueden registrarse por QR.');
         }
 
-        if (!$group->active) {
-            return view('group.join', ['group' => $group, 'groupClosed' => true]);
+        if ($group->status !== 'active') {
+            return view('group.join', ['group' => $group, 'groupStatus' => $group->status]);
         }
 
         $alreadyCheckedIn = GroupAttendance::where('group_id', $group->id)
@@ -30,7 +30,7 @@ class GroupJoinController extends Controller
             ->whereDate('attended_at', today())
             ->exists();
 
-        return view('group.join', ['group' => $group, 'groupClosed' => false, 'alreadyCheckedIn' => $alreadyCheckedIn]);
+        return view('group.join', ['group' => $group, 'groupStatus' => 'active', 'alreadyCheckedIn' => $alreadyCheckedIn]);
     }
 
     public function join(string $token)
@@ -47,8 +47,10 @@ class GroupJoinController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        if (!$group->active) {
-            return back()->with('error', 'Este grupo no está activo.');
+        if ($group->status !== 'active') {
+            return back()->with('error', $group->status === 'pending'
+                ? 'Este grupo aún no fue iniciado por el coordinador.'
+                : 'Este grupo está finalizado.');
         }
 
         $alreadyCheckedIn = GroupAttendance::where('group_id', $group->id)
