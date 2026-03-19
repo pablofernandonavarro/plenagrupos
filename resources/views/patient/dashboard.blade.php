@@ -68,6 +68,44 @@
         </div>
     @endif
 
+    {{-- Maintenance range --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Mi rango de mantenimiento</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Peso mínimo (piso) y máximo (techo) que querés mantener.</p>
+        </div>
+        <div class="px-5 py-4">
+            @if(session('success'))
+                <p class="text-green-600 text-sm mb-3">{{ session('success') }}</p>
+            @endif
+            <form action="{{ route('patient.profile.update') }}" method="POST">
+                @csrf
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Piso (kg)</label>
+                        <input type="number" step="0.01" min="0" max="300" name="peso_piso"
+                            value="{{ old('peso_piso', auth()->user()->peso_piso) }}"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                            placeholder="Ej: 68.00">
+                        @error('peso_piso')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Techo (kg)</label>
+                        <input type="number" step="0.01" min="0" max="300" name="peso_techo"
+                            value="{{ old('peso_techo', auth()->user()->peso_techo) }}"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                            placeholder="Ej: 72.00">
+                        @error('peso_techo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+                    Guardar rango
+                </button>
+            </form>
+        </div>
+    </div>
+
     {{-- Weight history --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100">

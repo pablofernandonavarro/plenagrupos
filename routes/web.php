@@ -65,6 +65,7 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
 // Patient routes
 Route::middleware(['auth', 'role:patient'])->prefix('patient')->name('patient.')->group(function () {
     Route::get('/dashboard', [Patient\DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/perfil', [Patient\DashboardController::class, 'updateProfile'])->name('profile.update');
     Route::get('/peso/registrar', [Patient\WeightController::class, 'create'])->name('weight.create');
     Route::post('/peso', [Patient\WeightController::class, 'store'])->name('weight.store');
 });
