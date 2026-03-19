@@ -33,34 +33,63 @@
         <div class="divide-y divide-gray-50">
             @forelse($patients as $patient)
                 @php
-                    $lastWeight = $patient->weightRecords()->latest('recorded_at')->first()?->weight;
+                    $lastWeight = $patient->weightRecords->first()?->weight;
                     $groups = $patient->patientGroups;
+                    $attendedGroupIds = $patient->attendances->pluck('group_id')->unique();
+                    $groupBreakdown = $groups->whereIn('id', $attendedGroupIds)->map(function ($g) {
+                        $mins = 0;
+                        if ($g->started_at && $g->ended_at) $mins = (int) $g->started_at->diffInMinutes($g->ended_at);
+                        elseif ($g->started_at && $g->active) $mins = (int) $g->started_at->diffInMinutes(now());
+                        return ['name' => $g->name, 'status' => $g->status, 'minutes' => $mins];
+                    })->filter(fn($g) => $g['minutes'] > 0)->values();
+                    $totalMins = $groupBreakdown->sum('minutes');
+                    $hrs = intdiv($totalMins, 60); $min = $totalMins % 60;
                 @endphp
-                <div class="px-5 py-4 flex items-center justify-between gap-3">
-                    <div class="min-w-0">
+                <div class="px-5 py-4 flex items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
                         <p class="font-semibold text-gray-800 text-sm">{{ $patient->name }}</p>
-                        <p class="text-xs text-gray-400 mt-0.5">
+                        <p class="text-xs text-gray-400 mt-0.5 truncate">
                             {{ $patient->email }}
                             @if($patient->phone) · {{ $patient->phone }} @endif
                         </p>
-                        <div class="flex flex-wrap gap-1 mt-1.5">
-                            @foreach($groups as $g)
-                                <span class="text-xs px-2 py-0.5 rounded-full
-                                    {{ $g->status === 'active' ? 'bg-green-100 text-green-700' : ($g->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500') }}">
-                                    {{ $g->name }}
-                                </span>
-                            @endforeach
-                        </div>
+
+                        {{-- Per-group time breakdown --}}
+                        @if($groupBreakdown->isNotEmpty())
+                            <div class="mt-2 space-y-1">
+                                @foreach($groupBreakdown as $gb)
+                                    @php $gh = intdiv($gb['minutes'], 60); $gm = $gb['minutes'] % 60; @endphp
+                                    <div class="flex items-center gap-1.5 text-xs">
+                                        <span class="w-1.5 h-1.5 rounded-full shrink-0
+                                            {{ $gb['status'] === 'active' ? 'bg-green-400' : ($gb['status'] === 'pending' ? 'bg-yellow-400' : 'bg-gray-300') }}"></span>
+                                        <span class="text-gray-600 truncate">{{ $gb['name'] }}</span>
+                                        <span class="text-gray-400 shrink-0 ml-auto">
+                                            {{ $gh > 0 ? $gh.'h ' : '' }}{{ $gm }}m
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-xs text-gray-300 mt-1.5">Sin tiempo registrado</p>
+                        @endif
                     </div>
-                    <div class="flex items-center gap-4 shrink-0">
+
+                    <div class="flex flex-col items-end gap-2 shrink-0">
+                        {{-- Total time --}}
+                        @if($totalMins > 0)
+                            <div class="text-right">
+                                <p class="text-base font-bold text-purple-600">{{ $hrs > 0 ? $hrs.'h ' : '' }}{{ $min }}m</p>
+                                <p class="text-xs text-gray-400">Total en grupos</p>
+                            </div>
+                        @endif
+                        {{-- Last weight --}}
                         @if($lastWeight)
-                            <div class="text-right hidden sm:block">
-                                <p class="text-lg font-bold text-teal-600">{{ $lastWeight }} kg</p>
+                            <div class="text-right">
+                                <p class="text-base font-bold text-teal-600">{{ $lastWeight }} kg</p>
                                 <p class="text-xs text-gray-400">Último peso</p>
                             </div>
                         @endif
                         <a href="{{ route('coordinator.patients.show', $patient) }}"
-                           class="text-sm bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition font-medium">
+                           class="text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg transition font-medium">
                             Ver historial
                         </a>
                     </div>

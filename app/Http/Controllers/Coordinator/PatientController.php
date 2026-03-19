@@ -11,7 +11,7 @@ class PatientController extends Controller
     public function index(Request $request)
     {
         $query = User::where('role', 'patient')
-            ->with(['patientGroups']);
+            ->with(['patientGroups', 'attendances', 'weightRecords' => fn($q) => $q->latest('recorded_at')]);
 
         if ($search = $request->input('search')) {
             $query->where(fn($q) => $q
