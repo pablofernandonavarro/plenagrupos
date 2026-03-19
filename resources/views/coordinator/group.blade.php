@@ -46,12 +46,12 @@
     {{-- Stats --}}
     <div class="grid grid-cols-3 gap-3">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <p id="stat-count" class="text-2xl sm:text-3xl font-bold text-teal-600">{{ $totalVisits }}</p>
-            <p class="text-xs text-gray-500 mt-1">Asistentes hoy</p>
+            <p id="stat-count" class="text-2xl sm:text-3xl font-bold text-teal-600">{{ $todayVisits }}</p>
+            <p class="text-xs text-gray-500 mt-1">Presentes hoy</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <p class="text-2xl sm:text-3xl font-bold text-blue-600">{{ $group->patients->count() }}</p>
-            <p class="text-xs text-gray-500 mt-1">Pacientes</p>
+            <p class="text-xs text-gray-500 mt-1">Inscriptos</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <p class="text-2xl sm:text-3xl font-bold text-green-600">{{ $avgWeight ? number_format($avgWeight, 1) : '—' }}</p>

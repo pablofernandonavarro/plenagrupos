@@ -61,9 +61,10 @@ class DashboardController extends Controller
             else { $noWeight++; }
         }
 
+        $todayVisits = $todayAttendances->count();
         $stats = compact('inRange', 'above', 'below', 'noWeight');
 
-        return view('coordinator.group', compact('group', 'attendances', 'avgWeight', 'totalVisits', 'stats'));
+        return view('coordinator.group', compact('group', 'attendances', 'avgWeight', 'totalVisits', 'todayVisits', 'stats'));
     }
 
     public function updateMaintenanceWeight(\App\Models\Group $group, \Illuminate\Http\Request $request)
