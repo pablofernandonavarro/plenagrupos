@@ -126,8 +126,11 @@ class GroupController extends Controller
                 'ideal_weight' => $a->user->ideal_weight,
             ]);
 
+        $avg = $group->weightRecords()->whereDate('recorded_at', today())->avg('weight');
+
         return response()->json([
             'count'       => $attendances->count(),
+            'avg_weight'  => $avg ? number_format($avg, 1) : null,
             'attendances' => $attendances,
         ]);
     }

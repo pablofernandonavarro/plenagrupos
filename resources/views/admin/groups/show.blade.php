@@ -63,19 +63,17 @@
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-                    <p class="text-3xl font-bold text-teal-600">{{ $totalVisits }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Total visitas</p>
+                    <p id="stat-visits" class="text-3xl font-bold text-teal-600">{{ $totalVisits }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Visitas hoy</p>
                 </div>
                 <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
                     <p class="text-3xl font-bold text-blue-600">{{ $group->patients->count() }}</p>
                     <p class="text-xs text-gray-500 mt-1">Pacientes</p>
                 </div>
-                @if($avgWeight)
                 <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center col-span-2">
-                    <p class="text-3xl font-bold text-green-600">{{ number_format($avgWeight, 1) }} kg</p>
-                    <p class="text-xs text-gray-500 mt-1">Peso promedio del grupo</p>
+                    <p id="stat-avg" class="text-3xl font-bold text-green-600">{{ $avgWeight ? number_format($avgWeight, 1) . ' kg' : '—' }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Peso promedio hoy</p>
                 </div>
-                @endif
             </div>
         </div>
 
@@ -225,11 +223,16 @@
 const liveUrl  = '{{ route('admin.groups.live', $group) }}';
 const tbody    = document.getElementById('attendance-body');
 const updateEl = document.getElementById('last-update');
+const statVisits = document.getElementById('stat-visits');
+const statAvg    = document.getElementById('stat-avg');
 
 async function fetchAttendances() {
     try {
         const res  = await fetch(liveUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
         const data = await res.json();
+
+        statVisits.textContent = data.count;
+        statAvg.textContent    = data.avg_weight ? data.avg_weight + ' kg' : '—';
 
         if (data.attendances.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td></tr>';
