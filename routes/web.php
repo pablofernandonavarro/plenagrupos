@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Coordinator;
 use App\Http\Controllers\Patient;
 use App\Http\Controllers\GroupJoinController;
+use App\Http\Controllers\Coordinator\PatientController as CoordinatorPatientController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root based on role
@@ -60,6 +61,9 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
     Route::get('/grupos/{group}/asistencia', [Coordinator\DashboardController::class, 'liveAttendances'])->name('groups.live');
     Route::post('/grupos/{group}/mantenimiento', [Coordinator\DashboardController::class, 'updateMaintenanceWeight'])->name('groups.maintenance');
     Route::post('/grupos/{group}/toggle', [Coordinator\DashboardController::class, 'toggleGroup'])->name('groups.toggle');
+
+    Route::get('/pacientes', [CoordinatorPatientController::class, 'index'])->name('patients.index');
+    Route::get('/pacientes/{patient}', [CoordinatorPatientController::class, 'show'])->name('patients.show');
 });
 
 // Patient routes

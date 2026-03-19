@@ -99,7 +99,9 @@
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Usuarios</a>
                     @elseif(auth()->user()->isCoordinator())
                         <a href="{{ route('coordinator.dashboard') }}" class="text-sm text-gray-300 transition"
-                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Dashboard</a>
+                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Grupos</a>
+                        <a href="{{ route('coordinator.patients.index') }}" class="text-sm text-gray-300 transition"
+                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Pacientes</a>
                     @else
                         <a href="{{ route('patient.dashboard') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Mi perfil</a>
@@ -146,7 +148,8 @@
                     <a href="{{ route('admin.groups.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Grupos</a>
                     <a href="{{ route('admin.users.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Usuarios</a>
                 @elseif(auth()->user()->isCoordinator())
-                    <a href="{{ route('coordinator.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Dashboard</a>
+                    <a href="{{ route('coordinator.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Grupos</a>
+                    <a href="{{ route('coordinator.patients.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Pacientes</a>
                 @else
                     <a href="{{ route('patient.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
                 @endif
