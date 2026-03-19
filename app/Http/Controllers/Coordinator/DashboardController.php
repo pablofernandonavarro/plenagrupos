@@ -119,11 +119,19 @@ class DashboardController extends Controller
             abort(403);
         }
 
-        if (!$group->active) {
+        // Already finalized — cannot reopen
+        if (!$group->active && $group->started_at) {
             return back()->with('error', 'Un grupo finalizado no puede volver a iniciarse.');
         }
 
-        $group->update(['active' => false]);
-        return back()->with('success', 'Grupo finalizado.');
+        if ($group->active) {
+            // Finalize
+            $group->update(['active' => false, 'ended_at' => now()]);
+            return back()->with('success', 'Grupo finalizado.');
+        }
+
+        // Start
+        $group->update(['active' => true, 'started_at' => now()]);
+        return back()->with('success', 'Grupo iniciado.');
     }
 }

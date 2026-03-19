@@ -27,6 +27,16 @@
                         </span>
                     @endif
                 </div>
+                @if($group->started_at || $group->ended_at)
+                    <div class="flex flex-wrap gap-3 mt-1 text-xs text-gray-500">
+                        @if($group->started_at)
+                            <span>▶ Inicio: <span class="font-medium text-gray-700">{{ $group->started_at->format('d/m/Y H:i') }}</span></span>
+                        @endif
+                        @if($group->ended_at)
+                            <span>■ Fin: <span class="font-medium text-gray-700">{{ $group->ended_at->format('d/m/Y H:i') }}</span></span>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
         @if($group->active)

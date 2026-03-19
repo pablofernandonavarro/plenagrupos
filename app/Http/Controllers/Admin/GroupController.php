@@ -140,8 +140,7 @@ class GroupController extends Controller
         if (!$group->active) {
             return back()->with('error', 'Un grupo finalizado no puede volver a iniciarse.');
         }
-        $group->active = false;
-        $group->save();
+        $group->update(['active' => false, 'ended_at' => now()]);
         return back()->with('success', 'Grupo finalizado.');
     }
 

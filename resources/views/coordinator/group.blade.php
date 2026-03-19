@@ -28,16 +28,35 @@
                         {{ $group->meeting_day }}{{ $group->meeting_day && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
                     </p>
                 @endif
+                @if($group->started_at || $group->ended_at)
+                    <div class="flex flex-wrap gap-3 mt-1 text-xs text-gray-500">
+                        @if($group->started_at)
+                            <span>▶ Inicio: <span class="font-medium text-gray-700">{{ $group->started_at->format('d/m/Y H:i') }}</span></span>
+                        @endif
+                        @if($group->ended_at)
+                            <span>■ Fin: <span class="font-medium text-gray-700">{{ $group->ended_at->format('d/m/Y H:i') }}</span></span>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
         @if($group->active)
-        <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST" class="shrink-0">
-            @csrf
-            <button type="submit"
-                class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
-                Finalizar
-            </button>
-        </form>
+            <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST" class="shrink-0"
+                  onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
+                @csrf
+                <button type="submit"
+                    class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
+                    Finalizar
+                </button>
+            </form>
+        @elseif(!$group->started_at)
+            <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST" class="shrink-0">
+                @csrf
+                <button type="submit"
+                    class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-teal-400 text-teal-600 hover:bg-teal-50">
+                    Iniciar grupo
+                </button>
+            </form>
         @else
             <span class="text-xs px-4 py-2 rounded-lg border border-gray-200 text-gray-400 shrink-0">Finalizado</span>
         @endif

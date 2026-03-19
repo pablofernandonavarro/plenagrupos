@@ -49,13 +49,22 @@
                 </div>
                 <div class="flex gap-2">
                     @if($group->active)
-                    <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
-                        @csrf
-                        <button type="submit"
-                            class="text-sm font-semibold px-4 py-1.5 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
-                            Finalizar
-                        </button>
-                    </form>
+                        <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST"
+                              onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
+                            @csrf
+                            <button type="submit"
+                                class="text-sm font-semibold px-4 py-1.5 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
+                                Finalizar
+                            </button>
+                        </form>
+                    @elseif(!$group->started_at)
+                        <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="text-sm font-semibold px-4 py-1.5 rounded-lg transition border border-teal-400 text-teal-600 hover:bg-teal-50">
+                                Iniciar
+                            </button>
+                        </form>
                     @else
                         <span class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-400">Finalizado</span>
                     @endif
@@ -65,6 +74,17 @@
                     </a>
                 </div>
             </div>
+
+            @if($group->started_at || $group->ended_at)
+            <div class="px-5 py-2 flex flex-wrap gap-4 text-xs text-gray-500 border-b border-gray-50">
+                @if($group->started_at)
+                    <span>▶ Inicio: <span class="font-medium text-gray-700">{{ $group->started_at->format('d/m/Y H:i') }}</span></span>
+                @endif
+                @if($group->ended_at)
+                    <span>■ Fin: <span class="font-medium text-gray-700">{{ $group->ended_at->format('d/m/Y H:i') }}</span></span>
+                @endif
+            </div>
+            @endif
 
             <div class="p-5 grid grid-cols-3 gap-4 text-center">
                 <div>

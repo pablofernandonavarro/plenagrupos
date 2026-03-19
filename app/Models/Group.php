@@ -10,9 +10,13 @@ class Group extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'meeting_day', 'meeting_time', 'admin_id', 'qr_token', 'active'];
+    protected $fillable = ['name', 'description', 'meeting_day', 'meeting_time', 'admin_id', 'qr_token', 'active', 'started_at', 'ended_at'];
 
-    protected $casts = ['active' => 'boolean'];
+    protected $casts = [
+        'active'     => 'boolean',
+        'started_at' => 'datetime',
+        'ended_at'   => 'datetime',
+    ];
 
     public function getMeetingTimeFormattedAttribute(): ?string
     {
