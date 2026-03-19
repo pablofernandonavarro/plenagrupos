@@ -17,6 +17,16 @@
                 {{ $patient->email }}
                 @if($patient->phone) · {{ $patient->phone }} @endif
             </p>
+            @if($groups->isNotEmpty())
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                    @foreach($groups as $g)
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                            {{ $g->status === 'active' ? 'bg-green-100 text-green-700' : ($g->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500') }}">
+                            {{ $g->name }}
+                        </span>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 
@@ -91,30 +101,6 @@
                 </div>
             </div>
             @endif
-
-            {{-- Groups --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <h2 class="font-semibold text-gray-800 text-sm mb-3">Grupos</h2>
-                <div class="space-y-2">
-                    @foreach($groups as $g)
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-800">{{ $g->name }}</p>
-                                @if($g->meeting_day || $g->meeting_time)
-                                    <p class="text-xs text-gray-400">{{ $g->meeting_day }}{{ $g->meeting_day && $g->meeting_time ? ' · ' : '' }}{{ $g->meeting_time_formatted ?? '' }}</p>
-                                @endif
-                            </div>
-                            @if($g->status === 'active')
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">En curso</span>
-                            @elseif($g->status === 'pending')
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Sin iniciar</span>
-                            @else
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Finalizado</span>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            </div>
 
         </div>
 
