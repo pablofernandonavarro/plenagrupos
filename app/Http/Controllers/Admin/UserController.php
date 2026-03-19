@@ -70,6 +70,8 @@ class UserController extends Controller
             'email'        => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'phone'        => 'nullable|string|max:20',
             'ideal_weight' => 'nullable|numeric|min:0|max:300',
+            'peso_piso'    => 'nullable|numeric|min:0|max:300',
+            'peso_techo'   => 'nullable|numeric|min:0|max:300',
             'password'     => 'nullable|min:8|confirmed',
         ]);
 
@@ -77,6 +79,8 @@ class UserController extends Controller
         $user->email        = $data['email'];
         $user->phone        = $data['phone'] ?? null;
         $user->ideal_weight = $data['ideal_weight'] ?? null;
+        $user->peso_piso    = $data['peso_piso'] ?? null;
+        $user->peso_techo   = $data['peso_techo'] ?? null;
 
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);

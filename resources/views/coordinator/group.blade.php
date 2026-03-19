@@ -80,32 +80,49 @@
                         <tr>
                             <th class="px-5 py-3 text-left">Paciente</th>
                             <th class="px-5 py-3 text-right">Peso registrado</th>
-                            <th class="px-5 py-3 text-right">Mantenimiento</th>
+                            <th class="px-5 py-3 text-right">Rango</th>
                             <th class="px-5 py-3 text-right">Diferencia</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @forelse($attendances as $att)
                             @php
-                                $pivot = $group->patients->firstWhere('id', $att->user_id)?->pivot;
-                                $mw    = $pivot?->maintenance_weight;
                                 $rw    = $att->weightRecord?->weight;
-                                $diff  = ($mw && $rw) ? round($rw - $mw, 2) : null;
+                                $piso  = $att->user->peso_piso;
+                                $techo = $att->user->peso_techo;
+                                $status = null;
+                                $diffVal = null;
+                                if ($rw && $techo && $rw > $techo) {
+                                    $status = 'above';
+                                    $diffVal = round($rw - $techo, 2);
+                                } elseif ($rw && $piso && $rw < $piso) {
+                                    $status = 'below';
+                                    $diffVal = round($rw - $piso, 2);
+                                } elseif ($rw && ($piso || $techo)) {
+                                    $status = 'ok';
+                                }
                             @endphp
                             <tr>
                                 <td class="px-5 py-3 font-medium text-gray-800">{{ $att->user->name }}</td>
                                 <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
                                     {{ $rw ? $rw . ' kg' : '—' }}
                                 </td>
-                                <td class="px-5 py-3 text-right text-gray-500">
-                                    {{ $mw ? $mw . ' kg' : '—' }}
-                                </td>
-                                <td class="px-5 py-3 text-right font-semibold
-                                    {{ $diff === null ? 'text-gray-300' : ($diff > 0 ? 'text-red-500' : ($diff < 0 ? 'text-green-600' : 'text-gray-500')) }}">
-                                    @if($diff !== null)
-                                        {{ $diff > 0 ? '+' : '' }}{{ $diff }} kg
+                                <td class="px-5 py-3 text-right text-gray-500 text-xs">
+                                    @if($piso || $techo)
+                                        {{ $piso ? $piso . ' kg' : '?' }} – {{ $techo ? $techo . ' kg' : '?' }}
                                     @else
                                         —
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3 text-right font-semibold">
+                                    @if($status === 'above')
+                                        <span class="text-red-500">↑ +{{ $diffVal }} kg</span>
+                                    @elseif($status === 'below')
+                                        <span class="text-blue-500">↓ {{ $diffVal }} kg</span>
+                                    @elseif($status === 'ok')
+                                        <span class="text-green-600">✓ en rango</span>
+                                    @else
+                                        <span class="text-gray-300">—</span>
                                     @endif
                                 </td>
                             </tr>
@@ -122,10 +139,20 @@
             <div class="sm:hidden divide-y divide-gray-50">
                 @forelse($attendances as $att)
                     @php
-                        $pivot = $group->patients->firstWhere('id', $att->user_id)?->pivot;
-                        $mw    = $pivot?->maintenance_weight;
                         $rw    = $att->weightRecord?->weight;
-                        $diff  = ($mw && $rw) ? round($rw - $mw, 2) : null;
+                        $piso  = $att->user->peso_piso;
+                        $techo = $att->user->peso_techo;
+                        $status = null;
+                        $diffVal = null;
+                        if ($rw && $techo && $rw > $techo) {
+                            $status = 'above';
+                            $diffVal = round($rw - $techo, 2);
+                        } elseif ($rw && $piso && $rw < $piso) {
+                            $status = 'below';
+                            $diffVal = round($rw - $piso, 2);
+                        } elseif ($rw && ($piso || $techo)) {
+                            $status = 'ok';
+                        }
                     @endphp
                     <div class="px-5 py-3">
                         <p class="font-medium text-gray-800 text-sm mb-2">{{ $att->user->name }}</p>
@@ -135,13 +162,21 @@
                                 <p class="text-gray-400 mt-0.5">Registrado</p>
                             </div>
                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                <p class="font-semibold text-gray-600">{{ $mw ? $mw . ' kg' : '—' }}</p>
-                                <p class="text-gray-400 mt-0.5">Mant.</p>
+                                <p class="font-semibold text-gray-600 text-xs leading-tight">
+                                    @if($piso || $techo){{ $piso ?? '?' }} – {{ $techo ?? '?' }}@else—@endif
+                                </p>
+                                <p class="text-gray-400 mt-0.5">Rango</p>
                             </div>
                             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                <p class="font-semibold {{ $diff === null ? 'text-gray-300' : ($diff > 0 ? 'text-red-500' : ($diff < 0 ? 'text-green-600' : 'text-gray-500')) }}">
-                                    @if($diff !== null){{ $diff > 0 ? '+' : '' }}{{ $diff }} kg@else—@endif
-                                </p>
+                                @if($status === 'above')
+                                    <p class="font-semibold text-red-500">↑ +{{ $diffVal }}</p>
+                                @elseif($status === 'below')
+                                    <p class="font-semibold text-blue-500">↓ {{ $diffVal }}</p>
+                                @elseif($status === 'ok')
+                                    <p class="font-semibold text-green-600">✓</p>
+                                @else
+                                    <p class="font-semibold text-gray-300">—</p>
+                                @endif
                                 <p class="text-gray-400 mt-0.5">Dif.</p>
                             </div>
                         </div>
@@ -155,37 +190,23 @@
         @endif
     </div>
 
-    {{-- Pesos de mantenimiento por paciente --}}
+    {{-- Rangos de mantenimiento por paciente --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-800">Peso de mantenimiento</h2>
-            <p class="text-xs text-gray-400 mt-0.5">Peso objetivo de cada paciente en este grupo.</p>
+            <h2 class="font-semibold text-gray-800">Rangos de mantenimiento</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Piso y techo de peso definidos por el administrador para cada paciente.</p>
         </div>
         <div class="divide-y divide-gray-50">
             @forelse($group->patients as $patient)
                 <div class="px-5 py-3 flex items-center justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="text-sm font-medium text-gray-800 truncate">{{ $patient->name }}</p>
-                        @if($patient->pivot->maintenance_weight)
-                            <p class="text-xs text-teal-600">{{ $patient->pivot->maintenance_weight }} kg</p>
-                        @else
-                            <p class="text-xs text-gray-400">Sin peso asignado</p>
-                        @endif
-                    </div>
-                    <form action="{{ route('coordinator.groups.maintenance', $group) }}" method="POST"
-                          class="flex items-center gap-2 shrink-0">
-                        @csrf
-                        <input type="hidden" name="user_id" value="{{ $patient->id }}">
-                        <input type="number" name="maintenance_weight"
-                               value="{{ $patient->pivot->maintenance_weight }}"
-                               step="0.1" min="1" max="300"
-                               placeholder="kg"
-                               class="w-20 px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-teal-500 outline-none">
-                        <button type="submit"
-                                class="text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg transition whitespace-nowrap">
-                            Guardar
-                        </button>
-                    </form>
+                    <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
+                    @if($patient->peso_piso || $patient->peso_techo)
+                        <span class="text-xs text-teal-700 bg-teal-50 border border-teal-100 rounded-full px-3 py-1">
+                            {{ $patient->peso_piso ?? '?' }} – {{ $patient->peso_techo ?? '?' }} kg
+                        </span>
+                    @else
+                        <span class="text-xs text-gray-400">Sin rango asignado</span>
+                    @endif
                 </div>
             @empty
                 <p class="px-5 py-4 text-sm text-gray-400">Sin pacientes en este grupo.</p>
@@ -202,25 +223,38 @@ const listEl   = document.getElementById('live-list');
 const countEl  = document.getElementById('stat-count');
 const updateEl = document.getElementById('last-update');
 
-const maintenanceWeights = {
+const patientRanges = {
     @foreach($group->patients as $p)
-        {{ $p->id }}: {{ $p->pivot->maintenance_weight ?? 'null' }},
+        {{ $p->id }}: { piso: {{ $p->peso_piso ?? 'null' }}, techo: {{ $p->peso_techo ?? 'null' }} },
     @endforeach
 };
 
-function diff(rw, mw) {
-    if (rw === null || mw === null) return { text: '—', color: 'text-gray-300' };
-    const d = Math.round((rw - mw) * 100) / 100;
-    const color = d > 0 ? 'text-red-500' : (d < 0 ? 'text-green-600' : 'text-gray-500');
-    return { text: (d > 0 ? '+' : '') + d + ' kg', color };
+function calcStatus(rw, piso, techo) {
+    if (!rw) return { text: '—', color: 'text-gray-300', icon: '' };
+    if (techo !== null && rw > techo) {
+        const d = Math.round((rw - techo) * 100) / 100;
+        return { text: '+' + d + ' kg', color: 'text-red-500', icon: '↑' };
+    }
+    if (piso !== null && rw < piso) {
+        const d = Math.round((rw - piso) * 100) / 100;
+        return { text: d + ' kg', color: 'text-blue-500', icon: '↓' };
+    }
+    if (piso !== null || techo !== null) {
+        return { text: 'en rango', color: 'text-green-600', icon: '✓' };
+    }
+    return { text: '—', color: 'text-gray-300', icon: '' };
 }
 
 function renderRow(a) {
-    const mw   = maintenanceWeights[a.id] ?? null;
-    const d    = diff(a.weight, mw);
-    const rw   = a.weight;
+    const range = patientRanges[a.id] ?? { piso: null, techo: null };
+    const rw    = a.weight;
+    const piso  = range.piso;
+    const techo = range.techo;
+    const s     = calcStatus(rw, piso, techo);
+    const rangeText = (piso !== null || techo !== null)
+        ? (piso ?? '?') + ' – ' + (techo ?? '?') + ' kg'
+        : '—';
 
-    // Mobile card (visible on small screens only via inline style trick — we use a div approach)
     return `
     <div class="px-5 py-3 border-b border-gray-50 last:border-0">
         <p class="font-medium text-gray-800 text-sm mb-2">${a.name}</p>
@@ -230,19 +264,19 @@ function renderRow(a) {
                 <p class="text-gray-400 mt-0.5">Registrado</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                <p class="font-semibold text-gray-600">${mw ? mw + ' kg' : '—'}</p>
-                <p class="text-gray-400 mt-0.5">Mant.</p>
+                <p class="font-semibold text-gray-600 text-xs leading-tight">${rangeText}</p>
+                <p class="text-gray-400 mt-0.5">Rango</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-2 text-center">
-                <p class="font-semibold ${d.color}">${d.text}</p>
+                <p class="font-semibold ${s.color}">${s.icon} ${s.text}</p>
                 <p class="text-gray-400 mt-0.5">Dif.</p>
             </div>
         </div>
         <div class="hidden sm:grid grid-cols-4 gap-2 text-sm items-center">
             <span></span>
             <span class="text-right font-semibold ${rw ? 'text-teal-600' : 'text-gray-300'}">${rw ? rw + ' kg' : '—'}</span>
-            <span class="text-right text-gray-500">${mw ? mw + ' kg' : '—'}</span>
-            <span class="text-right font-semibold ${d.color}">${d.text}</span>
+            <span class="text-right text-gray-500 text-xs">${rangeText}</span>
+            <span class="text-right font-semibold ${s.color}">${s.icon} ${s.text}</span>
         </div>
     </div>`;
 }
@@ -251,7 +285,7 @@ function renderHeader() {
     return `<div class="hidden sm:grid grid-cols-4 gap-2 px-5 py-2 text-xs text-gray-400 uppercase tracking-wide bg-gray-50">
         <span>Paciente</span>
         <span class="text-right">Peso registrado</span>
-        <span class="text-right">Mantenimiento</span>
+        <span class="text-right">Rango</span>
         <span class="text-right">Diferencia</span>
     </div>`;
 }

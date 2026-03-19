@@ -48,6 +48,28 @@
                     placeholder="Ej: 70.50">
                 @error('ideal_weight')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Rango de mantenimiento (kg)</label>
+                <p class="text-xs text-gray-400 mb-2">Peso mínimo y máximo aceptable para este paciente.</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Piso</label>
+                        <input type="number" step="0.01" min="0" max="300" name="peso_piso"
+                            value="{{ old('peso_piso', $user->peso_piso) }}"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                            placeholder="Ej: 68.00">
+                        @error('peso_piso')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Techo</label>
+                        <input type="number" step="0.01" min="0" max="300" name="peso_techo"
+                            value="{{ old('peso_techo', $user->peso_techo) }}"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                            placeholder="Ej: 72.00">
+                        @error('peso_techo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </div>
             @endif
 
             <div class="border-t pt-4">
