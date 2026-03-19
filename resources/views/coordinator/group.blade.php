@@ -190,27 +190,56 @@
         @endif
     </div>
 
-    {{-- Rangos de mantenimiento por paciente --}}
+    {{-- Estadísticas del grupo --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-800">Rangos de mantenimiento</h2>
-            <p class="text-xs text-gray-400 mt-0.5">Piso y techo de peso definidos por el administrador para cada paciente.</p>
+            <h2 class="font-semibold text-gray-800">Estadísticas del grupo</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Resumen de hoy y totales históricos.</p>
         </div>
-        <div class="divide-y divide-gray-50">
-            @forelse($group->patients as $patient)
-                <div class="px-5 py-3 flex items-center justify-between gap-3">
-                    <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
-                    @if($patient->peso_piso || $patient->peso_techo)
-                        <span class="text-xs text-teal-700 bg-teal-50 border border-teal-100 rounded-full px-3 py-1">
-                            {{ $patient->peso_piso ?? '?' }} – {{ $patient->peso_techo ?? '?' }} kg
-                        </span>
-                    @else
-                        <span class="text-xs text-gray-400">Sin rango asignado</span>
-                    @endif
+        <div class="p-5 space-y-5">
+
+            {{-- Hoy: distribución por rango --}}
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Hoy — distribución de pesos</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="rounded-xl border border-green-100 bg-green-50 p-4 text-center">
+                        <p class="text-2xl font-bold text-green-600">{{ $stats['inRange'] }}</p>
+                        <p class="text-xs text-green-700 mt-1">✓ En rango</p>
+                    </div>
+                    <div class="rounded-xl border border-red-100 bg-red-50 p-4 text-center">
+                        <p class="text-2xl font-bold text-red-500">{{ $stats['above'] }}</p>
+                        <p class="text-xs text-red-600 mt-1">↑ Por encima</p>
+                    </div>
+                    <div class="rounded-xl border border-blue-100 bg-blue-50 p-4 text-center">
+                        <p class="text-2xl font-bold text-blue-500">{{ $stats['below'] }}</p>
+                        <p class="text-xs text-blue-600 mt-1">↓ Por debajo</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 text-center">
+                        <p class="text-2xl font-bold text-gray-400">{{ $stats['noWeight'] }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Sin peso hoy</p>
+                    </div>
                 </div>
-            @empty
-                <p class="px-5 py-4 text-sm text-gray-400">Sin pacientes en este grupo.</p>
-            @endforelse
+            </div>
+
+            {{-- Totales históricos --}}
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Histórico</p>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="rounded-xl border border-gray-100 p-4 text-center">
+                        <p class="text-2xl font-bold text-gray-700">{{ $group->patients->count() }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Pacientes</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 p-4 text-center">
+                        <p class="text-2xl font-bold text-teal-600">{{ $totalVisits }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Visitas totales</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 p-4 text-center">
+                        <p class="text-2xl font-bold text-teal-600">{{ $avgWeight ? number_format($avgWeight, 1) : '—' }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Peso prom.</p>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 

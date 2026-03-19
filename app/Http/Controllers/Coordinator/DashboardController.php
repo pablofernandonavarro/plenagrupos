@@ -43,7 +43,27 @@ class DashboardController extends Controller
         $avgWeight = $group->weightRecords()->avg('weight');
         $totalVisits = $group->attendances()->count();
 
-        return view('coordinator.group', compact('group', 'attendances', 'avgWeight', 'totalVisits'));
+        // Stats: today's range breakdown
+        $todayAttendances = $group->attendances()
+            ->with(['user', 'weightRecord'])
+            ->whereDate('attended_at', today())
+            ->get();
+
+        $inRange = 0; $above = 0; $below = 0; $noWeight = 0;
+        foreach ($todayAttendances as $a) {
+            $rw    = $a->weightRecord?->weight;
+            $piso  = $a->user->peso_piso;
+            $techo = $a->user->peso_techo;
+            if (!$rw) { $noWeight++; }
+            elseif ($techo && $rw > $techo) { $above++; }
+            elseif ($piso && $rw < $piso) { $below++; }
+            elseif ($piso || $techo) { $inRange++; }
+            else { $noWeight++; }
+        }
+
+        $stats = compact('inRange', 'above', 'below', 'noWeight');
+
+        return view('coordinator.group', compact('group', 'attendances', 'avgWeight', 'totalVisits', 'stats'));
     }
 
     public function updateMaintenanceWeight(\App\Models\Group $group, \Illuminate\Http\Request $request)
