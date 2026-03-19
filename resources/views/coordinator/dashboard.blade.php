@@ -19,7 +19,7 @@
                 class="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
         </div>
         <div class="flex gap-2">
-            @foreach([''=>'Todos', 'active'=>'Activos', 'closed'=>'Finalizados'] as $val => $label)
+            @foreach([''=>'Todos', 'active'=>'En curso', 'pending'=>'Sin iniciar', 'closed'=>'Finalizados'] as $val => $label)
                 <button type="submit" name="status" value="{{ $val }}"
                     class="px-4 py-2.5 rounded-lg text-sm font-medium border transition
                         {{ request('status', '') === $val

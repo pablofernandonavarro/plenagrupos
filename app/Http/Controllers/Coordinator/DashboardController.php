@@ -20,8 +20,10 @@ class DashboardController extends Controller
 
         if ($request->input('status') === 'active') {
             $query->where('active', true);
+        } elseif ($request->input('status') === 'pending') {
+            $query->where('active', false)->whereNull('started_at');
         } elseif ($request->input('status') === 'closed') {
-            $query->where('active', false);
+            $query->where('active', false)->whereNotNull('started_at');
         }
 
         $groups = $query->paginate(10)->withQueryString();
