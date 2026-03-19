@@ -30,20 +30,17 @@
                 @endif
             </div>
         </div>
+        @if($group->active)
         <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST" class="shrink-0">
             @csrf
-            @if($group->active)
-                <button type="submit"
-                    class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
-                    Finalizar
-                </button>
-            @else
-                <button type="submit"
-                    class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-teal-400 text-teal-600 hover:bg-teal-50">
-                    Iniciar grupo
-                </button>
-            @endif
+            <button type="submit"
+                class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
+                Finalizar
+            </button>
         </form>
+        @else
+            <span class="text-xs px-4 py-2 rounded-lg border border-gray-200 text-gray-400 shrink-0">Finalizado</span>
+        @endif
     </div>
 
     {{-- Stats --}}

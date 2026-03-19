@@ -119,8 +119,11 @@ class DashboardController extends Controller
             abort(403);
         }
 
-        $group->update(['active' => !$group->active]);
-        $msg = $group->active ? 'Grupo iniciado.' : 'Grupo finalizado.';
-        return back()->with('success', $msg);
+        if (!$group->active) {
+            return back()->with('error', 'Un grupo finalizado no puede volver a iniciarse.');
+        }
+
+        $group->update(['active' => false]);
+        return back()->with('success', 'Grupo finalizado.');
     }
 }
