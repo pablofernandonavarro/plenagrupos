@@ -170,13 +170,19 @@ function openScanner() {
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 240, height: 240 } },
         (decodedText) => {
-            if (!decodedText.startsWith(appBase)) {
+            try {
+                const url = new URL(decodedText);
+                if (!url.pathname.match(/^\/grupo\//)) {
+                    statusEl.textContent = 'QR no válido para esta aplicación.';
+                    return;
+                }
+                statusEl.textContent = '¡QR detectado! Redirigiendo...';
+                closeScanner();
+                // Always redirect to the current app's host with the same path
+                window.location.href = window.location.origin + url.pathname;
+            } catch (e) {
                 statusEl.textContent = 'QR no válido para esta aplicación.';
-                return;
             }
-            statusEl.textContent = '¡QR detectado! Redirigiendo...';
-            closeScanner();
-            window.location.href = decodedText;
         },
         () => {}
     ).then(() => {
