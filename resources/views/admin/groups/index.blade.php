@@ -48,10 +48,14 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-1">
                             <h2 class="font-semibold text-gray-900 text-base">{{ $group->name }}</h2>
-                            @if($group->active)
+                            @if($group->status === 'active')
                                 <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                    Activo
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                    En curso
+                                </span>
+                            @elseif($group->status === 'pending')
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+                                    Sin iniciar
                                 </span>
                             @else
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
@@ -87,8 +91,9 @@
 
                     {{-- Actions --}}
                     <div class="flex items-center gap-2 sm:shrink-0">
-                        @if($group->active)
-                            <form action="{{ route('admin.groups.toggle', $group) }}" method="POST">
+                        @if($group->status === 'active')
+                            <form action="{{ route('admin.groups.toggle', $group) }}" method="POST"
+                                  onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
                                 @csrf
                                 <button type="submit"
                                     class="text-sm font-medium px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition">

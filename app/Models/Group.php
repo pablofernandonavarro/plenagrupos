@@ -18,6 +18,14 @@ class Group extends Model
         'ended_at'   => 'datetime',
     ];
 
+    // 'pending' | 'active' | 'closed'
+    public function getStatusAttribute(): string
+    {
+        if ($this->active) return 'active';
+        if ($this->started_at) return 'closed';
+        return 'pending';
+    }
+
     public function getMeetingTimeFormattedAttribute(): ?string
     {
         if (!$this->meeting_time) return null;

@@ -13,9 +13,15 @@
             <div>
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="text-xl sm:text-2xl font-bold text-gray-800">{{ $group->name }}</h1>
-                    <span class="text-xs px-2 py-1 rounded-full font-medium {{ $group->active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}">
-                        {{ $group->active ? 'Abierto' : 'Cerrado' }}
-                    </span>
+                    @if($group->status === 'active')
+                        <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En curso
+                        </span>
+                    @elseif($group->status === 'pending')
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
+                    @else
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
+                    @endif
                 </div>
                 <div class="flex items-center gap-3 mt-1 flex-wrap">
                     @if($group->description)
@@ -39,16 +45,15 @@
                 @endif
             </div>
         </div>
-        @if($group->active)
-        <form action="{{ route('admin.groups.toggle', $group) }}" method="POST" class="shrink-0">
+        @if($group->status === 'active')
+        <form action="{{ route('admin.groups.toggle', $group) }}" method="POST" class="shrink-0"
+              onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
             @csrf
             <button type="submit"
                 class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
                 Finalizar grupo
             </button>
         </form>
-        @else
-            <span class="text-xs px-4 py-2 rounded-lg border border-gray-200 text-gray-400 shrink-0">Finalizado</span>
         @endif
     </div>
 

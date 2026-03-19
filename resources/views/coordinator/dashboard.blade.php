@@ -43,9 +43,15 @@
                             </p>
                         @endif
                     </div>
-                    <span class="text-xs px-2 py-1 rounded-full font-medium {{ $group->active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}">
-                        {{ $group->active ? 'Abierto' : 'Cerrado' }}
-                    </span>
+                    @if($group->status === 'active')
+                        <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En curso
+                        </span>
+                    @elseif($group->status === 'pending')
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
+                    @else
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
+                    @endif
                 </div>
                 <div class="flex gap-2">
                     @if($group->active)

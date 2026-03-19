@@ -51,6 +51,7 @@ class GroupController extends Controller
             'meeting_day' => $data['meeting_day'] ?? null,
             'meeting_time' => $data['meeting_time'] ?? null,
             'admin_id' => auth()->id(),
+            'active' => false,
         ]);
 
         if (!empty($data['coordinator_ids'])) {
