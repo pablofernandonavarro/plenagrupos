@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Coordinator;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiDocument;
 use App\Models\GroupAttendance;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -144,9 +145,21 @@ class PatientController extends Controller
             $techo    = $patient->peso_techo ?? 'no definido';
             $ideal    = $patient->ideal_weight ?? 'no definido';
 
-            $prompt = "Analizá los siguientes datos clínicos de un paciente de un grupo terapéutico de control de peso " .
-                "y generá una devolución profesional breve (4-5 oraciones) en español para el coordinador del grupo. " .
-                "Usá un tono clínico, empático y orientado a la acción.\n\n" .
+            // Load active bibliography (Dr. Ravenna's framework)
+            $docs = AiDocument::active()->get();
+            $bibliography = $docs->isNotEmpty()
+                ? "\n\nMarco teórico de referencia (Dr. Máximo Ravenna):\n" .
+                  $docs->map(fn($d) => "## {$d->title}" . ($d->source ? " ({$d->source})" : "") . "\n{$d->content}")
+                       ->join("\n\n")
+                : '';
+
+            $systemPrompt = "Sos un psicólogo clínico especialista en grupos terapéuticos de control de peso. " .
+                "Trabajás con el método del Dr. Máximo Ravenna. " .
+                "Respondés siempre en español con lenguaje profesional y empático, usando el marco conceptual de Ravenna cuando es pertinente.{$bibliography}";
+
+            $prompt = "Analizá los siguientes datos clínicos de un paciente y generá una devolución profesional " .
+                "breve (4-5 oraciones) para el coordinador del grupo. " .
+                "Aplicá el marco conceptual de Ravenna si corresponde.\n\n" .
                 "Datos del paciente:\n" .
                 "- Peso inicial: {$firstW} kg\n" .
                 "- Peso actual: {$lastW} kg\n" .
@@ -159,9 +172,9 @@ class PatientController extends Controller
             $response = Http::withToken(config('services.groq.key'))
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model'      => 'llama-3.3-70b-versatile',
-                    'max_tokens' => 350,
+                    'max_tokens' => 400,
                     'messages'   => [
-                        ['role' => 'system', 'content' => 'Sos un psicólogo clínico especialista en grupos terapéuticos de control de peso. Respondés siempre en español con lenguaje profesional y empático.'],
+                        ['role' => 'system', 'content' => $systemPrompt],
                         ['role' => 'user',   'content' => $prompt],
                     ],
                 ]);
