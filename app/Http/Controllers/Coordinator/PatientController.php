@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Coordinator;
 
 use App\Http\Controllers\Controller;
-use App\Models\TherapeuticSession;
+use App\Models\GroupAttendance;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -53,12 +53,22 @@ class PatientController extends Controller
             return 0;
         });
 
-        // Attendance rate across all patient's groups
-        $totalSessions  = 0;
+        // Attendance rate: compare patient's visits vs unique session dates per group
+        $totalSessions    = 0;
         $attendedSessions = 0;
         foreach ($groups as $g) {
-            $totalSessions    += TherapeuticSession::where('group_id', $g->id)->count();
-            $attendedSessions += $attendances->where('group_id', $g->id)->count();
+            // Total sessions = distinct dates any patient attended this group
+            $groupSessionDates = GroupAttendance::where('group_id', $g->id)
+                ->selectRaw('DATE(attended_at) as d')
+                ->distinct()
+                ->pluck('d');
+            $totalSessions += $groupSessionDates->count();
+
+            // Patient's attended sessions = their attendance dates that match group session dates
+            $patientDates = $attendances->where('group_id', $g->id)
+                ->map(fn($a) => $a->attended_at->format('Y-m-d'))
+                ->unique();
+            $attendedSessions += $groupSessionDates->intersect($patientDates)->count();
         }
         $attendanceRate = $totalSessions > 0 ? round($attendedSessions / $totalSessions * 100) : null;
 
