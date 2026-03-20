@@ -164,6 +164,17 @@ class PatientController extends Controller
                 "Trabajás con el método del Dr. Máximo Ravenna. " .
                 "Respondés siempre en español con lenguaje profesional y empático, usando el marco conceptual de Ravenna cuando es pertinente.{$bibliography}";
 
+            // Include patient notes (last 10, non-empty)
+            $notes = $records->filter(fn($r) => !empty(trim($r->notes ?? '')))
+                ->sortByDesc('recorded_at')
+                ->take(10)
+                ->map(fn($r) => "- [{$r->recorded_at->format('d/m/Y')}] \"{$r->notes}\"")
+                ->join("\n");
+
+            $notesSection = $notes
+                ? "\n\nComentarios recientes del paciente al registrar su peso:\n{$notes}"
+                : '';
+
             $prompt = "Analizá los siguientes datos clínicos de un paciente y generá una devolución profesional " .
                 "breve (4-5 oraciones) para el coordinador del grupo. " .
                 "Aplicá el marco conceptual de Ravenna si corresponde.\n\n" .
@@ -173,8 +184,11 @@ class PatientController extends Controller
                 "- Tendencia: " . round($trend, 2) . " kg/sesión (negativo = pérdida)\n" .
                 "- Sesiones asistidas: {$sessions}\n" .
                 "- Peso ideal: {$ideal} kg\n" .
-                "- Rango de mantenimiento: {$piso} – {$techo} kg\n\n" .
-                "Incluí: interpretación de la tendencia, valoración de la adherencia, y una sugerencia clínica concreta.";
+                "- Rango de mantenimiento: {$piso} – {$techo} kg" .
+                $notesSection . "\n\n" .
+                "Incluí: interpretación de la tendencia, valoración de la adherencia, " .
+                "y si hay notas del paciente interpretá qué revelan emocionalmente según el marco de Ravenna. " .
+                "Cerrá con una sugerencia clínica concreta para el coordinador.";
 
             $response = Http::withToken(config('services.groq.key'))
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
