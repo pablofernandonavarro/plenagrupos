@@ -133,7 +133,14 @@ class PatientController extends Controller
 
     public function aiAnalysis(User $patient): JsonResponse
     {
-        $cacheKey = "ai_analysis_{$patient->id}_" . now()->format('Y-m-d');
+        // Cache key includes a hash of active docs — auto-invalidates when bibliography changes
+        $docsHash = md5(AiDocument::active()->pluck('updated_at', 'id')->toJson());
+        $cacheKey = "ai_analysis_{$patient->id}_{$docsHash}_" . now()->format('Y-m-d');
+
+        // ?force=1 bypasses cache (used by the "Regenerar" button)
+        if (request()->boolean('force')) {
+            Cache::forget($cacheKey);
+        }
 
         $analysis = Cache::remember($cacheKey, 3600 * 6, function () use ($patient) {
             $records  = $patient->weightRecords()->orderBy('recorded_at')->get();

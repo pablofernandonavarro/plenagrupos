@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\AiDocument;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 
 class AiDocumentSeeder extends Seeder
 {
@@ -89,6 +90,7 @@ EOT,
             );
         }
 
-        $this->command->info('✓ 5 fragmentos de bibliografía Ravenna cargados.');
+        Cache::flush();
+        $this->command->info('✓ 5 fragmentos de bibliografía Ravenna cargados. Caché limpiado.');
     }
 }

@@ -170,7 +170,7 @@
                 <p class="text-xs text-gray-400 mt-0.5">Generado por LLaMA 3.3 · Se actualiza una vez por día</p>
             </div>
             <button id="btn-ai"
-                onclick="loadAiAnalysis()"
+                onclick="loadAiAnalysis(true)"
                 class="flex items-center gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg transition font-medium">
                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
@@ -308,7 +308,7 @@
 @endif
 
 <script>
-async function loadAiAnalysis() {
+async function loadAiAnalysis(force = false) {
     const btn  = document.getElementById('btn-ai');
     const text = document.getElementById('ai-text');
     btn.disabled = true;
@@ -316,7 +316,8 @@ async function loadAiAnalysis() {
     text.textContent = 'Generando análisis clínico...';
     text.className = 'text-sm text-gray-400 italic';
     try {
-        const res = await fetch('{{ route("coordinator.patients.ai-analysis", $patient) }}', {
+        const url = '{{ route("coordinator.patients.ai-analysis", $patient) }}' + (force ? '?force=1' : '');
+        const res = await fetch(url, {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
         });
