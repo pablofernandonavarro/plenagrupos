@@ -45,11 +45,11 @@ class PatientController extends Controller
         $lastWeight  = $weightRecords->first()?->weight;
         $totalChange = ($firstWeight && $lastWeight) ? round($lastWeight - $firstWeight, 2) : null;
 
-        // Total minutes in groups
+        // Total minutes in groups (cast to int — Carbon 3 returns float from diffInMinutes)
         $attendedGroupIds = $attendances->pluck('group_id')->unique();
-        $totalMinutes = $groups->whereIn('id', $attendedGroupIds)->sum(function ($g) {
-            if ($g->started_at && $g->ended_at)  return $g->started_at->diffInMinutes($g->ended_at);
-            if ($g->started_at && $g->active)     return $g->started_at->diffInMinutes(now());
+        $totalMinutes = (int) $groups->whereIn('id', $attendedGroupIds)->sum(function ($g) {
+            if ($g->started_at && $g->ended_at)  return (int) $g->started_at->diffInMinutes($g->ended_at);
+            if ($g->started_at && $g->active)     return (int) $g->started_at->diffInMinutes(now());
             return 0;
         });
 
@@ -97,7 +97,7 @@ class PatientController extends Controller
             $key = $att->group_id . '_' . $att->attended_at->format('Y-m-d');
             return [
                 'date'       => $att->attended_at,
-                'group_name' => $att->group->name,
+                'group_name' => $att->group?->name ?? '(Grupo eliminado)',
                 'weight'     => $weightByAttendance->get($key)?->weight,
             ];
         });
