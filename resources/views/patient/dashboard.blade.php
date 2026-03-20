@@ -173,7 +173,7 @@
             @forelse($weightRecords as $record)
                 <div class="px-5 py-3 flex justify-between items-center">
                     <div>
-                        <p class="text-sm font-medium text-gray-800">{{ $record->group->name }}</p>
+                        <p class="text-sm font-medium text-gray-800">{{ $record->group?->name ?? '(Grupo eliminado)' }}</p>
                         <p class="text-xs text-gray-400">{{ $record->recorded_at->format('d/m/Y H:i') }}</p>
                         @if($record->notes)
                             <p class="text-xs text-gray-500 mt-0.5 italic">{{ $record->notes }}</p>
