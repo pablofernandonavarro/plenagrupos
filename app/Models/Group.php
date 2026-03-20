@@ -10,12 +10,13 @@ class Group extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'meeting_day', 'meeting_time', 'admin_id', 'qr_token', 'active', 'started_at', 'ended_at'];
+    protected $fillable = ['name', 'description', 'meeting_day', 'meeting_time', 'auto_sessions', 'admin_id', 'qr_token', 'active', 'started_at', 'ended_at'];
 
     protected $casts = [
-        'active'     => 'boolean',
-        'started_at' => 'datetime',
-        'ended_at'   => 'datetime',
+        'active'        => 'boolean',
+        'auto_sessions' => 'boolean',
+        'started_at'    => 'datetime',
+        'ended_at'      => 'datetime',
     ];
 
     // 'pending' | 'active' | 'closed'

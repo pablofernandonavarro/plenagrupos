@@ -45,7 +45,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
             <p class="text-2xl font-bold text-teal-600">{{ $lastWeight ? $lastWeight . ' kg' : '—' }}</p>
-            <p class="text-xs text-gray-400 mt-1">Último peso</p>
+            <p class="text-xs text-gray-400 mt-1">Peso actual</p>
         </div>
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
             @if($totalChange !== null)
@@ -55,23 +55,68 @@
             @else
                 <p class="text-2xl font-bold text-gray-300">—</p>
             @endif
-            <p class="text-xs text-gray-400 mt-1">Variación total</p>
+            <p class="text-xs text-gray-400 mt-1">Pérdida total</p>
         </div>
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <p class="text-2xl font-bold text-blue-600">{{ $attendances->count() }}</p>
-            <p class="text-xs text-gray-400 mt-1">Sesiones</p>
+            @if($attendanceRate !== null)
+                <p class="text-2xl font-bold {{ $attendanceRate >= 75 ? 'text-blue-600' : ($attendanceRate >= 50 ? 'text-yellow-600' : 'text-red-500') }}">
+                    {{ $attendanceRate }}%
+                </p>
+                <p class="text-xs text-gray-400 mt-1">{{ $attendedSessions }}/{{ $totalSessions }} sesiones</p>
+            @else
+                <p class="text-2xl font-bold text-gray-300">—</p>
+                <p class="text-xs text-gray-400 mt-1">Asistencia</p>
+            @endif
         </div>
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            @php
-                $hrs = intdiv($totalMinutes, 60);
-                $min = $totalMinutes % 60;
-            @endphp
-            <p class="text-2xl font-bold text-purple-600">
-                {{ $hrs > 0 ? $hrs . 'h ' : '' }}{{ $min }}m
-            </p>
-            <p class="text-xs text-gray-400 mt-1">Tiempo en grupos</p>
+            @php $hrs = intdiv($totalMinutes, 60); $min = $totalMinutes % 60; @endphp
+            <p class="text-2xl font-bold text-purple-600">{{ $hrs > 0 ? $hrs.'h ' : '' }}{{ $min }}m</p>
+            <p class="text-xs text-gray-400 mt-1">En grupos</p>
         </div>
     </div>
+
+    {{-- Trend + range banner --}}
+    @if($weightRecords->count() >= 2)
+    @php
+        $absT = abs($trend);
+        if ($trend < -0.5)      { $tc='text-blue-600';  $ti='↓↓'; $tt='Pérdida acelerada ('  .round($absT,2).' kg/ses.)'; $ts='bg-blue-50 border-blue-200'; }
+        elseif ($trend < -0.05) { $tc='text-green-600'; $ti='↓';  $tt='Bajando — ritmo saludable ('.round($absT,2).' kg/ses.)'; $ts='bg-green-50 border-green-200'; }
+        elseif ($trend < 0.05)  { $tc='text-gray-500';  $ti='→';  $tt='Peso estable';              $ts='bg-gray-50 border-gray-200'; }
+        elseif ($trend < 0.3)   { $tc='text-yellow-600';$ti='↑';  $tt='Leve aumento — monitorear'; $ts='bg-yellow-50 border-yellow-200'; }
+        else                    { $tc='text-red-500';   $ti='↑↑'; $tt='Aumento sostenido — requiere seguimiento'; $ts='bg-red-50 border-red-200'; }
+    @endphp
+    <div class="rounded-xl border px-4 py-3 flex items-center gap-3 {{ $ts }}">
+        <span class="text-2xl font-bold {{ $tc }} shrink-0">{{ $ti }}</span>
+        <div class="flex-1">
+            <p class="text-sm font-semibold text-gray-800">Tendencia de peso</p>
+            <p class="text-xs {{ $tc }}">{{ $tt }}</p>
+        </div>
+        @if($inRange !== null)
+            @php $piso = $patient->peso_piso; $techo = $patient->peso_techo; @endphp
+            <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full
+                {{ $inRange ? 'bg-green-100 text-green-700' : ($lastWeight > $techo ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700') }}">
+                {{ $inRange ? '✓ En rango' : ($lastWeight > $techo ? '↑ Sobre techo' : '↓ Bajo piso') }}
+            </span>
+        @endif
+    </div>
+    @endif
+
+    {{-- Progress toward ideal --}}
+    @if($progressPct !== null)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
+        <div class="flex justify-between items-center mb-2">
+            <p class="text-sm font-semibold text-gray-700">Progreso hacia peso ideal</p>
+            <span class="text-sm font-bold text-teal-600">{{ $progressPct }}%</span>
+        </div>
+        <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-teal-500 rounded-full" style="width:{{ $progressPct }}%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-gray-400 mt-1.5">
+            <span>Inicial: {{ $firstWeight }} kg</span>
+            <span>Ideal: {{ $patient->ideal_weight }} kg</span>
+        </div>
+    </div>
+    @endif
 
     {{-- Weight range info --}}
     @if($patient->ideal_weight || $piso || $techo)
@@ -107,9 +152,11 @@
 
     {{-- Weight chart --}}
     @if($weightRecords->count() > 1)
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h2 class="font-semibold text-gray-800 mb-4">Evolución del peso</h2>
-        <div class="relative h-48 sm:h-64">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Evolución del peso</h2>
+        </div>
+        <div class="px-4 py-4" style="position:relative; height:240px;">
             <canvas id="weightChart"></canvas>
         </div>
     </div>
@@ -192,74 +239,48 @@
 </div>
 
 @if($weightRecords->count() > 1)
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
-const labels = @json($weightRecords->reverse()->map(fn($r) => $r->recorded_at->format('d/m'))->values());
-const data   = @json($weightRecords->reverse()->pluck('weight')->values());
-@if($patient->peso_piso)  const piso  = {{ $patient->peso_piso }};  @else const piso  = null; @endif
-@if($patient->peso_techo) const techo = {{ $patient->peso_techo }}; @else const techo = null; @endif
+(function () {
+    const cd = @json($chartData);
+    const datasets = [{
+        label: 'Peso',
+        data: cd.weights,
+        borderColor: '#0d9488',
+        backgroundColor: 'rgba(13,148,136,0.08)',
+        borderWidth: 2.5,
+        pointRadius: cd.weights.length > 20 ? 2 : 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.3,
+    }];
+    if (cd.piso)  datasets.push({ label: 'Piso ('  + cd.piso  + ' kg)', data: cd.labels.map(() => cd.piso),
+        borderColor: '#16a34a', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false, tension: 0 });
+    if (cd.techo) datasets.push({ label: 'Techo (' + cd.techo + ' kg)', data: cd.labels.map(() => cd.techo),
+        borderColor: '#ef4444', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false, tension: 0 });
 
-const ctx = document.getElementById('weightChart').getContext('2d');
-new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels,
-        datasets: [
-            {
-                label: 'Peso',
-                data,
-                borderColor: '#09cda6',
-                backgroundColor: 'rgba(9,205,166,0.08)',
-                borderWidth: 2.5,
-                pointBackgroundColor: '#09cda6',
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                tension: 0.35,
-                fill: true,
+    new Chart(document.getElementById('weightChart').getContext('2d'), {
+        type: 'line',
+        data: { labels: cd.labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: !!(cd.piso || cd.techo), position: 'bottom',
+                    labels: { font:{size:11}, boxWidth:20, padding:10 } },
+                tooltip: { callbacks: {
+                    label: ctx => ctx.datasetIndex === 0
+                        ? ' ' + ctx.parsed.y.toFixed(2) + ' kg'
+                        : ctx.dataset.label
+                }}
             },
-            ...(piso ? [{
-                label: 'Piso',
-                data: labels.map(() => piso),
-                borderColor: 'rgba(59,130,246,0.4)',
-                borderWidth: 1.5,
-                borderDash: [5, 4],
-                pointRadius: 0,
-                fill: false,
-            }] : []),
-            ...(techo ? [{
-                label: 'Techo',
-                data: labels.map(() => techo),
-                borderColor: 'rgba(239,68,68,0.4)',
-                borderWidth: 1.5,
-                borderDash: [5, 4],
-                pointRadius: 0,
-                fill: false,
-            }] : []),
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: piso || techo },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' kg'
-                }
-            }
-        },
-        scales: {
-            y: {
-                ticks: { callback: v => v + ' kg', font: { size: 11 } },
-                grid: { color: 'rgba(0,0,0,0.04)' },
-            },
-            x: {
-                ticks: { font: { size: 11 } },
-                grid: { display: false },
+            scales: {
+                x: { ticks:{font:{size:11},color:'#9ca3af',maxRotation:45,autoSkip:true,maxTicksLimit:8}, grid:{display:false} },
+                y: { ticks:{font:{size:11},color:'#9ca3af',callback:v=>v+' kg'}, grid:{color:'#f3f4f6'}, grace:'8%' }
             }
         }
-    }
-});
+    });
+})();
 </script>
 @endif
 

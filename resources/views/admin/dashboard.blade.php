@@ -9,7 +9,7 @@
         <p class="text-gray-500 text-sm mt-1">Bienvenido, {{ auth()->user()->name }}</p>
     </div>
 
-    {{-- Stats --}}
+    {{-- Stats row 1 --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
             <p class="text-xs text-gray-500 uppercase tracking-wide">Grupos</p>
@@ -26,6 +26,49 @@
         <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
             <p class="text-xs text-gray-500 uppercase tracking-wide">Visitas hoy</p>
             <p class="text-3xl font-bold text-purple-600 mt-1">{{ $stats['visits_today'] }}</p>
+        </div>
+    </div>
+
+    {{-- Stats row 2: clinical KPIs --}}
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Pérdida promedio</p>
+            @if($stats['avg_loss'] !== null)
+                <p class="text-3xl font-bold mt-1 {{ $stats['avg_loss'] > 0 ? 'text-green-600' : 'text-red-500' }}">
+                    {{ $stats['avg_loss'] > 0 ? '-' : '+' }}{{ abs($stats['avg_loss']) }} kg
+                </p>
+                <p class="text-xs text-gray-400 mt-1">por paciente en el programa</p>
+            @else
+                <p class="text-3xl font-bold text-gray-300 mt-1">—</p>
+            @endif
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+            <p class="text-xs text-gray-500 uppercase tracking-wide">En rango mantenimiento</p>
+            @if($stats['patients_range'] > 0)
+                @php $rangePct = round($stats['in_range'] / $stats['patients_range'] * 100); @endphp
+                <p class="text-3xl font-bold mt-1 {{ $rangePct >= 60 ? 'text-teal-600' : ($rangePct >= 30 ? 'text-yellow-600' : 'text-red-500') }}">
+                    {{ $rangePct }}%
+                </p>
+                <p class="text-xs text-gray-400 mt-1">{{ $stats['in_range'] }} de {{ $stats['patients_range'] }} pacientes</p>
+            @else
+                <p class="text-3xl font-bold text-gray-300 mt-1">—</p>
+            @endif
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 col-span-2 lg:col-span-1">
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Activos este mes</p>
+            <p class="text-3xl font-bold text-blue-600 mt-1">{{ $stats['active_patients'] }}</p>
+            <p class="text-xs text-gray-400 mt-1">pacientes con visita en 30 días</p>
+        </div>
+    </div>
+
+    {{-- Weekly activity chart --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Actividad semanal</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Registros de peso por semana (últimas 8 semanas)</p>
+        </div>
+        <div class="px-4 py-4" style="position:relative; height:180px;">
+            <canvas id="weeklyChart"></canvas>
         </div>
     </div>
 
@@ -87,4 +130,34 @@
     </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+(function () {
+    const labels = @json($weeklyData->pluck('label'));
+    const counts = @json($weeklyData->pluck('count'));
+    new Chart(document.getElementById('weeklyChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                data: counts,
+                backgroundColor: counts.map((v, i) =>
+                    i === counts.length - 1 ? '#0d9488' : 'rgba(13,148,136,0.25)'
+                ),
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false },
+                tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' registros' }} },
+            scales: {
+                x: { ticks:{font:{size:11},color:'#9ca3af'}, grid:{display:false} },
+                y: { ticks:{font:{size:11},color:'#9ca3af',stepSize:1}, grid:{color:'#f3f4f6'}, beginAtZero:true }
+            }
+        }
+    });
+})();
+</script>
 @endsection

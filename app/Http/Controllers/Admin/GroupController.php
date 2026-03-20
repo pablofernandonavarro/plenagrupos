@@ -39,21 +39,23 @@ class GroupController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'meeting_day' => 'nullable|string|max:100',
-            'meeting_time' => 'nullable|date_format:H:i',
-            'coordinator_ids' => 'nullable|array',
+            'name'              => 'required|string|max:255',
+            'description'       => 'nullable|string',
+            'meeting_day'       => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'meeting_time'      => 'nullable|date_format:H:i',
+            'auto_sessions'     => 'nullable|boolean',
+            'coordinator_ids'   => 'nullable|array',
             'coordinator_ids.*' => 'exists:users,id',
         ]);
 
         $group = Group::create([
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'meeting_day' => $data['meeting_day'] ?? null,
-            'meeting_time' => $data['meeting_time'] ?? null,
-            'admin_id' => auth()->id(),
-            'active' => false,
+            'name'          => $data['name'],
+            'description'   => $data['description'] ?? null,
+            'meeting_day'   => $data['meeting_day'] ?? null,
+            'meeting_time'  => $data['meeting_time'] ?? null,
+            'auto_sessions' => !empty($data['auto_sessions']),
+            'admin_id'      => auth()->id(),
+            'active'        => false,
         ]);
 
         if (!empty($data['coordinator_ids'])) {

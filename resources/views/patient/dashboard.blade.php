@@ -46,8 +46,7 @@
             <p class="text-2xl sm:text-3xl font-bold {{ $totalLoss > 0 ? 'text-green-600' : ($totalLoss < 0 ? 'text-red-500' : 'text-gray-400') }}">
                 @if($totalLoss !== null)
                     {{ $totalLoss > 0 ? '-' : '+' }}{{ abs($totalLoss) }} kg
-                @else
-                    —
+                @else —
                 @endif
             </p>
             <p class="text-xs text-gray-500 mt-1">Progreso</p>
@@ -57,6 +56,65 @@
             <p class="text-xs text-gray-500 mt-1">Visitas</p>
         </div>
     </div>
+
+    {{-- Trend banner --}}
+    @if($weightRecords->count() >= 2)
+    @php
+        $absT = abs($trend);
+        if ($trend < -0.5)      { $tc='text-blue-600';  $ti='↓↓'; $tt='Pérdida acelerada — ¡excelente!';            $ts='bg-blue-50 border-blue-200'; }
+        elseif ($trend < -0.05) { $tc='text-green-600'; $ti='↓';  $tt='Vas bajando — ritmo saludable';              $ts='bg-green-50 border-green-200'; }
+        elseif ($trend < 0.05)  { $tc='text-gray-500';  $ti='→';  $tt='Peso estable';                               $ts='bg-gray-50 border-gray-200'; }
+        elseif ($trend < 0.3)   { $tc='text-yellow-600';$ti='↑';  $tt='Leve aumento — revisá tus hábitos';          $ts='bg-yellow-50 border-yellow-200'; }
+        else                    { $tc='text-red-500';   $ti='↑↑'; $tt='Aumento sostenido — consultá al coordinador'; $ts='bg-red-50 border-red-200'; }
+    @endphp
+    <div class="rounded-xl border px-4 py-3 flex items-center gap-3 {{ $ts }}">
+        <span class="text-2xl font-bold {{ $tc }} shrink-0">{{ $ti }}</span>
+        <div>
+            <p class="text-sm font-semibold text-gray-800">Tendencia</p>
+            <p class="text-xs {{ $tc }}">{{ $tt }}</p>
+        </div>
+        @if($inRange !== null)
+            <span class="ml-auto shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full
+                {{ $inRange ? 'bg-green-100 text-green-700' : (isset($latestWeight) && $techo && $latestWeight > $techo ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700') }}">
+                {{ $inRange ? '✓ En rango' : (isset($latestWeight) && isset($techo) && $latestWeight > $techo ? '↑ Sobre techo' : '↓ Bajo piso') }}
+            </span>
+        @endif
+    </div>
+    @endif
+
+    {{-- Progress toward ideal --}}
+    @if($progressPct !== null)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
+        <div class="flex justify-between items-center mb-2">
+            <p class="text-sm font-semibold text-gray-700">Progreso hacia tu peso ideal</p>
+            <span class="text-sm font-bold text-teal-600">{{ $progressPct }}%</span>
+        </div>
+        <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-teal-500 rounded-full transition-all" style="width: {{ $progressPct }}%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-gray-400 mt-1.5">
+            <span>Inicial: {{ $weightRecords->last()?->weight }} kg</span>
+            <span>Ideal: {{ auth()->user()->ideal_weight }} kg</span>
+        </div>
+    </div>
+    @endif
+
+    {{-- Weight evolution chart --}}
+    @if($weightRecords->count() >= 2)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Evolución de peso</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Tu recorrido sesión a sesión</p>
+        </div>
+        <div class="px-4 py-4" style="position:relative; height:220px;">
+            <canvas id="weightChart"></canvas>
+        </div>
+    </div>
+    @elseif($weightRecords->count() === 1)
+    <div class="bg-teal-50 border border-teal-200 rounded-xl px-5 py-4 text-sm text-teal-700">
+        Registrá un peso más para ver tu gráfico de evolución.
+    </div>
+    @endif
 
     {{-- Groups info --}}
     @if($groups->isNotEmpty())
@@ -133,6 +191,52 @@
     </div>
 
 </div>
+
+@if($weightRecords->count() >= 2)
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+(function () {
+    const cd = @json($chartData);
+    const datasets = [{
+        label: 'Peso',
+        data: cd.weights,
+        borderColor: '#0d9488',
+        backgroundColor: 'rgba(13,148,136,0.08)',
+        borderWidth: 2.5,
+        pointRadius: cd.weights.length > 20 ? 2 : 4,
+        pointHoverRadius: 6,
+        fill: true,
+        tension: 0.3,
+    }];
+    if (cd.piso)  datasets.push({ label: 'Piso ('  + cd.piso  + ' kg)', data: cd.labels.map(() => cd.piso),
+        borderColor: '#16a34a', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false, tension: 0 });
+    if (cd.techo) datasets.push({ label: 'Techo (' + cd.techo + ' kg)', data: cd.labels.map(() => cd.techo),
+        borderColor: '#ef4444', borderWidth: 1.5, borderDash: [6,4], pointRadius: 0, fill: false, tension: 0 });
+
+    new Chart(document.getElementById('weightChart').getContext('2d'), {
+        type: 'line',
+        data: { labels: cd.labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: !!(cd.piso || cd.techo), position: 'bottom',
+                    labels: { font: { size: 11 }, boxWidth: 20, padding: 10 } },
+                tooltip: { callbacks: {
+                    label: ctx => ctx.datasetIndex === 0
+                        ? ' ' + ctx.parsed.y.toFixed(2) + ' kg'
+                        : ctx.dataset.label
+                }}
+            },
+            scales: {
+                x: { ticks: { font:{size:11}, color:'#9ca3af', maxRotation:45, autoSkip:true, maxTicksLimit:8 }, grid:{display:false} },
+                y: { ticks: { font:{size:11}, color:'#9ca3af', callback: v => v+' kg' }, grid:{color:'#f3f4f6'}, grace:'8%' }
+            }
+        }
+    });
+})();
+</script>
+@endif
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
