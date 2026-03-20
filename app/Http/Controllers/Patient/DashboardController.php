@@ -66,7 +66,7 @@ class DashboardController extends Controller
 
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups',
-            'trend', 'progressPct', 'inRange', 'chartData'
+            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo'
         ));
     }
 
