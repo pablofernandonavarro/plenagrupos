@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Coordinator;
 use App\Http\Controllers\Controller;
 use App\Models\GroupAttendance;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class PatientController extends Controller
 {
@@ -125,6 +128,49 @@ class PatientController extends Controller
             'timelineWithChange', 'trend', 'attendanceRate', 'attendedSessions',
             'totalSessions', 'progressPct', 'inRange', 'chartData'
         ));
+    }
+
+    public function aiAnalysis(User $patient): JsonResponse
+    {
+        $cacheKey = "ai_analysis_{$patient->id}_" . now()->format('Y-m-d');
+
+        $analysis = Cache::remember($cacheKey, 3600 * 6, function () use ($patient) {
+            $records  = $patient->weightRecords()->orderBy('recorded_at')->get();
+            $firstW   = $records->first()?->weight ?? 'desconocido';
+            $lastW    = $records->last()?->weight  ?? 'desconocido';
+            $trend    = $this->weightTrend($records->values());
+            $sessions = $records->count();
+            $piso     = $patient->peso_piso  ?? 'no definido';
+            $techo    = $patient->peso_techo ?? 'no definido';
+            $ideal    = $patient->ideal_weight ?? 'no definido';
+
+            $prompt = "Analizá los siguientes datos clínicos de un paciente de un grupo terapéutico de control de peso " .
+                "y generá una devolución profesional breve (4-5 oraciones) en español para el coordinador del grupo. " .
+                "Usá un tono clínico, empático y orientado a la acción.\n\n" .
+                "Datos del paciente:\n" .
+                "- Peso inicial: {$firstW} kg\n" .
+                "- Peso actual: {$lastW} kg\n" .
+                "- Tendencia: " . round($trend, 2) . " kg/sesión (negativo = pérdida)\n" .
+                "- Sesiones asistidas: {$sessions}\n" .
+                "- Peso ideal: {$ideal} kg\n" .
+                "- Rango de mantenimiento: {$piso} – {$techo} kg\n\n" .
+                "Incluí: interpretación de la tendencia, valoración de la adherencia, y una sugerencia clínica concreta.";
+
+            $response = Http::withToken(config('services.groq.key'))
+                ->post('https://api.groq.com/openai/v1/chat/completions', [
+                    'model'      => 'llama-3.3-70b-versatile',
+                    'max_tokens' => 350,
+                    'messages'   => [
+                        ['role' => 'system', 'content' => 'Sos un psicólogo clínico especialista en grupos terapéuticos de control de peso. Respondés siempre en español con lenguaje profesional y empático.'],
+                        ['role' => 'user',   'content' => $prompt],
+                    ],
+                ]);
+
+            return $response->json('choices.0.message.content')
+                ?? 'No se pudo generar el análisis. Intentá nuevamente.';
+        });
+
+        return response()->json(['analysis' => $analysis]);
     }
 
     private function weightTrend(Collection $records): float
