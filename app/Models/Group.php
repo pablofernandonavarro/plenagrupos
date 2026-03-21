@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -31,6 +32,37 @@ class Group extends Model
     {
         if (!$this->meeting_time) return null;
         return date('H:i', strtotime($this->meeting_time));
+    }
+
+    public function getNextSessionAtAttribute(): ?Carbon
+    {
+        if (!$this->auto_sessions || !$this->meeting_day || !$this->meeting_time) {
+            return null;
+        }
+
+        $dayMap = [
+            'Domingo' => Carbon::SUNDAY,    'Lunes'     => Carbon::MONDAY,
+            'Martes'  => Carbon::TUESDAY,   'Miércoles' => Carbon::WEDNESDAY,
+            'Jueves'  => Carbon::THURSDAY,  'Viernes'   => Carbon::FRIDAY,
+            'Sábado'  => Carbon::SATURDAY,
+        ];
+
+        $targetDay = $dayMap[$this->meeting_day] ?? null;
+        if ($targetDay === null) return null;
+
+        [$hour, $minute] = explode(':', $this->meeting_time);
+        $tz  = 'America/Argentina/Buenos_Aires';
+        $now = Carbon::now($tz);
+
+        // If today is the meeting day and the session hasn't started yet → show today
+        if ($now->dayOfWeek === $targetDay) {
+            $todaySession = $now->copy()->setTime((int) $hour, (int) $minute);
+            if ($now->lt($todaySession)) {
+                return $todaySession;
+            }
+        }
+
+        return $now->next($targetDay)->setTime((int) $hour, (int) $minute);
     }
 
     protected static function boot(): void
