@@ -34,14 +34,12 @@
                         {{ $group->meeting_day }}{{ $group->meeting_day && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
                     </p>
                 @endif
-                @if($group->started_at || $group->ended_at)
-                    <div class="flex flex-wrap gap-3 mt-1 text-xs text-gray-500">
-                        @if($group->started_at)
-                            <span>▶ Inicio: <span class="font-medium text-gray-700">{{ $group->started_at->format('d/m/Y H:i') }}</span></span>
-                        @endif
-                        @if($group->ended_at)
-                            <span>■ Fin: <span class="font-medium text-gray-700">{{ $group->ended_at->format('d/m/Y H:i') }}</span></span>
-                        @endif
+                @if($group->started_at)
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-medium">
+                            <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {{ $group->started_at->format('d/m/Y · H:i') }}@if($group->ended_at) → {{ $group->started_at->isSameDay($group->ended_at) ? $group->ended_at->format('H:i') : $group->ended_at->format('d/m/Y · H:i') }}@endif
+                        </span>
                     </div>
                 @endif
             </div>
