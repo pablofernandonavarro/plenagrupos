@@ -118,6 +118,10 @@
                                 </button>
                             </form>
                         @endif
+                        <a href="{{ route('admin.groups.edit', $group) }}"
+                            class="text-sm font-medium px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                            Editar
+                        </a>
                         <a href="{{ route('admin.groups.show', $group) }}"
                             class="text-sm font-medium px-4 py-2 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition">
                             Gestionar

@@ -56,16 +56,22 @@
                 @endif
             </div>
         </div>
-        @if($group->status === 'active')
-        <form action="{{ route('admin.groups.toggle', $group) }}" method="POST" class="shrink-0"
-              onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
-            @csrf
-            <button type="submit"
-                class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
-                Finalizar grupo
-            </button>
-        </form>
-        @endif
+        <div class="flex gap-2 shrink-0">
+            <a href="{{ route('admin.groups.edit', $group) }}"
+                class="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                Editar
+            </a>
+            @if($group->status === 'active')
+            <form action="{{ route('admin.groups.toggle', $group) }}" method="POST"
+                  onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
+                @csrf
+                <button type="submit"
+                    class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
+                    Finalizar grupo
+                </button>
+            </form>
+            @endif
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

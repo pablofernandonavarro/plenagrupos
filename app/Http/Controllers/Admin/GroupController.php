@@ -65,6 +65,37 @@ class GroupController extends Controller
         return redirect()->route('admin.groups.show', $group)->with('success', 'Grupo creado exitosamente.');
     }
 
+    public function edit(Group $group)
+    {
+        $coordinators = User::where('role', 'coordinator')->get();
+        return view('admin.groups.edit', compact('group', 'coordinators'));
+    }
+
+    public function update(Request $request, Group $group)
+    {
+        $data = $request->validate([
+            'name'              => 'required|string|max:255',
+            'description'       => 'nullable|string',
+            'meeting_day'       => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'meeting_time'      => 'nullable|date_format:H:i',
+            'auto_sessions'     => 'nullable|boolean',
+            'coordinator_ids'   => 'nullable|array',
+            'coordinator_ids.*' => 'exists:users,id',
+        ]);
+
+        $group->update([
+            'name'          => $data['name'],
+            'description'   => $data['description'] ?? null,
+            'meeting_day'   => $data['meeting_day'] ?? null,
+            'meeting_time'  => $data['meeting_time'] ?? null,
+            'auto_sessions' => !empty($data['auto_sessions']),
+        ]);
+
+        $group->coordinators()->sync($data['coordinator_ids'] ?? []);
+
+        return redirect()->route('admin.groups.show', $group)->with('success', 'Grupo actualizado.');
+    }
+
     public function show(Group $group)
     {
         $group->load(['coordinators', 'patients']);
