@@ -38,7 +38,7 @@ Route::post('/grupo/{token}', [GroupJoinController::class, 'join'])->name('group
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
 
-    Route::resource('groups', Admin\GroupController::class)->except(['show']);
+    Route::resource('groups', Admin\GroupController::class);
     Route::post('/groups/{group}/toggle', [Admin\GroupController::class, 'toggle'])->name('groups.toggle');
     Route::get('/groups/{group}/live', [Admin\GroupController::class, 'liveAttendances'])->name('groups.live');
     Route::post('/groups/{group}/coordinators', [Admin\GroupController::class, 'addCoordinator'])->name('groups.coordinators.add');
