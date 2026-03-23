@@ -75,7 +75,7 @@ $typeBadge = [
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
             </svg>
             <h2 class="font-semibold text-gray-700 text-sm">
-                Resumen — {{ $summaryFrom->format('d/m/Y') }} al {{ $summaryTo->format('d/m/Y') }}
+                Resumen por ciclo de 30 días (individual por paciente)
             </h2>
         </div>
 
@@ -97,7 +97,12 @@ $typeBadge = [
                     @foreach($summary as $idx => $row)
                     @php $patient = $row['patient']; @endphp
                     <tr class="hover:bg-gray-50 transition">
-                        <td class="px-5 py-3 font-medium text-gray-800">{{ $patient->name }}</td>
+                        <td class="px-5 py-3">
+                            <p class="font-medium text-gray-800">{{ $patient->name }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                Ciclo: {{ $row['cycleStart']->format('d/m/Y') }} → {{ $row['cycleEnd']->format('d/m/Y') }}
+                            </p>
+                        </td>
                         <td class="px-5 py-3">
                             @if($patient->plan === 'mantenimiento')
                                 <span class="text-xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Mantenimiento</span>
@@ -228,7 +233,14 @@ $typeBadge = [
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <div>
                 <p class="font-bold text-gray-800">{{ $patient->name }}</p>
-                <p class="text-xs text-gray-400">Historial de asistencias</p>
+                <p class="text-xs text-gray-400">
+                    Ciclo actual: {{ $row['cycleStart']->format('d/m/Y') }} → {{ $row['cycleEnd']->format('d/m/Y') }}
+                </p>
+                @if($patient->plan_start_date)
+                <p class="text-xs text-gray-400">Inicio del plan: {{ $patient->plan_start_date->format('d/m/Y') }}</p>
+                @else
+                <p class="text-xs text-orange-400">Sin fecha de inicio — usando mes calendario</p>
+                @endif
             </div>
             <button onclick="closeModal({{ $idx }})"
                 class="text-gray-400 hover:text-gray-600 transition text-xl leading-none">&times;</button>

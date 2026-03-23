@@ -20,6 +20,7 @@ class User extends Authenticatable
         'peso_techo',
         'role',
         'plan',
+        'plan_start_date',
         'password',
     ];
 
@@ -32,8 +33,28 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'plan_start_date'   => 'date',
+            'password'          => 'hashed',
         ];
+    }
+
+    /**
+     * Returns [cycleStart, cycleEnd] for the patient's current 30-day billing period.
+     * Falls back to the current calendar month if no plan_start_date is set.
+     */
+    public function currentPlanCycle(): array
+    {
+        if (!$this->plan_start_date) {
+            return [now()->startOfMonth(), now()->endOfMonth()];
+        }
+
+        $start = $this->plan_start_date->copy();
+        // Advance in 30-day increments until the next cycle start is in the future
+        while ($start->copy()->addDays(30)->lte(now())) {
+            $start->addDays(30);
+        }
+
+        return [$start->startOfDay(), $start->copy()->addDays(29)->endOfDay()];
     }
 
     public function isAdmin(): bool

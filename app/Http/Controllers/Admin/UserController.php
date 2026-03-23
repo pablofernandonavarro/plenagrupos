@@ -45,18 +45,20 @@ class UserController extends Controller
             'email'    => 'required|email|unique:users',
             'phone'    => 'nullable|string|max:20',
             'role'     => 'required|in:coordinator,patient',
-            'plan'     => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
-            'password' => 'required|min:8|confirmed',
-            'avatar'   => 'nullable|image|max:2048',
+            'plan'            => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
+            'plan_start_date' => 'nullable|date',
+            'password'        => 'required|min:8|confirmed',
+            'avatar'          => 'nullable|image|max:2048',
         ]);
 
         $user = User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            'phone'    => $data['phone'] ?? null,
-            'role'     => $data['role'],
-            'plan'     => ($data['role'] === 'patient') ? ($data['plan'] ?? null) : null,
-            'password' => Hash::make($data['password']),
+            'name'            => $data['name'],
+            'email'           => $data['email'],
+            'phone'           => $data['phone'] ?? null,
+            'role'            => $data['role'],
+            'plan'            => ($data['role'] === 'patient') ? ($data['plan'] ?? null) : null,
+            'plan_start_date' => ($data['role'] === 'patient') ? ($data['plan_start_date'] ?? null) : null,
+            'password'        => Hash::make($data['password']),
         ]);
 
         if ($request->hasFile('avatar')) {
@@ -78,8 +80,9 @@ class UserController extends Controller
             'name'         => 'required|string|max:255',
             'email'        => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'phone'        => 'nullable|string|max:20',
-            'plan'         => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
-            'ideal_weight' => 'nullable|numeric|min:0|max:300',
+            'plan'            => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
+            'plan_start_date' => 'nullable|date',
+            'ideal_weight'    => 'nullable|numeric|min:0|max:300',
             'peso_piso'    => 'nullable|numeric|min:0|max:300',
             'peso_techo'   => 'nullable|numeric|min:0|max:300',
             'password'     => 'nullable|min:8|confirmed',
@@ -89,8 +92,9 @@ class UserController extends Controller
         $user->name         = $data['name'];
         $user->email        = $data['email'];
         $user->phone        = $data['phone'] ?? null;
-        $user->plan         = $user->role === 'patient' ? ($data['plan'] ?? null) : null;
-        $user->ideal_weight = $data['ideal_weight'] ?? null;
+        $user->plan            = $user->role === 'patient' ? ($data['plan'] ?? null) : null;
+        $user->plan_start_date = $user->role === 'patient' ? ($data['plan_start_date'] ?? null) : null;
+        $user->ideal_weight    = $data['ideal_weight'] ?? null;
         $user->peso_piso    = $data['peso_piso'] ?? null;
         $user->peso_techo   = $data['peso_techo'] ?? null;
 

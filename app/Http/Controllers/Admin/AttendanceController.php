@@ -37,30 +37,12 @@ class AttendanceController extends Controller
         $groups   = Group::orderBy('name')->get(['id', 'name']);
         $patients = User::where('role', 'patient')->orderBy('name')->get(['id', 'name', 'plan']);
 
-        // Summary period: use filter dates if provided, otherwise current month
-        $summaryFrom = $request->filled('date_from')
-            ? \Carbon\Carbon::parse($request->date_from)->startOfDay()
-            : now()->startOfMonth();
-        $summaryTo   = $request->filled('date_to')
-            ? \Carbon\Carbon::parse($request->date_to)->endOfDay()
-            : now()->endOfMonth();
+        $groupTypes  = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
+        $rules       = PlanRule::all()->keyBy(fn($r) => $r->patient_plan . '.' . $r->group_type);
 
         // Summary shows all patients (with or without plan)
         $summaryPatients = $patients;
-
-        $groupTypes  = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
-        $rules       = PlanRule::all()->keyBy(fn($r) => $r->patient_plan . '.' . $r->group_type);
-        $patientIds  = $summaryPatients->pluck('id');
-
-        // Counts for the summary period grouped by user_id + group_type
-        $periodCounts = GroupAttendance::whereBetween('attended_at', [$summaryFrom, $summaryTo])
-            ->whereIn('user_id', $patientIds)
-            ->join('groups', 'group_attendances.group_id', '=', 'groups.id')
-            ->selectRaw('group_attendances.user_id, groups.group_type, COUNT(*) as total')
-            ->groupBy('group_attendances.user_id', 'groups.group_type')
-            ->get()
-            ->groupBy('user_id')
-            ->map(fn($rows) => $rows->keyBy('group_type'));
+        $patientIds      = $summaryPatients->pluck('id');
 
         // All-time attendances for the detail modal
         $allAttendances = GroupAttendance::with('group')
@@ -69,12 +51,31 @@ class AttendanceController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $summary = $summaryPatients->map(function ($patient) use ($groupTypes, $rules, $periodCounts, $allAttendances) {
-            $row = ['patient' => $patient, 'types' => [], 'attendances' => $allAttendances->get($patient->id, collect())];
+        // Build summary with per-patient 30-day cycle
+        $summary = $summaryPatients->map(function ($patient) use ($groupTypes, $rules, $allAttendances) {
+            [$cycleStart, $cycleEnd] = $patient->currentPlanCycle();
+
+            // Count attendances within this patient's current cycle
+            $cycleCounts = \App\Models\GroupAttendance::where('user_id', $patient->id)
+                ->whereBetween('attended_at', [$cycleStart, $cycleEnd])
+                ->join('groups', 'group_attendances.group_id', '=', 'groups.id')
+                ->selectRaw('groups.group_type, COUNT(*) as total')
+                ->groupBy('groups.group_type')
+                ->get()
+                ->keyBy('group_type');
+
+            $row = [
+                'patient'    => $patient,
+                'cycleStart' => $cycleStart,
+                'cycleEnd'   => $cycleEnd,
+                'types'      => [],
+                'attendances'=> $allAttendances->get($patient->id, collect()),
+            ];
+
             foreach ($groupTypes as $gt) {
-                $rule    = $rules->get("{$patient->plan}.{$gt}");
-                $used    = (int) ($periodCounts->get($patient->id)?->get($gt)?->total ?? 0);
-                $limit   = $rule?->monthly_limit;
+                $rule  = $rules->get("{$patient->plan}.{$gt}");
+                $used  = (int) ($cycleCounts->get($gt)?->total ?? 0);
+                $limit = $rule?->monthly_limit;
                 $row['types'][$gt] = [
                     'used'      => $used,
                     'limit'     => $limit,
@@ -85,7 +86,7 @@ class AttendanceController extends Controller
             return $row;
         })->values();
 
-        return view('admin.attendances.index', compact('attendances', 'groups', 'patients', 'summary', 'groupTypes', 'summaryFrom', 'summaryTo'));
+        return view('admin.attendances.index', compact('attendances', 'groups', 'patients', 'summary', 'groupTypes'));
     }
 
     public function destroy(GroupAttendance $attendance)

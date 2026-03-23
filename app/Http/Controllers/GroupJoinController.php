@@ -74,11 +74,11 @@ class GroupJoinController extends Controller
                 $isWeekend = now()->isWeekend();
 
                 if (!($isWeekend && $rule->weekend_unlimited)) {
-                    // Count how many times the patient attended groups of this type this month
-                    $monthStart = now()->startOfMonth();
+                    [$cycleStart, $cycleEnd] = $user->currentPlanCycle();
+
                     $monthlyCount = GroupAttendance::where('user_id', $user->id)
                         ->whereHas('group', fn($q) => $q->where('group_type', $group->group_type))
-                        ->where('attended_at', '>=', $monthStart)
+                        ->whereBetween('attended_at', [$cycleStart, $cycleEnd])
                         ->count();
 
                     if ($monthlyCount >= $rule->monthly_limit) {
