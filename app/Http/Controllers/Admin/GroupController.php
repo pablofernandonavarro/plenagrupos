@@ -50,7 +50,7 @@ class GroupController extends Controller
         $data = $request->validate([
             'name'                => 'required|string|max:255',
             'modality'            => 'required|in:presencial,virtual,hibrido',
-            'group_type'          => 'required|in:descenso,mantenimiento',
+            'group_type'          => 'required|in:descenso,mantenimiento,mantenimiento_pleno',
             'description'         => 'nullable|string',
             'meeting_days'        => 'nullable|array',
             'meeting_days.*'      => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
@@ -100,7 +100,7 @@ class GroupController extends Controller
         $data = $request->validate([
             'name'                => 'required|string|max:255',
             'modality'            => 'required|in:presencial,virtual,hibrido',
-            'group_type'          => 'required|in:descenso,mantenimiento',
+            'group_type'          => 'required|in:descenso,mantenimiento,mantenimiento_pleno',
             'description'         => 'nullable|string',
             'meeting_days'        => 'nullable|array',
             'meeting_days.*'      => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',

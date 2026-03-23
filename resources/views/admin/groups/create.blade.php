@@ -39,7 +39,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de grupo</label>
                 <div class="flex gap-2">
-                    @foreach(['descenso'=>'Descenso de peso','mantenimiento'=>'Mantenimiento'] as $val => $label)
+                    @foreach(['descenso'=>'Descenso de peso','mantenimiento'=>'Mantenimiento','mantenimiento_pleno'=>'Mantenimiento Pleno'] as $val => $label)
                         <div class="relative flex-1">
                             <input type="radio" id="gtype-{{ $val }}" name="group_type" value="{{ $val }}"
                                 class="sr-only peer"

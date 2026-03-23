@@ -90,8 +90,11 @@
                             <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $modalityStyles[$m] ?? 'bg-gray-100 text-gray-500' }}">
                                 {{ $modalityLabels[$m] ?? $m }}
                             </span>
-                            @if(($group->group_type ?? 'descenso') === 'mantenimiento')
+                            @php $gt = $group->group_type ?? 'descenso'; @endphp
+                            @if($gt === 'mantenimiento')
                                 <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700">Mantenimiento</span>
+                            @elseif($gt === 'mantenimiento_pleno')
+                                <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-50 text-purple-700">Mant. Pleno</span>
                             @else
                                 <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-sky-50 text-sky-700">Descenso</span>
                             @endif
