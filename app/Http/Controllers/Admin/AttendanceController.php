@@ -40,8 +40,10 @@ class AttendanceController extends Controller
         $groupTypes  = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
         $rules       = PlanRule::all()->keyBy(fn($r) => $r->patient_plan . '.' . $r->group_type);
 
-        // Summary shows all patients (with or without plan)
-        $summaryPatients = $patients;
+        // Summary: filter by patient if selected
+        $summaryPatients = $request->filled('patient_id')
+            ? $patients->where('id', (int) $request->patient_id)
+            : $patients;
         $patientIds      = $summaryPatients->pluck('id');
 
         // All-time attendances for the detail modal
