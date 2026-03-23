@@ -143,16 +143,67 @@ class PatientController extends Controller
         }
 
         $analysis = Cache::remember($cacheKey, 3600 * 6, function () use ($patient) {
-            $records  = $patient->weightRecords()->orderBy('recorded_at')->get();
+            $records    = $patient->weightRecords()->with('group')->orderBy('recorded_at')->get();
+            $attendances = $patient->attendances()->with('group')->orderBy('attended_at')->get();
+            $groups     = $patient->patientGroups()->get();
+
             $firstW   = $records->first()?->weight ?? 'desconocido';
             $lastW    = $records->last()?->weight  ?? 'desconocido';
             $trend    = $this->weightTrend($records->values());
-            $sessions = $records->count();
-            $piso     = $patient->peso_piso  ?? 'no definido';
-            $techo    = $patient->peso_techo ?? 'no definido';
+            $piso     = $patient->peso_piso    ?? 'no definido';
+            $techo    = $patient->peso_techo   ?? 'no definido';
             $ideal    = $patient->ideal_weight ?? 'no definido';
 
-            // Load active bibliography (Dr. Ravenna's framework)
+            // Plan info
+            $planLabels = [
+                'descenso'            => 'Descenso de peso',
+                'mantenimiento'       => 'Mantenimiento',
+                'mantenimiento_pleno' => 'Mantenimiento Pleno',
+            ];
+            $planLabel   = $planLabels[$patient->plan] ?? 'no asignado';
+            $cycleInfo   = '';
+            if ($patient->plan_start_date) {
+                [$cs, $ce] = $patient->currentPlanCycle();
+                $cycleInfo = "Ciclo actual: {$cs->format('d/m/Y')} al {$ce->format('d/m/Y')}";
+            }
+
+            // Maintenance range status
+            $inRange = ($lastW !== 'desconocido' && $piso !== 'no definido' && $techo !== 'no definido')
+                ? ((float)$lastW >= (float)$piso && (float)$lastW <= (float)$techo
+                    ? 'dentro del rango de mantenimiento'
+                    : ((float)$lastW < (float)$piso ? 'por debajo del rango' : 'por encima del rango'))
+                : 'sin rango definido';
+
+            // Attendance stats
+            $totalAttendances = $attendances->count();
+            $firstAttendance  = $attendances->first()?->attended_at?->format('d/m/Y') ?? 'sin registro';
+            $lastAttendance   = $attendances->last()?->attended_at?->format('d/m/Y')  ?? 'sin registro';
+
+            // Groups attended
+            $groupsSummary = $groups->map(fn($g) => "  · {$g->name} (tipo: " . ($g->group_type ?? 'descenso') . ")")
+                ->join("\n");
+
+            // Attendance frequency per group type
+            $byType = $attendances->groupBy(fn($a) => $a->group?->group_type ?? 'descenso')
+                ->map(fn($g) => $g->count());
+
+            $attendanceByType = $byType->map(fn($c, $t) => "  · " . ($planLabels[$t] ?? $t) . ": {$c} asistencias")
+                ->join("\n");
+
+            // Full weight history (last 20)
+            $weightHistory = $records->sortByDesc('recorded_at')->take(20)
+                ->map(fn($r) => "  [{$r->recorded_at->format('d/m/Y')}] {$r->weight} kg" .
+                    ($r->group ? " ({$r->group->name})" : "") .
+                    (!empty($r->notes) ? " — nota: \"{$r->notes}\"" : ""))
+                ->join("\n");
+
+            // Notes (last 10 non-empty)
+            $notes = $records->filter(fn($r) => !empty(trim($r->notes ?? '')))
+                ->sortByDesc('recorded_at')->take(10)
+                ->map(fn($r) => "  [{$r->recorded_at->format('d/m/Y')}] \"{$r->notes}\"")
+                ->join("\n");
+
+            // Load active bibliography
             $docs = AiDocument::active()->get();
             $bibliography = $docs->isNotEmpty()
                 ? "\n\nMarco teórico de referencia (Dr. Máximo Ravenna):\n" .
@@ -164,36 +215,42 @@ class PatientController extends Controller
                 "Trabajás con el método del Dr. Máximo Ravenna. " .
                 "Respondés siempre en español con lenguaje profesional y empático, usando el marco conceptual de Ravenna cuando es pertinente.{$bibliography}";
 
-            // Include patient notes (last 10, non-empty)
-            $notes = $records->filter(fn($r) => !empty(trim($r->notes ?? '')))
-                ->sortByDesc('recorded_at')
-                ->take(10)
-                ->map(fn($r) => "- [{$r->recorded_at->format('d/m/Y')}] \"{$r->notes}\"")
-                ->join("\n");
+            $prompt = "Analizá los siguientes datos clínicos completos de un paciente y generá una devolución profesional " .
+                "para el coordinador del grupo (6-8 oraciones). Aplicá el marco conceptual de Ravenna donde corresponda.\n\n" .
 
-            $notesSection = $notes
-                ? "\n\nComentarios recientes del paciente al registrar su peso:\n{$notes}"
-                : '';
-
-            $prompt = "Analizá los siguientes datos clínicos de un paciente y generá una devolución profesional " .
-                "breve (4-5 oraciones) para el coordinador del grupo. " .
-                "Aplicá el marco conceptual de Ravenna si corresponde.\n\n" .
-                "Datos del paciente:\n" .
+                "=== PERFIL DEL PACIENTE ===\n" .
+                "- Plan: {$planLabel}\n" .
+                ($cycleInfo ? "- {$cycleInfo}\n" : "") .
                 "- Peso inicial: {$firstW} kg\n" .
                 "- Peso actual: {$lastW} kg\n" .
-                "- Tendencia: " . round($trend, 2) . " kg/sesión (negativo = pérdida)\n" .
-                "- Sesiones asistidas: {$sessions}\n" .
+                "- Tendencia: " . round($trend, 3) . " kg/sesión (negativo = pérdida)\n" .
                 "- Peso ideal: {$ideal} kg\n" .
-                "- Rango de mantenimiento: {$piso} – {$techo} kg" .
-                $notesSection . "\n\n" .
-                "Incluí: interpretación de la tendencia, valoración de la adherencia, " .
-                "y si hay notas del paciente interpretá qué revelan emocionalmente según el marco de Ravenna. " .
-                "Cerrá con una sugerencia clínica concreta para el coordinador.";
+                "- Rango de mantenimiento: {$piso} – {$techo} kg\n" .
+                "- Estado actual respecto al rango: {$inRange}\n\n" .
+
+                "=== ASISTENCIA ===\n" .
+                "- Total de asistencias: {$totalAttendances}\n" .
+                "- Primera asistencia: {$firstAttendance}\n" .
+                "- Última asistencia: {$lastAttendance}\n" .
+                ($groupsSummary ? "- Grupos:\n{$groupsSummary}\n" : "") .
+                ($attendanceByType ? "- Por tipo de grupo:\n{$attendanceByType}\n" : "") . "\n" .
+
+                "=== HISTORIAL DE PESO (últimas 20 sesiones) ===\n" .
+                ($weightHistory ?: "  Sin registros de peso.") . "\n\n" .
+
+                ($notes ? "=== COMENTARIOS DEL PACIENTE ===\n{$notes}\n\n" : "") .
+
+                "Incluí en tu análisis:\n" .
+                "1. Interpretación de la evolución del peso según el plan ({$planLabel})\n" .
+                "2. Valoración de la adherencia y regularidad\n" .
+                "3. Relación entre el estado actual y el rango de mantenimiento\n" .
+                ($notes ? "4. Qué revelan emocionalmente las notas según el marco de Ravenna\n" : "") .
+                "5. Una sugerencia clínica concreta para el coordinador";
 
             $response = Http::withToken(config('services.groq.key'))
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
                     'model'      => 'llama-3.3-70b-versatile',
-                    'max_tokens' => 400,
+                    'max_tokens' => 600,
                     'messages'   => [
                         ['role' => 'system', 'content' => $systemPrompt],
                         ['role' => 'user',   'content' => $prompt],
