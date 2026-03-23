@@ -39,23 +39,28 @@ class GroupController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'              => 'required|string|max:255',
-            'description'       => 'nullable|string',
-            'meeting_day'       => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
-            'meeting_time'      => 'nullable|date_format:H:i',
-            'auto_sessions'     => 'nullable|boolean',
-            'coordinator_ids'   => 'nullable|array',
-            'coordinator_ids.*' => 'exists:users,id',
+            'name'                => 'required|string|max:255',
+            'description'         => 'nullable|string',
+            'meeting_day'         => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'meeting_time'        => 'nullable|date_format:H:i',
+            'recurrence_type'     => 'required|in:none,daily,weekly,monthly,yearly',
+            'recurrence_interval' => 'nullable|integer|min:1|max:365',
+            'recurrence_end_date' => 'nullable|date|after:today',
+            'coordinator_ids'     => 'nullable|array',
+            'coordinator_ids.*'   => 'exists:users,id',
         ]);
 
         $group = Group::create([
-            'name'          => $data['name'],
-            'description'   => $data['description'] ?? null,
-            'meeting_day'   => $data['meeting_day'] ?? null,
-            'meeting_time'  => $data['meeting_time'] ?? null,
-            'auto_sessions' => !empty($data['auto_sessions']),
-            'admin_id'      => auth()->id(),
-            'active'        => false,
+            'name'                => $data['name'],
+            'description'         => $data['description'] ?? null,
+            'meeting_day'         => $data['meeting_day'] ?? null,
+            'meeting_time'        => $data['meeting_time'] ?? null,
+            'recurrence_type'     => $data['recurrence_type'],
+            'recurrence_interval' => $data['recurrence_interval'] ?? 1,
+            'recurrence_end_date' => $data['recurrence_end_date'] ?? null,
+            'auto_sessions'       => $data['recurrence_type'] !== 'none',
+            'admin_id'            => auth()->id(),
+            'active'              => false,
         ]);
 
         if (!empty($data['coordinator_ids'])) {
@@ -74,21 +79,26 @@ class GroupController extends Controller
     public function update(Request $request, Group $group)
     {
         $data = $request->validate([
-            'name'              => 'required|string|max:255',
-            'description'       => 'nullable|string',
-            'meeting_day'       => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
-            'meeting_time'      => 'nullable|date_format:H:i',
-            'auto_sessions'     => 'nullable|boolean',
-            'coordinator_ids'   => 'nullable|array',
-            'coordinator_ids.*' => 'exists:users,id',
+            'name'                => 'required|string|max:255',
+            'description'         => 'nullable|string',
+            'meeting_day'         => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'meeting_time'        => 'nullable|date_format:H:i',
+            'recurrence_type'     => 'required|in:none,daily,weekly,monthly,yearly',
+            'recurrence_interval' => 'nullable|integer|min:1|max:365',
+            'recurrence_end_date' => 'nullable|date',
+            'coordinator_ids'     => 'nullable|array',
+            'coordinator_ids.*'   => 'exists:users,id',
         ]);
 
         $group->update([
-            'name'          => $data['name'],
-            'description'   => $data['description'] ?? null,
-            'meeting_day'   => $data['meeting_day'] ?? null,
-            'meeting_time'  => $data['meeting_time'] ?? null,
-            'auto_sessions' => !empty($data['auto_sessions']),
+            'name'                => $data['name'],
+            'description'         => $data['description'] ?? null,
+            'meeting_day'         => $data['meeting_day'] ?? null,
+            'meeting_time'        => $data['meeting_time'] ?? null,
+            'recurrence_type'     => $data['recurrence_type'],
+            'recurrence_interval' => $data['recurrence_interval'] ?? 1,
+            'recurrence_end_date' => $data['recurrence_end_date'] ?? null,
+            'auto_sessions'       => $data['recurrence_type'] !== 'none',
         ]);
 
         $group->coordinators()->sync($data['coordinator_ids'] ?? []);

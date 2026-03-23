@@ -30,36 +30,71 @@
                     placeholder="Descripción opcional...">{{ old('description', $group->description) }}</textarea>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Día de reunión</label>
-                    <select name="meeting_day"
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
-                        <option value="">Sin día fijo</option>
-                        @foreach(['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] as $day)
-                            <option value="{{ $day }}" {{ old('meeting_day', $group->meeting_day) === $day ? 'selected' : '' }}>{{ $day }}</option>
-                        @endforeach
-                    </select>
-                    @error('meeting_day')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            {{-- Recurrence --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Repetición</label>
+                <select name="recurrence_type" id="rec-type"
+                    onchange="updateRecUI()"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                    <option value="none"    {{ old('recurrence_type', $group->recurrence_type ?? 'none')==='none'    ? 'selected':'' }}>Sin repetición</option>
+                    <option value="daily"   {{ old('recurrence_type', $group->recurrence_type ?? 'none')==='daily'   ? 'selected':'' }}>Todos los días</option>
+                    <option value="weekly"  {{ old('recurrence_type', $group->recurrence_type ?? 'none')==='weekly'  ? 'selected':'' }}>Todas las semanas</option>
+                    <option value="monthly" {{ old('recurrence_type', $group->recurrence_type ?? 'none')==='monthly' ? 'selected':'' }}>Todos los meses</option>
+                    <option value="yearly"  {{ old('recurrence_type', $group->recurrence_type ?? 'none')==='yearly'  ? 'selected':'' }}>Todos los años</option>
+                </select>
+            </div>
+
+            {{-- Meeting day (weekly only) --}}
+            <div id="rec-day" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Día de reunión</label>
+                <select name="meeting_day"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                    <option value="">Sin día fijo</option>
+                    @foreach(['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] as $day)
+                        <option value="{{ $day }}" {{ old('meeting_day', $group->meeting_day) === $day ? 'selected' : '' }}>{{ $day }}</option>
+                    @endforeach
+                </select>
+                @error('meeting_day')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            {{-- Time + interval (hidden when none) --}}
+            <div id="rec-options" class="hidden space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Hora de inicio</label>
+                        <input type="time" name="meeting_time" value="{{ old('meeting_time', $group->meeting_time) }}"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Repetir cada</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="recurrence_interval" min="1" max="365"
+                                value="{{ old('recurrence_interval', $group->recurrence_interval ?? 1) }}"
+                                class="w-20 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
+                            <span id="rec-unit" class="text-sm text-gray-500">semanas</span>
+                        </div>
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Hora de inicio</label>
-                    <input type="time" name="meeting_time" value="{{ old('meeting_time', $group->meeting_time) }}"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Finaliza (opcional)</label>
+                    <input type="date" name="recurrence_end_date"
+                        value="{{ old('recurrence_end_date', $group->recurrence_end_date?->format('Y-m-d')) }}"
                         class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
+                    @error('recurrence_end_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
 
-            <div class="bg-teal-50 border border-teal-200 rounded-lg px-4 py-3">
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" name="auto_sessions" value="1"
-                        {{ old('auto_sessions', $group->auto_sessions) ? 'checked' : '' }}
-                        class="mt-0.5 rounded text-teal-600 focus:ring-teal-500">
-                    <div>
-                        <p class="text-sm font-medium text-teal-800">Sesiones automáticas</p>
-                        <p class="text-xs text-teal-600 mt-0.5">Se creará una sesión automáticamente 1 día antes de cada reunión programada.</p>
-                    </div>
-                </label>
-            </div>
+            <script>
+            const recUnits = { daily: 'días', weekly: 'semanas', monthly: 'meses', yearly: 'años' };
+            function updateRecUI() {
+                const t = document.getElementById('rec-type').value;
+                document.getElementById('rec-day').classList.toggle('hidden', t !== 'weekly');
+                document.getElementById('rec-options').classList.toggle('hidden', t === 'none');
+                const u = document.getElementById('rec-unit');
+                if (u && recUnits[t]) u.textContent = recUnits[t];
+            }
+            updateRecUI();
+            </script>
 
             @if($coordinators->isNotEmpty())
             <div>

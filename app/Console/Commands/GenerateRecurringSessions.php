@@ -14,39 +14,26 @@ class GenerateRecurringSessions extends Command
     protected $description = 'Crea automáticamente las sesiones del día siguiente para los grupos recurrentes';
 
     private const DAY_MAP = [
-        'Domingo'   => 0,
-        'Lunes'     => 1,
-        'Martes'    => 2,
-        'Miércoles' => 3,
-        'Jueves'    => 4,
-        'Viernes'   => 5,
-        'Sábado'    => 6,
+        'Domingo'   => 0, 'Lunes'     => 1, 'Martes'    => 2,
+        'Miércoles' => 3, 'Jueves'    => 4, 'Viernes'   => 5, 'Sábado'    => 6,
     ];
 
     public function handle(): int
     {
-        $tomorrow  = Carbon::tomorrow('America/Argentina/Buenos_Aires');
-        $dayOfWeek = $tomorrow->dayOfWeek;
-        $isDryRun  = $this->option('dry-run');
+        $tomorrow = Carbon::tomorrow('America/Argentina/Buenos_Aires');
+        $isDryRun = $this->option('dry-run');
 
-        if ($isDryRun) {
-            $this->warn('-- DRY RUN: no se guardará nada --');
-        }
+        if ($isDryRun) $this->warn('-- DRY RUN: no se guardará nada --');
 
         $groups = Group::where('active', true)
-            ->where('auto_sessions', true)
-            ->whereNotNull('meeting_day')
+            ->whereNotIn('recurrence_type', ['none'])
             ->get();
 
         $created = 0;
         $skipped = 0;
 
         foreach ($groups as $group) {
-            $groupDayNumber = self::DAY_MAP[$group->meeting_day] ?? null;
-
-            if ($groupDayNumber === null || $groupDayNumber !== $dayOfWeek) {
-                continue;
-            }
+            if (!$this->shouldCreateSession($group, $tomorrow)) continue;
 
             $exists = TherapeuticSession::where('group_id', $group->id)
                 ->whereDate('session_date', $tomorrow->toDateString())
@@ -58,19 +45,19 @@ class GenerateRecurringSessions extends Command
                 continue;
             }
 
-            $timeLabel = $group->meeting_time ? ' ' . substr($group->meeting_time, 0, 5) : '';
+            $timeLabel   = $group->meeting_time ? ' ' . substr($group->meeting_time, 0, 5) : '';
             $sessionName = 'Sesión ' . $tomorrow->format('d/m/Y') . $timeLabel;
 
-            $this->line("  " . ($isDryRun ? '[dry] ' : '') . "Crear: {$group->name} — {$sessionName}");
+            $this->line('  ' . ($isDryRun ? '[dry] ' : '') . "Crear: {$group->name} — {$sessionName}");
 
             if (!$isDryRun) {
                 TherapeuticSession::create([
-                    'group_id'    => $group->id,
-                    'name'        => $sessionName,
+                    'group_id'     => $group->id,
+                    'name'         => $sessionName,
                     'session_date' => $tomorrow->toDateString(),
-                    'qr_token'    => Str::uuid(),
-                    'status'      => 'active',
-                    'created_by'  => $group->admin_id,
+                    'qr_token'     => Str::uuid(),
+                    'status'       => 'active',
+                    'created_by'   => $group->admin_id,
                 ]);
             }
 
@@ -78,7 +65,41 @@ class GenerateRecurringSessions extends Command
         }
 
         $this->info("Resultado: {$created} creadas, {$skipped} omitidas.");
-
         return self::SUCCESS;
+    }
+
+    private function shouldCreateSession(Group $group, Carbon $tomorrow): bool
+    {
+        $type     = $group->attributes['recurrence_type'] ?? 'none';
+        $interval = max(1, (int)($group->recurrence_interval ?? 1));
+
+        // Check end date
+        if ($group->recurrence_end_date && $tomorrow->gt($group->recurrence_end_date)) {
+            return false;
+        }
+
+        // Reference date for interval calculations
+        $ref = ($group->started_at ?? $group->created_at)->copy()->startOfDay();
+
+        switch ($type) {
+            case 'daily':
+                return (int)$ref->diffInDays($tomorrow) % $interval === 0;
+
+            case 'weekly':
+                $targetDay = self::DAY_MAP[$group->meeting_day] ?? null;
+                if ($targetDay === null || $tomorrow->dayOfWeek !== $targetDay) return false;
+                if ($interval === 1) return true;
+                return (int)$ref->startOfWeek()->diffInWeeks($tomorrow->copy()->startOfWeek()) % $interval === 0;
+
+            case 'monthly':
+                if ($tomorrow->day !== $ref->day) return false;
+                return (int)$ref->diffInMonths($tomorrow) % $interval === 0;
+
+            case 'yearly':
+                if ($tomorrow->month !== $ref->month || $tomorrow->day !== $ref->day) return false;
+                return (int)$ref->diffInYears($tomorrow) % $interval === 0;
+        }
+
+        return false;
     }
 }
