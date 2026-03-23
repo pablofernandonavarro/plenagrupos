@@ -35,7 +35,7 @@ class AttendanceController extends Controller
         $attendances = $query->paginate(25)->withQueryString();
 
         $groups   = Group::orderBy('name')->get(['id', 'name']);
-        $patients = User::where('role', 'patient')->orderBy('name')->get(['id', 'name', 'plan']);
+        $patients = User::where('role', 'patient')->orderBy('name')->get(['id', 'name', 'plan', 'plan_start_date']);
 
         $groupTypes  = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
         $rules       = PlanRule::all()->keyBy(fn($r) => $r->patient_plan . '.' . $r->group_type);
