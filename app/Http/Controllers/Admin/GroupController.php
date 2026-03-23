@@ -82,7 +82,8 @@ class GroupController extends Controller
 
     public function edit(Group $group)
     {
-        $coordinators = User::where('role', 'coordinator')->get();
+        $group->load('coordinators');
+        $coordinators = User::where('role', 'coordinator')->orderBy('name')->get();
         return view('admin.groups.edit', compact('group', 'coordinators'));
     }
 

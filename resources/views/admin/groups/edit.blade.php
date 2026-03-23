@@ -105,22 +105,25 @@
             updateRecUI();
             </script>
 
-            @if($coordinators->isNotEmpty())
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Coordinadores</label>
-                <div class="space-y-2 max-h-40 overflow-y-auto">
-                    @foreach($coordinators as $coordinator)
-                        <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input type="checkbox" name="coordinator_ids[]" value="{{ $coordinator->id }}"
-                                {{ in_array($coordinator->id, old('coordinator_ids', $group->coordinators->pluck('id')->toArray())) ? 'checked' : '' }}
-                                class="rounded text-teal-600">
-                            <span class="text-sm text-gray-700">{{ $coordinator->name }}</span>
-                            <span class="text-xs text-gray-400">{{ $coordinator->email }}</span>
-                        </label>
-                    @endforeach
-                </div>
+                @if($coordinators->isNotEmpty())
+                    @php $assignedIds = old('coordinator_ids', $group->coordinators->pluck('id')->toArray()); @endphp
+                    <div class="space-y-1">
+                        @foreach($coordinators as $coordinator)
+                            <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" name="coordinator_ids[]" value="{{ $coordinator->id }}"
+                                    {{ in_array($coordinator->id, $assignedIds) ? 'checked' : '' }}
+                                    class="rounded text-teal-600">
+                                <span class="text-sm text-gray-700">{{ $coordinator->name }}</span>
+                                <span class="text-xs text-gray-400">{{ $coordinator->email }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm text-gray-400">No hay coordinadores creados aún.</p>
+                @endif
             </div>
-            @endif
 
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-2.5 rounded-lg transition text-sm">
