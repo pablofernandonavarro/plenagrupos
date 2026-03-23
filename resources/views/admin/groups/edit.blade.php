@@ -27,13 +27,14 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Modalidad</label>
                 <div class="flex gap-2">
                     @foreach(['presencial'=>'Presencial','virtual'=>'Virtual','hibrido'=>'Híbrido'] as $val => $label)
-                        <label class="relative cursor-pointer flex-1">
-                            <input type="radio" name="modality" value="{{ $val }}" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer peer"
+                        <div class="relative flex-1">
+                            <input type="radio" id="modality-{{ $val }}" name="modality" value="{{ $val }}" class="sr-only peer"
                                 {{ old('modality', $group->modality ?? 'presencial') === $val ? 'checked' : '' }}>
-                            <span class="block text-center px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
+                            <label for="modality-{{ $val }}"
+                                class="block text-center px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
                                 peer-checked:border-teal-600 peer-checked:bg-teal-600 peer-checked:text-white
-                                hover:border-teal-400 transition select-none">{{ $label }}</span>
-                        </label>
+                                hover:border-teal-400 transition select-none cursor-pointer">{{ $label }}</label>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -67,14 +68,15 @@
                 @endphp
                 <div class="flex flex-wrap gap-2">
                     @foreach(['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'=>'Jue','Viernes'=>'Vie','Sábado'=>'Sáb','Domingo'=>'Dom'] as $day => $abbr)
-                        <label class="relative cursor-pointer">
-                            <input type="checkbox" name="meeting_days[]" value="{{ $day }}"
-                                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer peer"
+                        <div class="relative">
+                            <input type="checkbox" id="ed-{{ $loop->index }}" name="meeting_days[]" value="{{ $day }}"
+                                class="sr-only peer"
                                 {{ in_array($day, $selectedDays) ? 'checked' : '' }}>
-                            <span class="block px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
+                            <label for="ed-{{ $loop->index }}"
+                                class="block px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
                                 peer-checked:bg-teal-600 peer-checked:text-white peer-checked:border-teal-600
-                                hover:border-teal-400 transition select-none">{{ $abbr }}</span>
-                        </label>
+                                hover:border-teal-400 transition select-none cursor-pointer">{{ $abbr }}</label>
+                        </div>
                     @endforeach
                 </div>
                 @error('meeting_days')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
