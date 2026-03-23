@@ -131,13 +131,24 @@
                 </div>
             </div>
 
-            {{-- QR --}}
-            <div class="px-5 pb-5 flex justify-center">
-                <div class="text-center">
-                    <div class="inline-block p-2 border border-gray-100 rounded-lg shadow-sm">
-                        {!! $group->qrSvg !!}
+            {{-- QR + link --}}
+            <div class="px-5 pb-5 space-y-3">
+                <div class="flex justify-center">
+                    <div class="text-center">
+                        <div class="inline-block p-2 border border-gray-100 rounded-lg shadow-sm">
+                            {!! $group->qrSvg !!}
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">QR del grupo</p>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2">QR del grupo</p>
+                </div>
+                @php $joinUrl = route('group.join', $group->qr_token); @endphp
+                <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    <span class="text-xs text-gray-500 truncate flex-1 select-all" id="join-url-{{ $group->id }}">{{ $joinUrl }}</span>
+                    <button type="button"
+                        onclick="navigator.clipboard.writeText('{{ $joinUrl }}').then(() => { this.textContent = '✓'; setTimeout(() => this.textContent = 'Copiar', 1500) })"
+                        class="shrink-0 text-xs font-medium text-teal-600 hover:text-teal-800 transition">
+                        Copiar
+                    </button>
                 </div>
             </div>
         </div>
