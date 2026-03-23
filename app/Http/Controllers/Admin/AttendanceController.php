@@ -45,11 +45,8 @@ class AttendanceController extends Controller
             ? \Carbon\Carbon::parse($request->date_to)->endOfDay()
             : now()->endOfMonth();
 
-        // If patient filter active, limit summary to that patient
+        // Summary always shows all patients with a plan (not affected by patient filter)
         $summaryPatients = $patients->filter(fn($p) => $p->plan);
-        if ($request->filled('patient_id')) {
-            $summaryPatients = $summaryPatients->where('id', (int) $request->patient_id);
-        }
 
         $groupTypes  = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
         $rules       = PlanRule::all()->keyBy(fn($r) => $r->patient_plan . '.' . $r->group_type);
