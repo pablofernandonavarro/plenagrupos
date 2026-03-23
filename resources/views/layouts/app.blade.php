@@ -203,7 +203,7 @@
 
     <footer class="mt-16 py-6 text-center text-xs text-gray-400 border-t border-gray-100">
         <span style="font-family: 'Poppins', sans-serif; font-weight: 600; color: #252440;">Plen<span style="color: #09cda6;">@</span></span>
-        &nbsp;&mdash;&nbsp;Grupo Terapéutico para el Descenso de Peso &copy; {{ date('Y') }}
+        &nbsp;&mdash;&nbsp; &copy; {{ date('Y') }}
     </footer>
 
     <script>
