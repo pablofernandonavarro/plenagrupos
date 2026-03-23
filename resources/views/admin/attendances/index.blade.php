@@ -2,12 +2,80 @@
 @section('title', 'Control de asistencias')
 
 @section('content')
-<div class="space-y-5">
+@php
+$typeLabels = [
+    'descenso'            => 'Descenso',
+    'mantenimiento'       => 'Mantenimiento',
+    'mantenimiento_pleno' => 'Mant. Pleno',
+];
+$typeBadge = [
+    'descenso'            => 'bg-sky-50 text-sky-700',
+    'mantenimiento'       => 'bg-amber-50 text-amber-700',
+    'mantenimiento_pleno' => 'bg-purple-50 text-purple-700',
+];
+@endphp
+<div class="space-y-6">
 
-    <div class="flex items-center gap-3">
-        <h1 class="text-2xl font-bold text-gray-800">Control de asistencias</h1>
-        <span class="text-sm text-gray-400">{{ $attendances->total() }} registro(s)</span>
+    <h1 class="text-2xl font-bold text-gray-800">Control de asistencias</h1>
+
+    {{-- Weekly summary --}}
+    @if($summary->count())
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background:#f8fafc">
+            <svg class="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            <h2 class="font-semibold text-gray-700 text-sm">Resumen semanal — semana del {{ now()->startOfWeek()->format('d/m') }} al {{ now()->endOfWeek()->format('d/m') }}</h2>
+        </div>
+        <div class="divide-y divide-gray-50">
+            @foreach($summary as $row)
+            @php $patient = $row['patient']; @endphp
+            <div class="px-5 py-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="font-semibold text-gray-800 text-sm">{{ $patient->name }}</span>
+                    @if($patient->plan === 'mantenimiento')
+                        <span class="text-xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Mantenimiento</span>
+                    @elseif($patient->plan === 'mantenimiento_pleno')
+                        <span class="text-xs px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">Mant. Pleno</span>
+                    @else
+                        <span class="text-xs px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-700 font-medium">Descenso</span>
+                    @endif
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    @foreach($groupTypes as $gt)
+                    @php $stat = $row['types'][$gt]; @endphp
+                    <div class="rounded-lg border px-3 py-2.5
+                        {{ $stat['over'] ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-gray-50' }}">
+                        <p class="text-xs font-medium mb-1">
+                            <span class="px-1.5 py-0.5 rounded-full text-xs {{ $typeBadge[$gt] }}">{{ $typeLabels[$gt] }}</span>
+                        </p>
+                        <div class="flex items-end gap-1 mt-2">
+                            <span class="text-xl font-bold {{ $stat['over'] ? 'text-red-600' : 'text-gray-800' }}">{{ $stat['used'] }}</span>
+                            @if($stat['limit'] !== null)
+                                <span class="text-sm text-gray-400 mb-0.5">/ {{ $stat['limit'] }}</span>
+                            @else
+                                <span class="text-sm text-gray-400 mb-0.5">/ ∞</span>
+                            @endif
+                        </div>
+                        @if($stat['limit'] !== null)
+                            @if($stat['over'])
+                                <p class="text-xs text-red-500 mt-1 font-medium">Superó el límite</p>
+                            @elseif($stat['remaining'] === 0)
+                                <p class="text-xs text-orange-500 mt-1 font-medium">Sin cupo esta semana</p>
+                            @else
+                                <p class="text-xs text-gray-400 mt-1">{{ $stat['remaining'] }} restante(s)</p>
+                            @endif
+                        @else
+                            <p class="text-xs text-gray-400 mt-1">Sin límite</p>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endforeach
+        </div>
     </div>
+    @endif
 
     {{-- Filters --}}
     <form method="GET" action="{{ route('admin.attendances.index') }}"
@@ -58,8 +126,12 @@
         </div>
     </form>
 
-    {{-- Table --}}
+    {{-- Attendance log --}}
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background:#f8fafc">
+            <h2 class="font-semibold text-gray-700 text-sm">Historial de asistencias</h2>
+            <span class="text-xs text-gray-400">({{ $attendances->total() }} registro(s))</span>
+        </div>
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-gray-100 text-left" style="background:#f8fafc">
@@ -77,19 +149,13 @@
                     <td class="px-5 py-3">
                         <div class="flex items-center gap-2">
                             @php $gt = $att->group?->group_type; @endphp
-                            @if($gt === 'mantenimiento')
-                                <span class="text-xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Mant.</span>
-                            @elseif($gt === 'mantenimiento_pleno')
-                                <span class="text-xs px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">M. Pleno</span>
-                            @else
-                                <span class="text-xs px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-700 font-medium">Desc.</span>
-                            @endif
+                            <span class="text-xs px-1.5 py-0.5 rounded-full font-medium {{ $typeBadge[$gt] ?? 'bg-gray-100 text-gray-500' }}">
+                                {{ $typeLabels[$gt] ?? $gt }}
+                            </span>
                             <span class="text-gray-700">{{ $att->group?->name ?? '—' }}</span>
                         </div>
                     </td>
-                    <td class="px-5 py-3 text-gray-500">
-                        {{ $att->attended_at->format('d/m/Y H:i') }}
-                    </td>
+                    <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
                     <td class="px-5 py-3 text-center">
                         @if($att->weightRecord)
                             <span class="font-semibold text-teal-600">{{ $att->weightRecord->weight }} kg</span>
