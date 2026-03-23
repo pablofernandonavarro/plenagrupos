@@ -41,7 +41,8 @@ class GroupController extends Controller
         $data = $request->validate([
             'name'                => 'required|string|max:255',
             'description'         => 'nullable|string',
-            'meeting_day'         => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'meeting_days'        => 'nullable|array',
+            'meeting_days.*'      => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
             'meeting_time'        => 'nullable|date_format:H:i',
             'recurrence_type'     => 'required|in:none,daily,weekly,monthly,yearly',
             'recurrence_interval' => 'nullable|integer|min:1|max:365',
@@ -50,10 +51,14 @@ class GroupController extends Controller
             'coordinator_ids.*'   => 'exists:users,id',
         ]);
 
+        $meetingDays = $data['recurrence_type'] === 'weekly' ? ($data['meeting_days'] ?? []) : null;
+        $meetingDay  = !empty($meetingDays) ? $meetingDays[0] : null;
+
         $group = Group::create([
             'name'                => $data['name'],
             'description'         => $data['description'] ?? null,
-            'meeting_day'         => $data['meeting_day'] ?? null,
+            'meeting_day'         => $meetingDay,
+            'meeting_days'        => $meetingDays,
             'meeting_time'        => $data['meeting_time'] ?? null,
             'recurrence_type'     => $data['recurrence_type'],
             'recurrence_interval' => $data['recurrence_interval'] ?? 1,
@@ -81,7 +86,8 @@ class GroupController extends Controller
         $data = $request->validate([
             'name'                => 'required|string|max:255',
             'description'         => 'nullable|string',
-            'meeting_day'         => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'meeting_days'        => 'nullable|array',
+            'meeting_days.*'      => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
             'meeting_time'        => 'nullable|date_format:H:i',
             'recurrence_type'     => 'required|in:none,daily,weekly,monthly,yearly',
             'recurrence_interval' => 'nullable|integer|min:1|max:365',
@@ -90,10 +96,14 @@ class GroupController extends Controller
             'coordinator_ids.*'   => 'exists:users,id',
         ]);
 
+        $meetingDays = $data['recurrence_type'] === 'weekly' ? ($data['meeting_days'] ?? []) : null;
+        $meetingDay  = !empty($meetingDays) ? $meetingDays[0] : null;
+
         $group->update([
             'name'                => $data['name'],
             'description'         => $data['description'] ?? null,
-            'meeting_day'         => $data['meeting_day'] ?? null,
+            'meeting_day'         => $meetingDay,
+            'meeting_days'        => $meetingDays,
             'meeting_time'        => $data['meeting_time'] ?? null,
             'recurrence_type'     => $data['recurrence_type'],
             'recurrence_interval' => $data['recurrence_interval'] ?? 1,

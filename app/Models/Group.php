@@ -12,7 +12,7 @@ class Group extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'description', 'meeting_day', 'meeting_time',
+        'name', 'description', 'meeting_day', 'meeting_days', 'meeting_time',
         'recurrence_type', 'recurrence_interval', 'recurrence_end_date',
         'auto_sessions', 'admin_id', 'qr_token', 'active', 'started_at', 'ended_at',
     ];
@@ -22,6 +22,7 @@ class Group extends Model
         'auto_sessions'       => 'boolean',
         'recurrence_interval' => 'integer',
         'recurrence_end_date' => 'date',
+        'meeting_days'        => 'array',
         'started_at'          => 'datetime',
         'ended_at'            => 'datetime',
     ];
@@ -47,18 +48,39 @@ class Group extends Model
     }
 
     /**
-     * Human-readable recurrence label, e.g. "Semanal · Lunes", "Cada 2 semanas · Lunes", "Mensual"
+     * Human-readable recurrence label, e.g. "Semanal · Lun a Vie", "Cada 2 semanas · Lun, Mié", "Mensual"
      */
     public function getRecurrenceLabelAttribute(): string
     {
         $n = $this->recurrence_interval ?? 1;
-        return match ($this->recurrence_type) {
+        if (($this->attributes['recurrence_type'] ?? 'none') === 'weekly') {
+            $days = $this->meeting_days ?? ($this->meeting_day ? [$this->meeting_day] : []);
+            $prefix = $n > 1 ? "Cada {$n} semanas" : 'Semanal';
+            return $prefix . (count($days) ? ' · ' . $this->formatDaysLabel($days) : '');
+        }
+        return match ($this->attributes['recurrence_type'] ?? 'none') {
             'daily'   => $n > 1 ? "Cada {$n} días" : 'Diario',
-            'weekly'  => ($n > 1 ? "Cada {$n} semanas" : 'Semanal') . ($this->meeting_day ? " · {$this->meeting_day}" : ''),
             'monthly' => $n > 1 ? "Cada {$n} meses" : 'Mensual',
             'yearly'  => $n > 1 ? "Cada {$n} años" : 'Anual',
             default   => 'Sin repetición',
         };
+    }
+
+    private function formatDaysLabel(array $days): string
+    {
+        $order = ['Lunes'=>1,'Martes'=>2,'Miércoles'=>3,'Jueves'=>4,'Viernes'=>5,'Sábado'=>6,'Domingo'=>7];
+        $abbr  = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'=>'Jue','Viernes'=>'Vie','Sábado'=>'Sáb','Domingo'=>'Dom'];
+        usort($days, fn($a, $b) => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
+        if (count($days) === 1) return $days[0];
+        $nums = array_map(fn($d) => $order[$d] ?? 99, $days);
+        $consecutive = true;
+        for ($i = 1; $i < count($nums); $i++) {
+            if ($nums[$i] - $nums[$i - 1] !== 1) { $consecutive = false; break; }
+        }
+        if ($consecutive) {
+            return ($abbr[$days[0]] ?? $days[0]) . ' a ' . ($abbr[end($days)] ?? end($days));
+        }
+        return implode(', ', array_map(fn($d) => $abbr[$d] ?? $d, $days));
     }
 
     public function getNextSessionAtAttribute(): ?Carbon
@@ -75,20 +97,26 @@ class Group extends Model
                 return $now->copy()->addDay()->setTime((int)$hour, (int)$minute);
 
             case 'weekly':
-                if (!$this->meeting_day) return null;
+                $days = $this->meeting_days ?? ($this->meeting_day ? [$this->meeting_day] : []);
+                if (empty($days)) return null;
                 $dayMap = [
-                    'Domingo' => Carbon::SUNDAY,    'Lunes'     => Carbon::MONDAY,
-                    'Martes'  => Carbon::TUESDAY,   'Miércoles' => Carbon::WEDNESDAY,
-                    'Jueves'  => Carbon::THURSDAY,  'Viernes'   => Carbon::FRIDAY,
+                    'Domingo' => Carbon::SUNDAY,  'Lunes'     => Carbon::MONDAY,
+                    'Martes'  => Carbon::TUESDAY, 'Miércoles' => Carbon::WEDNESDAY,
+                    'Jueves'  => Carbon::THURSDAY,'Viernes'   => Carbon::FRIDAY,
                     'Sábado'  => Carbon::SATURDAY,
                 ];
-                $targetDay = $dayMap[$this->meeting_day] ?? null;
-                if ($targetDay === null) return null;
-                if ($now->dayOfWeek === $targetDay) {
-                    $today = $now->copy()->setTime((int)$hour, (int)$minute);
-                    if ($now->lt($today)) return $today;
+                $candidates = [];
+                foreach ($days as $dayName) {
+                    $targetDay = $dayMap[$dayName] ?? null;
+                    if ($targetDay === null) continue;
+                    if ($now->dayOfWeek === $targetDay) {
+                        $today = $now->copy()->setTime((int)$hour, (int)$minute);
+                        if ($now->lt($today)) { $candidates[] = $today; continue; }
+                    }
+                    $candidates[] = $now->copy()->next($targetDay)->setTime((int)$hour, (int)$minute);
                 }
-                return $now->next($targetDay)->setTime((int)$hour, (int)$minute);
+                if (empty($candidates)) return null;
+                return collect($candidates)->sortBy(fn($c) => $c->timestamp)->first();
 
             case 'monthly':
                 return $now->copy()->addMonth()->setTime((int)$hour, (int)$minute);

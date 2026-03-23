@@ -86,8 +86,13 @@ class GenerateRecurringSessions extends Command
                 return (int)$ref->diffInDays($tomorrow) % $interval === 0;
 
             case 'weekly':
-                $targetDay = self::DAY_MAP[$group->meeting_day] ?? null;
-                if ($targetDay === null || $tomorrow->dayOfWeek !== $targetDay) return false;
+                $days = $group->meeting_days ?? ($group->attributes['meeting_day'] ? [$group->attributes['meeting_day']] : []);
+                if (empty($days)) return false;
+                $dayNums = array_values(array_filter(
+                    array_map(fn($d) => self::DAY_MAP[$d] ?? null, $days),
+                    fn($d) => $d !== null
+                ));
+                if (!in_array($tomorrow->dayOfWeek, $dayNums, true)) return false;
                 if ($interval === 1) return true;
                 return (int)$ref->startOfWeek()->diffInWeeks($tomorrow->copy()->startOfWeek()) % $interval === 0;
 

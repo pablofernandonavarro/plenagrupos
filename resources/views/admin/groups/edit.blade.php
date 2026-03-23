@@ -44,17 +44,26 @@
                 </select>
             </div>
 
-            {{-- Meeting day (weekly only) --}}
+            {{-- Meeting days (weekly only) --}}
             <div id="rec-day" class="hidden">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Día de reunión</label>
-                <select name="meeting_day"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
-                    <option value="">Sin día fijo</option>
-                    @foreach(['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] as $day)
-                        <option value="{{ $day }}" {{ old('meeting_day', $group->meeting_day) === $day ? 'selected' : '' }}>{{ $day }}</option>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Días de reunión</label>
+                @php
+                    $defaultDays = $group->meeting_days ?? ($group->meeting_day ? [$group->meeting_day] : []);
+                    $selectedDays = old('meeting_days', $defaultDays);
+                @endphp
+                <div class="flex flex-wrap gap-2">
+                    @foreach(['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'=>'Jue','Viernes'=>'Vie','Sábado'=>'Sáb','Domingo'=>'Dom'] as $day => $abbr)
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="meeting_days[]" value="{{ $day }}"
+                                class="sr-only peer"
+                                {{ in_array($day, $selectedDays) ? 'checked' : '' }}>
+                            <span class="block px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
+                                peer-checked:bg-teal-600 peer-checked:text-white peer-checked:border-teal-600
+                                hover:border-teal-400 transition select-none">{{ $abbr }}</span>
+                        </label>
                     @endforeach
-                </select>
-                @error('meeting_day')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                @error('meeting_days')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
             {{-- Time + interval (hidden when none) --}}
