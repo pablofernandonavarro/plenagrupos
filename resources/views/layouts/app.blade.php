@@ -111,6 +111,7 @@
                     @endif
 
                     <div class="flex items-center gap-2 border-l border-white/20 pl-4 ml-2">
+                        <x-avatar :user="auth()->user()" size="sm" />
                         <span class="text-sm font-medium text-white">{{ auth()->user()->name }}</span>
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium
                             @if(auth()->user()->isAdmin()) bg-purple-500/30 text-purple-200
@@ -159,14 +160,17 @@
                 @endif
 
                 <div class="border-t border-white/10 pt-3 mt-2 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-white">{{ auth()->user()->name }}</p>
-                        <span class="text-xs px-2 py-0.5 rounded-full font-medium
-                            @if(auth()->user()->isAdmin()) bg-purple-500/30 text-purple-200
-                            @elseif(auth()->user()->isCoordinator()) bg-blue-500/30 text-blue-200
-                            @else bg-white/20 text-white/90 @endif">
-                            {{ ucfirst(auth()->user()->role) }}
-                        </span>
+                    <div class="flex items-center gap-2">
+                        <x-avatar :user="auth()->user()" size="sm" />
+                        <div>
+                            <p class="text-sm font-medium text-white">{{ auth()->user()->name }}</p>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                                @if(auth()->user()->isAdmin()) bg-purple-500/30 text-purple-200
+                                @elseif(auth()->user()->isCoordinator()) bg-blue-500/30 text-blue-200
+                                @else bg-white/20 text-white/90 @endif">
+                                {{ ucfirst(auth()->user()->role) }}
+                            </span>
+                        </div>
                     </div>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf

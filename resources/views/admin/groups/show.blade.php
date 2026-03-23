@@ -117,9 +117,12 @@
             <div class="p-4 space-y-2">
                 @forelse($group->coordinators as $coord)
                     <div class="flex justify-between items-center py-1">
-                        <div>
-                            <p class="text-sm font-medium text-gray-800">{{ $coord->name }}</p>
-                            <p class="text-xs text-gray-400">{{ $coord->email }}</p>
+                        <div class="flex items-center gap-2">
+                            <x-avatar :user="$coord" size="sm" />
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">{{ $coord->name }}</p>
+                                <p class="text-xs text-gray-400">{{ $coord->email }}</p>
+                            </div>
                         </div>
                         <form action="{{ route('admin.groups.coordinators.remove', $group) }}" method="POST">
                             @csrf @method('DELETE')
@@ -162,9 +165,12 @@
         <div class="divide-y divide-gray-50">
             @forelse($group->patients as $patient)
                 <div class="px-5 py-3 flex justify-between items-center">
-                    <div>
-                        <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
-                        <p class="text-xs text-gray-400">{{ $patient->email }}@if($patient->phone) · {{ $patient->phone }}@endif</p>
+                    <div class="flex items-center gap-3">
+                        <x-avatar :user="$patient" size="sm" />
+                        <div>
+                            <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
+                            <p class="text-xs text-gray-400">{{ $patient->email }}@if($patient->phone) · {{ $patient->phone }}@endif</p>
+                        </div>
                     </div>
                     @if($group->active)
                     <form action="{{ route('admin.groups.patients.remove', $group) }}" method="POST">
@@ -216,7 +222,12 @@
                             $diff = ($rw && $iw) ? round($rw - $iw, 2) : null;
                         @endphp
                         <tr>
-                            <td class="px-5 py-3 font-medium text-gray-800">{{ $att->user->name }}</td>
+                            <td class="px-5 py-3">
+                                <div class="flex items-center gap-2">
+                                    <x-avatar :user="$att->user" size="sm" />
+                                    <span class="font-medium text-gray-800">{{ $att->user->name }}</span>
+                                </div>
+                            </td>
                             <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
                             <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
                                 {{ $rw ? $rw . ' kg' : '—' }}

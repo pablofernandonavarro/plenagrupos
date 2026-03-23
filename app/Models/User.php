@@ -14,6 +14,7 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
+        'avatar',
         'ideal_weight',
         'peso_piso',
         'peso_techo',

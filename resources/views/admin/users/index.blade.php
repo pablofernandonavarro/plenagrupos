@@ -46,9 +46,12 @@
         <div class="divide-y divide-gray-50">
             @forelse($coordinators as $user)
                 <div class="px-5 py-3 flex justify-between items-center">
-                    <div>
-                        <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
-                        <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
+                    <div class="flex items-center gap-3">
+                        <x-avatar :user="$user" size="sm" />
+                        <div>
+                            <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
+                            <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
+                        </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
@@ -73,9 +76,12 @@
         <div class="divide-y divide-gray-50">
             @forelse($patients as $user)
                 <div class="px-5 py-3 flex justify-between items-center">
-                    <div>
-                        <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
-                        <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
+                    <div class="flex items-center gap-3">
+                        <x-avatar :user="$user" size="sm" />
+                        <div>
+                            <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
+                            <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
+                        </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>

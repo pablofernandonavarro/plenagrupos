@@ -139,7 +139,12 @@
                                 }
                             @endphp
                             <tr>
-                                <td class="px-5 py-3 font-medium text-gray-800">{{ $att->user->name }}</td>
+                                <td class="px-5 py-3">
+                                    <div class="flex items-center gap-2">
+                                        <x-avatar :user="$att->user" size="sm" />
+                                        <span class="font-medium text-gray-800">{{ $att->user->name }}</span>
+                                    </div>
+                                </td>
                                 <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
                                     {{ $rw ? $rw . ' kg' : '—' }}
                                 </td>
@@ -191,7 +196,10 @@
                         }
                     @endphp
                     <div class="px-5 py-3">
-                        <p class="font-medium text-gray-800 text-sm mb-2">{{ $att->user->name }}</p>
+                        <div class="flex items-center gap-2 mb-2">
+                            <x-avatar :user="$att->user" size="sm" />
+                            <p class="font-medium text-gray-800 text-sm">{{ $att->user->name }}</p>
+                        </div>
                         <div class="grid grid-cols-3 gap-2 text-xs">
                             <div class="bg-gray-50 rounded-lg p-2 text-center">
                                 <p class="font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">{{ $rw ? $rw . ' kg' : '—' }}</p>

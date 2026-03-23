@@ -46,7 +46,9 @@
                     $hrs = intdiv($totalMins, 60); $min = $totalMins % 60;
                 @endphp
                 <div class="px-5 py-4 flex items-start justify-between gap-3">
-                    <div class="min-w-0 flex-1">
+                    <div class="flex items-start gap-3 min-w-0 flex-1">
+                        <x-avatar :user="$patient" size="md" />
+                        <div class="min-w-0 flex-1">
                         <p class="font-semibold text-gray-800 text-sm">{{ $patient->name }}</p>
                         <p class="text-xs text-gray-400 mt-0.5 truncate">
                             {{ $patient->email }}
@@ -71,6 +73,7 @@
                         @else
                             <p class="text-xs text-gray-300 mt-1.5">Sin tiempo registrado</p>
                         @endif
+                        </div>
                     </div>
 
                     <div class="flex flex-col items-end gap-2 shrink-0">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Patient;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -75,13 +76,23 @@ class DashboardController extends Controller
         $data = $request->validate([
             'peso_piso'  => 'nullable|numeric|min:0|max:300',
             'peso_techo' => 'nullable|numeric|min:0|max:300',
+            'avatar'     => 'nullable|image|max:2048',
         ]);
 
-        auth()->user()->update([
-            'peso_piso'  => $data['peso_piso'] ?? null,
-            'peso_techo' => $data['peso_techo'] ?? null,
-        ]);
+        $user = auth()->user();
 
-        return back()->with('success', 'Rango de mantenimiento actualizado.');
+        $user->peso_piso  = $data['peso_piso'] ?? null;
+        $user->peso_techo = $data['peso_techo'] ?? null;
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        $user->save();
+
+        return back()->with('success', 'Perfil actualizado.');
     }
 }

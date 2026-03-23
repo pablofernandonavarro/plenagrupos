@@ -4,9 +4,12 @@
 @section('content')
 <div class="space-y-6">
 
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">Hola, {{ auth()->user()->name }}</h1>
-        <p class="text-gray-500 text-sm mt-1">Tu progreso en el grupo terapéutico</p>
+    <div class="flex items-center gap-3">
+        <x-avatar :user="auth()->user()" size="lg" />
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Hola, {{ auth()->user()->name }}</h1>
+            <p class="text-gray-500 text-sm mt-0.5">Tu progreso en el grupo terapéutico</p>
+        </div>
     </div>
 
     {{-- Scan QR button --}}
@@ -136,7 +139,7 @@
             @if(session('success'))
                 <p class="text-green-600 text-sm mb-3">{{ session('success') }}</p>
             @endif
-            <form action="{{ route('patient.profile.update') }}" method="POST">
+            <form action="{{ route('patient.profile.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div>
@@ -156,9 +159,18 @@
                         @error('peso_techo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-600 mb-2">Foto de perfil</label>
+                    <div class="flex items-center gap-3">
+                        <x-avatar :user="auth()->user()" size="md" />
+                        <input type="file" name="avatar" accept="image/*"
+                            class="flex-1 text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                    </div>
+                    @error('avatar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
                 <button type="submit"
                     class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">
-                    Guardar rango
+                    Guardar
                 </button>
             </form>
         </div>

@@ -11,9 +11,16 @@
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <form action="{{ route('admin.users.store') }}" method="POST" class="space-y-4">
+        <form action="{{ route('admin.users.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
             <input type="hidden" name="role" value="{{ $role }}">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Foto de perfil</label>
+                <input type="file" name="avatar" accept="image/*"
+                    class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                @error('avatar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>

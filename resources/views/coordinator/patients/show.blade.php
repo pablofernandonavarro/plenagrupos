@@ -11,7 +11,9 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
         </a>
-        <div class="min-w-0 flex-1">
+        <div class="flex items-start gap-3 min-w-0 flex-1">
+            <x-avatar :user="$patient" size="md" />
+            <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-800">{{ $patient->name }}</h1>
                 @php
@@ -44,6 +46,7 @@
                     @endforeach
                 </div>
             @endif
+            </div>
         </div>
     </div>
 

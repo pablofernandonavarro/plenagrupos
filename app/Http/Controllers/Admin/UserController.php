@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -45,15 +46,21 @@ class UserController extends Controller
             'phone'    => 'nullable|string|max:20',
             'role'     => 'required|in:coordinator,patient',
             'password' => 'required|min:8|confirmed',
+            'avatar'   => 'nullable|image|max:2048',
         ]);
 
-        User::create([
+        $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
             'phone'    => $data['phone'] ?? null,
             'role'     => $data['role'],
             'password' => Hash::make($data['password']),
         ]);
+
+        if ($request->hasFile('avatar')) {
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+            $user->save();
+        }
 
         return redirect()->route('admin.users.index')->with('success', ucfirst($data['role']) . ' creado exitosamente.');
     }
@@ -73,6 +80,7 @@ class UserController extends Controller
             'peso_piso'    => 'nullable|numeric|min:0|max:300',
             'peso_techo'   => 'nullable|numeric|min:0|max:300',
             'password'     => 'nullable|min:8|confirmed',
+            'avatar'       => 'nullable|image|max:2048',
         ]);
 
         $user->name         = $data['name'];
@@ -84,6 +92,13 @@ class UserController extends Controller
 
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
+        }
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
         }
 
         $user->save();
