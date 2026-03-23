@@ -165,12 +165,12 @@
                         <x-avatar :user="auth()->user()" size="md" />
                         <div class="flex-1">
                             <input type="file" name="avatar" id="avatar-input" accept="image/*" class="hidden"
-                                onchange="document.getElementById('avatar-label').textContent = this.files[0]?.name ?? 'Ningún archivo'">
-                            <button type="button" onclick="document.getElementById('avatar-input').click()"
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 bg-white hover:bg-gray-50 active:bg-gray-100 text-left transition">
+                                onchange="document.getElementById('avatar-label').textContent = this.files[0]?.name ?? 'Ningún archivo seleccionado'">
+                            <label for="avatar-input"
+                                class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 bg-white hover:bg-gray-50 active:bg-gray-100 text-center cursor-pointer transition">
                                 Seleccionar foto
-                            </button>
-                            <p id="avatar-label" class="text-xs text-gray-400 mt-1 truncate">Ningún archivo</p>
+                            </label>
+                            <p id="avatar-label" class="text-xs text-gray-400 mt-1 truncate text-center">Ningún archivo seleccionado</p>
                         </div>
                     </div>
                     @error('avatar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
