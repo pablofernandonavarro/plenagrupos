@@ -22,7 +22,7 @@ class UserImportController extends Controller
         $sheet       = $spreadsheet->getActiveSheet();
 
         $cols    = ['A','B','C','D','E','F','G','H','I'];
-        $headers = ['email','nombre','telefono','plan','fecha_inicio','peso_ideal','peso_piso','peso_techo','rol'];
+        $headers = ['email','nombre','telefono','plan','fecha inicio del plan','peso_ideal','peso_piso','peso_techo','rol'];
 
         // Write headers
         foreach ($headers as $i => $header) {
@@ -43,7 +43,9 @@ class UserImportController extends Controller
         foreach ($patients as $p) {
             $sheet->getCell('A' . $row)->setValue($p->email);
             $sheet->getCell('B' . $row)->setValue($p->name);
-            $sheet->getCell('C' . $row)->setValue($p->phone ?? '');
+            // Strip non-digits for WhatsApp compatibility
+            $phone = $p->phone ? preg_replace('/\D/', '', $p->phone) : '';
+            $sheet->getCell('C' . $row)->setValue($phone);
             $sheet->getCell('D' . $row)->setValue($p->plan ?? '');
             $sheet->getCell('E' . $row)->setValue($p->plan_start_date ? $p->plan_start_date->format('d/m/Y') : '');
             $sheet->getCell('F' . $row)->setValue($p->ideal_weight ?? '');
@@ -103,7 +105,7 @@ class UserImportController extends Controller
             $name  = $get('nombre') ?? $get('name') ?? $email;
             $phone = $get('telefono') ?? $get('phone');
             $plan  = $get('plan');
-            $planStartRaw = $get('fecha_inicio') ?? $get('inicio_plan');
+            $planStartRaw = $get('fecha inicio del plan') ?? $get('fecha_inicio') ?? $get('inicio_plan');
             $idealWeight  = $get('peso_ideal');
             $pesoPiso     = $get('peso_piso');
             $pesoTecho    = $get('peso_techo');

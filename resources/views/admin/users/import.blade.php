@@ -32,9 +32,9 @@
                     @foreach([
                         ['email',        'Email del usuario',                                  'Sí'],
                         ['nombre',       'Nombre completo',                                    'Sí'],
-                        ['telefono',     'Teléfono',                                           'No'],
-                        ['plan',         'descenso / mantenimiento / mantenimiento_pleno',     'No'],
-                        ['fecha_inicio', 'Fecha de inicio del plan (ej: 18/03/2026)',          'No'],
+                        ['telefono',              'Solo dígitos, con código de país (ej: 5491112345678)',   'No'],
+                        ['plan',                  'descenso / mantenimiento / mantenimiento_pleno',          'No'],
+                        ['fecha inicio del plan', 'Fecha de inicio del plan (ej: 18/03/2026)',               'No'],
                         ['peso_ideal',   'Peso ideal en kg',                                   'No'],
                         ['peso_piso',    'Peso mínimo de mantenimiento',                       'No'],
                         ['peso_techo',   'Peso máximo de mantenimiento',                       'No'],
