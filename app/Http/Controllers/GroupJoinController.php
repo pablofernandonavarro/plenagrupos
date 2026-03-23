@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Group;
 use App\Models\GroupAttendance;
+use App\Models\PlanRule;
 
 class GroupJoinController extends Controller
 {
@@ -61,6 +62,37 @@ class GroupJoinController extends Controller
         if ($alreadyCheckedIn) {
             return redirect()->route('patient.dashboard')
                 ->with('info', 'Ya registraste tu asistencia a este grupo hoy.');
+        }
+
+        // Enforce plan rules
+        if ($user->plan) {
+            $rule = PlanRule::where('patient_plan', $user->plan)
+                ->where('group_type', $group->group_type)
+                ->first();
+
+            if ($rule && $rule->weekly_limit !== null) {
+                $isWeekend = now()->isWeekend();
+
+                if (!($isWeekend && $rule->weekend_unlimited)) {
+                    // Count how many times the patient attended groups of this type this week
+                    $weekStart = now()->startOfWeek();
+                    $weeklyCount = GroupAttendance::where('user_id', $user->id)
+                        ->whereHas('group', fn($q) => $q->where('group_type', $group->group_type))
+                        ->where('attended_at', '>=', $weekStart)
+                        ->count();
+
+                    if ($weeklyCount >= $rule->weekly_limit) {
+                        $typeLabels = [
+                            'descenso'           => 'descenso de peso',
+                            'mantenimiento'      => 'mantenimiento',
+                            'mantenimiento_pleno'=> 'mantenimiento pleno',
+                        ];
+                        $label = $typeLabels[$group->group_type] ?? $group->group_type;
+                        return back()->with('error',
+                            "Llegaste al límite semanal de {$rule->weekly_limit} grupo(s) de {$label} para tu plan.");
+                    }
+                }
+            }
         }
 
         // Register attendance for this visit

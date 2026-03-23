@@ -55,6 +55,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::resource('ai-documents', Admin\AiDocumentController::class)
         ->except(['show']);
+
+    Route::get('/plan-rules', [Admin\PlanRuleController::class, 'index'])->name('plan-rules.index');
+    Route::post('/plan-rules', [Admin\PlanRuleController::class, 'save'])->name('plan-rules.save');
 });
 
 // Coordinator routes
