@@ -19,6 +19,7 @@ class User extends Authenticatable
         'peso_piso',
         'peso_techo',
         'role',
+        'plan',
         'password',
     ];
 

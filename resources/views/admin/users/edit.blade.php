@@ -54,6 +54,22 @@
 
             @if($user->role === 'patient')
             <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
+                <div class="flex gap-2">
+                    @foreach(['descenso'=>'Descenso','mantenimiento'=>'Mantenimiento','mantenimiento_pleno'=>'Mant. Pleno'] as $val => $label)
+                        <div class="relative flex-1">
+                            <input type="radio" id="plan-{{ $val }}" name="plan" value="{{ $val }}"
+                                class="sr-only peer"
+                                {{ old('plan', $user->plan ?? 'descenso') === $val ? 'checked' : '' }}>
+                            <label for="plan-{{ $val }}"
+                                class="block text-center px-2 py-2 rounded-lg text-sm font-medium border border-gray-300
+                                peer-checked:border-teal-600 peer-checked:bg-teal-600 peer-checked:text-white
+                                hover:border-teal-400 transition select-none cursor-pointer">{{ $label }}</label>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Peso ideal (kg)</label>
                 <input type="number" step="0.01" min="0" max="300" name="ideal_weight"
                     value="{{ old('ideal_weight', $user->ideal_weight) }}"

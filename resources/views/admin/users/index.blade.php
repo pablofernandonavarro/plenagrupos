@@ -79,7 +79,16 @@
                     <div class="flex items-center gap-3">
                         <x-avatar :user="$user" size="sm" />
                         <div>
-                            <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
+                                @if($user->plan === 'mantenimiento')
+                                    <span class="text-xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Mantenimiento</span>
+                                @elseif($user->plan === 'mantenimiento_pleno')
+                                    <span class="text-xs px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">Mant. Pleno</span>
+                                @elseif($user->plan)
+                                    <span class="text-xs px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-700 font-medium">Descenso</span>
+                                @endif
+                            </div>
                             <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
                         </div>
                     </div>

@@ -42,6 +42,24 @@
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
                     placeholder="Opcional">
             </div>
+            @if($role === 'patient')
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
+                <div class="flex gap-2">
+                    @foreach(['descenso'=>'Descenso','mantenimiento'=>'Mantenimiento','mantenimiento_pleno'=>'Mant. Pleno'] as $val => $label)
+                        <div class="relative flex-1">
+                            <input type="radio" id="plan-{{ $val }}" name="plan" value="{{ $val }}"
+                                class="sr-only peer"
+                                {{ old('plan', 'descenso') === $val ? 'checked' : '' }}>
+                            <label for="plan-{{ $val }}"
+                                class="block text-center px-2 py-2 rounded-lg text-sm font-medium border border-gray-300
+                                peer-checked:border-teal-600 peer-checked:bg-teal-600 peer-checked:text-white
+                                hover:border-teal-400 transition select-none cursor-pointer">{{ $label }}</label>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
                 <input type="password" name="password" required
