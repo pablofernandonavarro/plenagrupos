@@ -48,6 +48,22 @@
                 </div>
             </div>
             <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de grupo</label>
+                <div class="flex gap-2">
+                    @foreach(['descenso'=>'Descenso de peso','mantenimiento'=>'Mantenimiento'] as $val => $label)
+                        <div class="relative flex-1">
+                            <input type="radio" id="gtype-{{ $val }}" name="group_type" value="{{ $val }}"
+                                class="sr-only peer"
+                                {{ old('group_type', $group->group_type ?? 'descenso') === $val ? 'checked' : '' }}>
+                            <label for="gtype-{{ $val }}"
+                                class="block text-center px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
+                                peer-checked:border-teal-600 peer-checked:bg-teal-600 peer-checked:text-white
+                                hover:border-teal-400 transition select-none cursor-pointer">{{ $label }}</label>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                 <textarea name="description" rows="2"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm"

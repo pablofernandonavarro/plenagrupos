@@ -12,7 +12,7 @@ class Group extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'modality', 'description', 'meeting_day', 'meeting_days', 'meeting_time',
+        'name', 'modality', 'group_type', 'description', 'meeting_day', 'meeting_days', 'meeting_time',
         'recurrence_type', 'recurrence_interval', 'recurrence_end_date',
         'auto_sessions', 'admin_id', 'qr_token', 'active', 'started_at', 'ended_at',
     ];

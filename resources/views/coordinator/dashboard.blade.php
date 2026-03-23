@@ -60,6 +60,11 @@
                     @else
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-blue-50 text-blue-700">Presencial</span>
                     @endif
+                    @if(($group->group_type ?? 'descenso') === 'mantenimiento')
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-amber-50 text-amber-700">Mantenimiento</span>
+                    @else
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-sky-50 text-sky-700">Descenso</span>
+                    @endif
                 </div>
                 <div class="flex gap-2">
                     @if($group->active)
