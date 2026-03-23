@@ -45,6 +45,7 @@ class GroupController extends Controller
     {
         $data = $request->validate([
             'name'                => 'required|string|max:255',
+            'modality'            => 'required|in:presencial,virtual,hibrido',
             'description'         => 'nullable|string',
             'meeting_days'        => 'nullable|array',
             'meeting_days.*'      => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
@@ -61,6 +62,7 @@ class GroupController extends Controller
 
         $group = Group::create([
             'name'                => $data['name'],
+            'modality'            => $data['modality'],
             'description'         => $data['description'] ?? null,
             'meeting_day'         => $meetingDay,
             'meeting_days'        => $meetingDays,
@@ -91,6 +93,7 @@ class GroupController extends Controller
     {
         $data = $request->validate([
             'name'                => 'required|string|max:255',
+            'modality'            => 'required|in:presencial,virtual,hibrido',
             'description'         => 'nullable|string',
             'meeting_days'        => 'nullable|array',
             'meeting_days.*'      => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
@@ -107,6 +110,7 @@ class GroupController extends Controller
 
         $group->update([
             'name'                => $data['name'],
+            'modality'            => $data['modality'],
             'description'         => $data['description'] ?? null,
             'meeting_day'         => $meetingDay,
             'meeting_days'        => $meetingDays,

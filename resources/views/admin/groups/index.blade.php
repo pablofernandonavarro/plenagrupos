@@ -75,6 +75,14 @@
                                     Finalizado
                                 </span>
                             @endif
+                            @php
+                                $modalityStyles = ['presencial'=>'bg-blue-50 text-blue-700','virtual'=>'bg-violet-50 text-violet-700','hibrido'=>'bg-orange-50 text-orange-700'];
+                                $modalityLabels = ['presencial'=>'Presencial','virtual'=>'Virtual','hibrido'=>'Híbrido'];
+                                $m = $group->modality ?? 'presencial';
+                            @endphp
+                            <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $modalityStyles[$m] ?? 'bg-gray-100 text-gray-500' }}">
+                                {{ $modalityLabels[$m] ?? $m }}
+                            </span>
                             @if($group->started_at)
                                 <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-medium">
                                     <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>

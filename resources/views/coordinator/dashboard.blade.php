@@ -52,6 +52,14 @@
                     @else
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
                     @endif
+                    @php $m = $group->modality ?? 'presencial'; @endphp
+                    @if($m === 'virtual')
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-violet-50 text-violet-700">Virtual</span>
+                    @elseif($m === 'hibrido')
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-orange-50 text-orange-700">Híbrido</span>
+                    @else
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-blue-50 text-blue-700">Presencial</span>
+                    @endif
                 </div>
                 <div class="flex gap-2">
                     @if($group->active)

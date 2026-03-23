@@ -24,6 +24,20 @@
             </div>
 
             <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Modalidad</label>
+                <div class="flex gap-2">
+                    @foreach(['presencial'=>'Presencial','virtual'=>'Virtual','hibrido'=>'Híbrido'] as $val => $label)
+                        <label class="cursor-pointer flex-1">
+                            <input type="radio" name="modality" value="{{ $val }}" class="sr-only peer"
+                                {{ old('modality', $group->modality ?? 'presencial') === $val ? 'checked' : '' }}>
+                            <span class="block text-center px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
+                                peer-checked:border-teal-600 peer-checked:bg-teal-600 peer-checked:text-white
+                                hover:border-teal-400 transition select-none">{{ $label }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                 <textarea name="description" rows="2"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none text-sm"
