@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class PlanRule extends Model
 {
-    protected $fillable = ['patient_plan', 'group_type', 'weekly_limit', 'weekend_unlimited'];
+    protected $fillable = ['patient_plan', 'group_type', 'monthly_limit', 'weekend_unlimited'];
 
     protected $casts = [
         'weekend_unlimited' => 'boolean',
-        'weekly_limit'      => 'integer',
+        'monthly_limit'     => 'integer',
     ];
 
     public static function find(string $patientPlan, string $groupType): ?self

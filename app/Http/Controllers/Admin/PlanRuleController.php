@@ -32,7 +32,7 @@ class PlanRuleController extends Controller
 
                 PlanRule::updateOrCreate(
                     ['patient_plan' => $plan, 'group_type' => $gt],
-                    ['weekly_limit' => $limit, 'weekend_unlimited' => $weekend]
+                    ['monthly_limit' => $limit, 'weekend_unlimited' => $weekend]
                 );
             }
         }

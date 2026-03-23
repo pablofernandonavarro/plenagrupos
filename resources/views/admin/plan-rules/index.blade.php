@@ -17,7 +17,7 @@
     </div>
 
     <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-700">
-        Definí cuántas veces por semana puede asistir un paciente a cada tipo de grupo según su plan.<br>
+        Definí cuántas veces por mes puede asistir un paciente a cada tipo de grupo según su plan.<br>
         Dejá el límite <strong>vacío</strong> para permitir acceso ilimitado. Marcá <strong>Finde libre</strong> para que los sábados y domingos no aplique el límite.
     </div>
 
@@ -55,9 +55,9 @@
                     <div class="flex items-center gap-2">
                         <input type="number" name="limit[{{ $plan }}][{{ $gt }}]"
                             min="0" max="99" placeholder="∞"
-                            value="{{ $rule?->weekly_limit }}"
+                            value="{{ $rule?->monthly_limit }}"
                             class="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-teal-500 outline-none">
-                        <span class="text-xs text-gray-500">por semana</span>
+                        <span class="text-xs text-gray-500">por mes</span>
                     </div>
 
                     <label class="flex items-center gap-2 cursor-pointer ml-auto">

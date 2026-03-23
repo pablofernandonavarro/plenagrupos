@@ -37,15 +37,15 @@ class AttendanceController extends Controller
         $groups   = Group::orderBy('name')->get(['id', 'name']);
         $patients = User::where('role', 'patient')->orderBy('name')->get(['id', 'name', 'plan']);
 
-        // Weekly summary per patient
-        $groupTypes = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
-        $weekStart  = now()->startOfWeek();
-        $rules      = PlanRule::all()->keyBy(fn($r) => $r->patient_plan . '.' . $r->group_type);
+        // Monthly summary per patient
+        $groupTypes  = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
+        $monthStart  = now()->startOfMonth();
+        $rules       = PlanRule::all()->keyBy(fn($r) => $r->patient_plan . '.' . $r->group_type);
 
         $patientIds = $patients->filter(fn($p) => $p->plan)->pluck('id');
 
-        // This-week counts grouped by user_id + group_type
-        $weekCounts = GroupAttendance::where('attended_at', '>=', $weekStart)
+        // This-month counts grouped by user_id + group_type
+        $weekCounts = GroupAttendance::where('attended_at', '>=', $monthStart)
             ->whereIn('user_id', $patientIds)
             ->join('groups', 'group_attendances.group_id', '=', 'groups.id')
             ->selectRaw('group_attendances.user_id, groups.group_type, COUNT(*) as total')
@@ -66,7 +66,7 @@ class AttendanceController extends Controller
             foreach ($groupTypes as $gt) {
                 $rule    = $rules->get("{$patient->plan}.{$gt}");
                 $used    = (int) ($weekCounts->get($patient->id)?->get($gt)?->total ?? 0);
-                $limit   = $rule?->weekly_limit;
+                $limit   = $rule?->monthly_limit;
                 $row['types'][$gt] = [
                     'used'      => $used,
                     'limit'     => $limit,

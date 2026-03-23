@@ -70,18 +70,18 @@ class GroupJoinController extends Controller
                 ->where('group_type', $group->group_type)
                 ->first();
 
-            if ($rule && $rule->weekly_limit !== null) {
+            if ($rule && $rule->monthly_limit !== null) {
                 $isWeekend = now()->isWeekend();
 
                 if (!($isWeekend && $rule->weekend_unlimited)) {
-                    // Count how many times the patient attended groups of this type this week
-                    $weekStart = now()->startOfWeek();
-                    $weeklyCount = GroupAttendance::where('user_id', $user->id)
+                    // Count how many times the patient attended groups of this type this month
+                    $monthStart = now()->startOfMonth();
+                    $monthlyCount = GroupAttendance::where('user_id', $user->id)
                         ->whereHas('group', fn($q) => $q->where('group_type', $group->group_type))
-                        ->where('attended_at', '>=', $weekStart)
+                        ->where('attended_at', '>=', $monthStart)
                         ->count();
 
-                    if ($weeklyCount >= $rule->weekly_limit) {
+                    if ($monthlyCount >= $rule->monthly_limit) {
                         $typeLabels = [
                             'descenso'           => 'descenso de peso',
                             'mantenimiento'      => 'mantenimiento',
@@ -89,7 +89,7 @@ class GroupJoinController extends Controller
                         ];
                         $label = $typeLabels[$group->group_type] ?? $group->group_type;
                         return back()->with('error',
-                            "Llegaste al límite semanal de {$rule->weekly_limit} grupo(s) de {$label} para tu plan.");
+                            "Llegaste al límite mensual de {$rule->monthly_limit} grupo(s) de {$label} para tu plan.");
                     }
                 }
             }
