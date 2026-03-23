@@ -29,9 +29,9 @@
                         </span>
                     @endif
                 </div>
-                @if($group->meeting_day || $group->meeting_time)
+                @if($group->meetingDaysDisplay || $group->meeting_time)
                     <p class="text-sm text-teal-600 font-medium mt-0.5">
-                        {{ $group->meeting_day }}{{ $group->meeting_day && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
+                        {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
                     </p>
                 @endif
                 @if($group->started_at || $group->auto_sessions)

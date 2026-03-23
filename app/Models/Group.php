@@ -41,6 +41,14 @@ class Group extends Model
         return 'pending';
     }
 
+    /** Days label for display: "Lun a Vie", "Lunes, Miércoles", or single day name */
+    public function getMeetingDaysDisplayAttribute(): ?string
+    {
+        $days = $this->meeting_days ?? ($this->meeting_day ? [$this->meeting_day] : []);
+        if (empty($days)) return null;
+        return $this->formatDaysLabel($days);
+    }
+
     public function getMeetingTimeFormattedAttribute(): ?string
     {
         if (!$this->meeting_time) return null;
