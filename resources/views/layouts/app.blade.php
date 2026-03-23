@@ -96,8 +96,34 @@
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Inicio</a>
                         <a href="{{ route('admin.groups.index') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Grupos</a>
-                        <a href="{{ route('admin.users.index') }}" class="text-sm text-gray-300 transition"
-                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Usuarios</a>
+                        {{-- Usuarios dropdown --}}
+                        <div class="relative" id="nav-usuarios-wrap">
+                            <button id="nav-usuarios-btn"
+                                class="flex items-center gap-1 text-sm text-gray-300 transition"
+                                onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">
+                                Usuarios
+                                <svg class="w-3 h-3 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div id="nav-usuarios-menu"
+                                class="hidden absolute left-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                                <a href="{{ route('admin.users.index') }}"
+                                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    Usuarios
+                                </a>
+                                <a href="{{ route('admin.attendances.index') }}"
+                                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                    </svg>
+                                    Control de asistencias
+                                </a>
+                            </div>
+                        </div>
                         <a href="{{ route('admin.ai-documents.index') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Bibliografía IA</a>
                         <a href="{{ route('admin.plan-rules.index') }}" class="text-sm text-gray-300 transition"
@@ -155,6 +181,7 @@
                     <a href="{{ route('admin.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Inicio</a>
                     <a href="{{ route('admin.groups.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Grupos</a>
                     <a href="{{ route('admin.users.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Usuarios</a>
+                    <a href="{{ route('admin.attendances.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Control de asistencias</a>
                     <a href="{{ route('admin.ai-documents.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Bibliografía IA</a>
                     <a href="{{ route('admin.plan-rules.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Reglas</a>
                 @elseif(auth()->user()->isCoordinator())
@@ -220,6 +247,17 @@
                 iconOpen.classList.toggle('hidden', !isHidden);
                 iconClose.classList.toggle('hidden', isHidden);
             });
+        }
+
+        // Usuarios dropdown
+        const usuariosBtn  = document.getElementById('nav-usuarios-btn');
+        const usuariosMenu = document.getElementById('nav-usuarios-menu');
+        if (usuariosBtn) {
+            usuariosBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                usuariosMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => usuariosMenu.classList.add('hidden'));
         }
     </script>
 

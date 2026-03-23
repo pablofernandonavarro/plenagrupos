@@ -58,6 +58,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/plan-rules', [Admin\PlanRuleController::class, 'index'])->name('plan-rules.index');
     Route::post('/plan-rules', [Admin\PlanRuleController::class, 'save'])->name('plan-rules.save');
+
+    Route::get('/attendances', [Admin\AttendanceController::class, 'index'])->name('attendances.index');
+    Route::delete('/attendances/{attendance}', [Admin\AttendanceController::class, 'destroy'])->name('attendances.destroy');
 });
 
 // Coordinator routes
