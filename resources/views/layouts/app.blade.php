@@ -122,6 +122,13 @@
                                     </svg>
                                     Control de asistencias
                                 </a>
+                                <a href="{{ route('admin.users.import') }}"
+                                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                    </svg>
+                                    Importar desde Excel
+                                </a>
                             </div>
                         </div>
                         <a href="{{ route('admin.ai-documents.index') }}" class="text-sm text-gray-300 transition"
@@ -182,6 +189,7 @@
                     <a href="{{ route('admin.groups.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Grupos</a>
                     <a href="{{ route('admin.users.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Usuarios</a>
                     <a href="{{ route('admin.attendances.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Control de asistencias</a>
+                    <a href="{{ route('admin.users.import') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Importar desde Excel</a>
                     <a href="{{ route('admin.ai-documents.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Bibliografía IA</a>
                     <a href="{{ route('admin.plan-rules.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Reglas</a>
                 @elseif(auth()->user()->isCoordinator())

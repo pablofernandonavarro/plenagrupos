@@ -47,6 +47,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/groups/{group}/patients', [Admin\GroupController::class, 'removePatient'])->name('groups.patients.remove');
 
     Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
+    Route::get('/users/import', [Admin\UserImportController::class, 'show'])->name('users.import');
+    Route::post('/users/import', [Admin\UserImportController::class, 'import'])->name('users.import');
     Route::get('/users/create', [Admin\UserController::class, 'create'])->name('users.create');
     Route::post('/users', [Admin\UserController::class, 'store'])->name('users.store');
     Route::get('/users/{user}/edit', [Admin\UserController::class, 'edit'])->name('users.edit');
