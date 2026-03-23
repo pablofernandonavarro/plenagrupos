@@ -30,6 +30,10 @@ class GroupController extends Controller
             $query->whereHas('coordinators', fn($q) => $q->where('users.id', $coordinatorId));
         }
 
+        if ($modality = $request->input('modality')) {
+            $query->where('modality', $modality);
+        }
+
         $coordinators = User::where('role', 'coordinator')->orderBy('name')->get();
         $groups = $query->paginate(10)->withQueryString();
         return view('admin.groups.index', compact('groups', 'coordinators'));

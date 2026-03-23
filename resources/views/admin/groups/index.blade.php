@@ -35,6 +35,13 @@
                 @endforeach
             </select>
             @endif
+            <select name="modality" onchange="this.form.submit()"
+                class="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white text-gray-600">
+                <option value="">Todas las modalidades</option>
+                <option value="presencial" {{ request('modality') === 'presencial' ? 'selected' : '' }}>Presencial</option>
+                <option value="virtual"    {{ request('modality') === 'virtual'    ? 'selected' : '' }}>Virtual</option>
+                <option value="hibrido"    {{ request('modality') === 'hibrido'    ? 'selected' : '' }}>Híbrido</option>
+            </select>
         </div>
         <div class="flex gap-2">
             @foreach([''=>'Todos', 'active'=>'En curso', 'pending'=>'Sin iniciar', 'closed'=>'Finalizados'] as $val => $label)
