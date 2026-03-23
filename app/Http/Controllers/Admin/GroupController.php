@@ -18,13 +18,16 @@ class GroupController extends Controller
             $query->where('name', 'like', '%' . $search . '%');
         }
 
-        if ($request->input('status') === 'active') {
+        // Default to active groups unless a status filter is explicitly set
+        $status = $request->input('status', 'active');
+        if ($status === 'active') {
             $query->where('active', true);
-        } elseif ($request->input('status') === 'pending') {
+        } elseif ($status === 'pending') {
             $query->where('active', false)->whereNull('started_at');
-        } elseif ($request->input('status') === 'closed') {
+        } elseif ($status === 'closed') {
             $query->where('active', false)->whereNotNull('started_at');
         }
+        // $status === '' means "Todos"
 
         if ($coordinatorId = $request->input('coordinator_id')) {
             $query->whereHas('coordinators', fn($q) => $q->where('users.id', $coordinatorId));
@@ -34,9 +37,10 @@ class GroupController extends Controller
             $query->where('modality', $modality);
         }
 
+        $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 10;
         $coordinators = User::where('role', 'coordinator')->orderBy('name')->get();
-        $groups = $query->paginate(10)->withQueryString();
-        return view('admin.groups.index', compact('groups', 'coordinators'));
+        $groups = $query->paginate($perPage)->withQueryString();
+        return view('admin.groups.index', compact('groups', 'coordinators', 'status'));
     }
 
     public function create()
@@ -220,6 +224,10 @@ class GroupController extends Controller
 
     public function destroy(Group $group)
     {
+        $hasData = $group->attendances()->exists() || $group->weightRecords()->exists();
+        if ($hasData) {
+            return back()->with('error', 'No se puede eliminar el grupo porque tiene estadísticas registradas. Finalizalo en su lugar.');
+        }
         $group->delete();
         return redirect()->route('admin.groups.index')->with('success', 'Grupo eliminado.');
     }

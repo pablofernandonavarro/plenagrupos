@@ -43,16 +43,22 @@
                 <option value="hibrido"    {{ request('modality') === 'hibrido'    ? 'selected' : '' }}>Híbrido</option>
             </select>
         </div>
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2">
             @foreach([''=>'Todos', 'active'=>'En curso', 'pending'=>'Sin iniciar', 'closed'=>'Finalizados'] as $val => $label)
                 <button type="submit" name="status" value="{{ $val }}"
                     class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium border transition
-                        {{ request('status', '') === $val
+                        {{ $status === $val
                             ? 'bg-teal-600 text-white border-teal-600'
                             : 'bg-white text-gray-600 border-gray-200 hover:border-teal-400' }}">
                     {{ $label }}
                 </button>
             @endforeach
+            <select name="per_page" onchange="this.form.submit()"
+                class="ml-auto px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white text-gray-600">
+                @foreach([10=>10, 25=>25, 50=>50] as $n => $label)
+                    <option value="{{ $n }}" {{ request('per_page', 10) == $n ? 'selected' : '' }}>{{ $n }} por página</option>
+                @endforeach
+            </select>
         </div>
     </form>
 
@@ -168,7 +174,7 @@
                             Gestionar
                         </a>
                         <form action="{{ route('admin.groups.destroy', $group) }}" method="POST"
-                              onsubmit="return confirm('¿Eliminar grupo?')">
+                              onsubmit="return confirm('¿Eliminar el grupo «{{ addslashes($group->name) }}»?\n\nSi tiene asistencias o pesos registrados el sistema no lo permitirá. En ese caso usá Finalizar.')">
                             @csrf @method('DELETE')
                             <button class="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -192,9 +198,12 @@
         @endforelse
     </div>
 
-    @if($groups->hasPages())
-        <div>{{ $groups->links() }}</div>
-    @endif
+    <div class="flex items-center justify-between text-xs text-gray-400">
+        <span>{{ $groups->total() }} grupo(s) · página {{ $groups->currentPage() }} de {{ $groups->lastPage() }}</span>
+        @if($groups->hasPages())
+            <div>{{ $groups->links() }}</div>
+        @endif
+    </div>
 
 </div>
 @endsection
