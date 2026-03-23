@@ -18,7 +18,56 @@ $typeBadge = [
 
     <h1 class="text-2xl font-bold text-gray-800">Control de asistencias</h1>
 
-    {{-- Weekly summary table --}}
+    {{-- Filters --}}
+    <form method="GET" action="{{ route('admin.attendances.index') }}"
+          class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Paciente</label>
+                <select name="patient_id"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                    <option value="">Todos</option>
+                    @foreach($patients as $p)
+                        <option value="{{ $p->id }}" {{ request('patient_id') == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Grupo</label>
+                <select name="group_id"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                    <option value="">Todos</option>
+                    @foreach($groups as $g)
+                        <option value="{{ $g->id }}" {{ request('group_id') == $g->id ? 'selected' : '' }}>{{ $g->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Desde</label>
+                <input type="date" name="date_from" value="{{ request('date_from') }}"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Hasta</label>
+                <input type="date" name="date_to" value="{{ request('date_to') }}"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+            </div>
+        </div>
+        <div class="flex gap-2 mt-3">
+            <button type="submit"
+                class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition">
+                Filtrar
+            </button>
+            @if(request()->hasAny(['patient_id','group_id','date_from','date_to']))
+                <a href="{{ route('admin.attendances.index') }}"
+                   class="px-4 py-2 border border-gray-200 text-gray-500 text-sm rounded-lg hover:bg-gray-50 transition">
+                    Limpiar
+                </a>
+            @endif
+        </div>
+    </form>
+
+    {{-- Monthly summary table --}}
     @if($summary->count())
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-2" style="background:#f8fafc">
@@ -91,55 +140,6 @@ $typeBadge = [
         </div>
     </div>
     @endif
-
-    {{-- Filters --}}
-    <form method="GET" action="{{ route('admin.attendances.index') }}"
-          class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Paciente</label>
-                <select name="patient_id"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                    <option value="">Todos</option>
-                    @foreach($patients as $p)
-                        <option value="{{ $p->id }}" {{ request('patient_id') == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Grupo</label>
-                <select name="group_id"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                    <option value="">Todos</option>
-                    @foreach($groups as $g)
-                        <option value="{{ $g->id }}" {{ request('group_id') == $g->id ? 'selected' : '' }}>{{ $g->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Desde</label>
-                <input type="date" name="date_from" value="{{ request('date_from') }}"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-            </div>
-            <div>
-                <label class="block text-xs text-gray-500 mb-1">Hasta</label>
-                <input type="date" name="date_to" value="{{ request('date_to') }}"
-                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-            </div>
-        </div>
-        <div class="flex gap-2 mt-3">
-            <button type="submit"
-                class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg transition">
-                Filtrar
-            </button>
-            @if(request()->hasAny(['patient_id','group_id','date_from','date_to']))
-                <a href="{{ route('admin.attendances.index') }}"
-                   class="px-4 py-2 border border-gray-200 text-gray-500 text-sm rounded-lg hover:bg-gray-50 transition">
-                    Limpiar
-                </a>
-            @endif
-        </div>
-    </form>
 
     {{-- Attendance log --}}
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
