@@ -19,41 +19,45 @@ class UserImportController extends Controller
     public function template()
     {
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+        $sheet       = $spreadsheet->getActiveSheet();
 
-        // Headers
-        $headers = ['email', 'nombre', 'telefono', 'plan', 'fecha_inicio', 'peso_ideal', 'peso_piso', 'peso_techo', 'rol'];
+        $cols    = ['A','B','C','D','E','F','G','H','I'];
+        $headers = ['email','nombre','telefono','plan','fecha_inicio','peso_ideal','peso_piso','peso_techo','rol'];
+
+        // Write headers
         foreach ($headers as $i => $header) {
-            $sheet->setCellValueByColumnAndRow($i + 1, 1, $header);
-            $sheet->getColumnDimensionByColumn($i + 1)->setAutoSize(true);
+            $sheet->getCell($cols[$i] . '1')->setValue($header);
+            $sheet->getColumnDimension($cols[$i])->setAutoSize(true);
         }
 
         // Style header row
-        $headerStyle = [
-            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill'      => ['fillType' => 'solid', 'startColor' => ['rgb' => '09CDA6']],
+        $sheet->getStyle('A1:I1')->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '09CDA6']],
             'alignment' => ['horizontal' => 'center'],
-        ];
-        $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
+        ]);
 
-        // Example rows
-        $examples = [
-            ['juan@ejemplo.com', 'Juan Pérez',   '1122334455', 'descenso',            '18/03/2026', 70.0, 68.0, 73.0, 'patient'],
-            ['maria@ejemplo.com','María García', '1155667788', 'mantenimiento',        '01/03/2026', 65.0, 63.0, 67.0, 'patient'],
-            ['diego@ejemplo.com','Diego Torres', '',           'mantenimiento_pleno',  '',           '',   '',   '',   'patient'],
-        ];
-
-        foreach ($examples as $r => $row) {
-            foreach ($row as $c => $value) {
-                $sheet->setCellValueByColumnAndRow($c + 1, $r + 2, $value);
-            }
+        // Fill with existing patients
+        $patients = User::where('role', 'patient')->orderBy('name')->get();
+        $row = 2;
+        foreach ($patients as $p) {
+            $sheet->getCell('A' . $row)->setValue($p->email);
+            $sheet->getCell('B' . $row)->setValue($p->name);
+            $sheet->getCell('C' . $row)->setValue($p->phone ?? '');
+            $sheet->getCell('D' . $row)->setValue($p->plan ?? '');
+            $sheet->getCell('E' . $row)->setValue($p->plan_start_date ? $p->plan_start_date->format('d/m/Y') : '');
+            $sheet->getCell('F' . $row)->setValue($p->ideal_weight ?? '');
+            $sheet->getCell('G' . $row)->setValue($p->peso_piso ?? '');
+            $sheet->getCell('H' . $row)->setValue($p->peso_techo ?? '');
+            $sheet->getCell('I' . $row)->setValue('patient');
+            $row++;
         }
 
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
-        }, 'modelo_importacion_usuarios.xlsx', [
+        }, 'usuarios_plena.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
