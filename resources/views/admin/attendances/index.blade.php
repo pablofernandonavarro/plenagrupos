@@ -103,8 +103,10 @@ $typeBadge = [
                                 <span class="text-xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Mantenimiento</span>
                             @elseif($patient->plan === 'mantenimiento_pleno')
                                 <span class="text-xs px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">Mant. Pleno</span>
-                            @else
+                            @elseif($patient->plan === 'descenso')
                                 <span class="text-xs px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-700 font-medium">Descenso</span>
+                            @else
+                                <span class="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 font-medium">Sin plan</span>
                             @endif
                         </td>
                         @foreach($groupTypes as $gt)
