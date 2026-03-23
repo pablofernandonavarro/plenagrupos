@@ -4,8 +4,15 @@
 @section('content')
 <div class="max-w-2xl space-y-5">
 
-    <div class="flex items-center gap-3">
+    <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold text-gray-800">Importar usuarios desde Excel</h1>
+        <a href="{{ route('admin.users.import.template') }}"
+           class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition shadow-sm">
+            <svg class="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Descargar modelo
+        </a>
     </div>
 
     {{-- Format guide --}}

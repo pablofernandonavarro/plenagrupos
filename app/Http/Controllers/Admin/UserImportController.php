@@ -16,6 +16,48 @@ class UserImportController extends Controller
         return view('admin.users.import');
     }
 
+    public function template()
+    {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Headers
+        $headers = ['email', 'nombre', 'telefono', 'plan', 'fecha_inicio', 'peso_ideal', 'peso_piso', 'peso_techo', 'rol'];
+        foreach ($headers as $i => $header) {
+            $sheet->setCellValueByColumnAndRow($i + 1, 1, $header);
+            $sheet->getColumnDimensionByColumn($i + 1)->setAutoSize(true);
+        }
+
+        // Style header row
+        $headerStyle = [
+            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => 'solid', 'startColor' => ['rgb' => '09CDA6']],
+            'alignment' => ['horizontal' => 'center'],
+        ];
+        $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
+
+        // Example rows
+        $examples = [
+            ['juan@ejemplo.com', 'Juan Pérez',   '1122334455', 'descenso',            '18/03/2026', 70.0, 68.0, 73.0, 'patient'],
+            ['maria@ejemplo.com','María García', '1155667788', 'mantenimiento',        '01/03/2026', 65.0, 63.0, 67.0, 'patient'],
+            ['diego@ejemplo.com','Diego Torres', '',           'mantenimiento_pleno',  '',           '',   '',   '',   'patient'],
+        ];
+
+        foreach ($examples as $r => $row) {
+            foreach ($row as $c => $value) {
+                $sheet->setCellValueByColumnAndRow($c + 1, $r + 2, $value);
+            }
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'modelo_importacion_usuarios.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
     public function import(Request $request)
     {
         $request->validate([
