@@ -30,6 +30,10 @@ class UserImportController extends Controller
             $sheet->getColumnDimension($cols[$i])->setAutoSize(true);
         }
 
+        // Force column C (telefono) as text to avoid scientific notation
+        $sheet->getStyle('C1:C1000')->getNumberFormat()
+            ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+
         // Style header row
         $sheet->getStyle('A1:I1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
@@ -43,9 +47,13 @@ class UserImportController extends Controller
         foreach ($patients as $p) {
             $sheet->getCell('A' . $row)->setValue($p->email);
             $sheet->getCell('B' . $row)->setValue($p->name);
-            // Strip non-digits for WhatsApp compatibility
+            // Force text type so Excel doesn't convert to scientific notation
             $phone = $p->phone ? preg_replace('/\D/', '', $p->phone) : '';
-            $sheet->getCell('C' . $row)->setValue($phone);
+            $sheet->getCell('C' . $row)
+                ->setDataType(\PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING)
+                ->setValue($phone);
+            $sheet->getStyle('C' . $row)->getNumberFormat()
+                ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
             $sheet->getCell('D' . $row)->setValue($p->plan ?? '');
             $sheet->getCell('E' . $row)->setValue($p->plan_start_date ? $p->plan_start_date->format('d/m/Y') : '');
             $sheet->getCell('F' . $row)->setValue($p->ideal_weight ?? '');
