@@ -121,11 +121,28 @@
 
     {{-- Groups info --}}
     @if($groups->isNotEmpty())
-        <div class="bg-teal-50 border border-teal-200 rounded-xl p-4">
+        <div class="bg-teal-50 border border-teal-200 rounded-xl p-4 space-y-3">
             <p class="text-sm font-medium text-teal-800">
                 Estás en {{ $groups->count() === 1 ? 'el grupo' : 'los grupos' }}:
                 <span class="font-semibold">{{ $groups->pluck('name')->join(', ') }}</span>
             </p>
+            @foreach($groups->where('modality', 'virtual') as $vg)
+                @php $joinUrl = route('group.join', $vg->qr_token); @endphp
+                <div>
+                    <p class="text-xs font-medium text-teal-700 mb-1.5">
+                        <svg class="inline w-3.5 h-3.5 mr-0.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+                        Link de acceso virtual — {{ $vg->name }}
+                    </p>
+                    <div class="flex items-center gap-2 bg-white border border-teal-200 rounded-lg px-3 py-2">
+                        <a href="{{ $joinUrl }}" class="text-xs text-teal-600 truncate flex-1 underline underline-offset-2">{{ $joinUrl }}</a>
+                        <button type="button"
+                            onclick="navigator.clipboard.writeText('{{ $joinUrl }}').then(() => { this.textContent = '✓'; setTimeout(() => this.textContent = 'Copiar', 1500) })"
+                            class="shrink-0 text-xs font-medium text-teal-600 hover:text-teal-800 transition">
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+            @endforeach
         </div>
     @endif
 
