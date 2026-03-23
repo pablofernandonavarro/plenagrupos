@@ -65,6 +65,9 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
     Route::post('/grupos/{group}/mantenimiento', [Coordinator\DashboardController::class, 'updateMaintenanceWeight'])->name('groups.maintenance');
     Route::post('/grupos/{group}/toggle', [Coordinator\DashboardController::class, 'toggleGroup'])->name('groups.toggle');
 
+    Route::get('/perfil', [Coordinator\DashboardController::class, 'profile'])->name('profile');
+    Route::post('/perfil', [Coordinator\DashboardController::class, 'updateProfile'])->name('profile.update');
+
     Route::get('/pacientes', [CoordinatorPatientController::class, 'index'])->name('patients.index');
     Route::get('/pacientes/{patient}', [CoordinatorPatientController::class, 'show'])->name('patients.show');
     Route::post('/pacientes/{patient}/ai-analysis', [CoordinatorPatientController::class, 'aiAnalysis'])->name('patients.ai-analysis');

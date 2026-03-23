@@ -105,6 +105,8 @@
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Grupos</a>
                         <a href="{{ route('coordinator.patients.index') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Pacientes</a>
+                        <a href="{{ route('coordinator.profile') }}" class="text-sm text-gray-300 transition"
+                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Mi perfil</a>
                     @else
                         <a href="{{ route('patient.dashboard') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Mi perfil</a>
@@ -155,6 +157,7 @@
                 @elseif(auth()->user()->isCoordinator())
                     <a href="{{ route('coordinator.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Grupos</a>
                     <a href="{{ route('coordinator.patients.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Pacientes</a>
+                    <a href="{{ route('coordinator.profile') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
                 @else
                     <a href="{{ route('patient.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
                 @endif

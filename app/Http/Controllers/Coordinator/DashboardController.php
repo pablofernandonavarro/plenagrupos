@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Coordinator;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DashboardController extends Controller
@@ -96,6 +97,28 @@ class DashboardController extends Controller
             'count'       => $attendances->count(),
             'attendances' => $attendances,
         ]);
+    }
+
+    public function profile()
+    {
+        return view('coordinator.profile');
+    }
+
+    public function updateProfile(\Illuminate\Http\Request $request)
+    {
+        $request->validate(['avatar' => 'nullable|image|max:2048']);
+
+        $user = auth()->user();
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+            $user->save();
+        }
+
+        return back()->with('success', 'Foto de perfil actualizada.');
     }
 
     public function toggleGroup(Group $group)
