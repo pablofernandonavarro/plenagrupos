@@ -226,7 +226,7 @@ $typeBadge = [
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <div>
                 <p class="font-bold text-gray-800">{{ $patient->name }}</p>
-                <p class="text-xs text-gray-400">Asistencias esta semana</p>
+                <p class="text-xs text-gray-400">Historial de asistencias</p>
             </div>
             <button onclick="closeModal({{ $idx }})"
                 class="text-gray-400 hover:text-gray-600 transition text-xl leading-none">&times;</button>

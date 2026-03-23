@@ -42,21 +42,27 @@ class AttendanceController extends Controller
         $weekStart  = now()->startOfWeek();
         $rules      = PlanRule::all()->keyBy(fn($r) => $r->patient_plan . '.' . $r->group_type);
 
-        // This-week attendances with group info, grouped by user_id
-        $weekAttendances = GroupAttendance::with('group')
-            ->where('attended_at', '>=', $weekStart)
+        $patientIds = $patients->filter(fn($p) => $p->plan)->pluck('id');
+
+        // This-week counts grouped by user_id + group_type
+        $weekCounts = GroupAttendance::where('attended_at', '>=', $weekStart)
+            ->whereIn('user_id', $patientIds)
+            ->join('groups', 'group_attendances.group_id', '=', 'groups.id')
+            ->selectRaw('group_attendances.user_id, groups.group_type, COUNT(*) as total')
+            ->groupBy('group_attendances.user_id', 'groups.group_type')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn($rows) => $rows->keyBy('group_type'));
+
+        // All-time attendances for the detail modal
+        $allAttendances = GroupAttendance::with('group')
+            ->whereIn('user_id', $patientIds)
             ->orderBy('attended_at', 'desc')
             ->get()
             ->groupBy('user_id');
 
-        // Count per user_id + group_type
-        $weekCounts = $weekAttendances->map(
-            fn($rows) => $rows->groupBy(fn($a) => $a->group?->group_type ?? 'descenso')
-                              ->map(fn($g) => (object)['total' => $g->count()])
-        );
-
-        $summary = $patients->filter(fn($p) => $p->plan)->map(function ($patient) use ($groupTypes, $rules, $weekCounts, $weekAttendances) {
-            $row = ['patient' => $patient, 'types' => [], 'attendances' => $weekAttendances->get($patient->id, collect())];
+        $summary = $patients->filter(fn($p) => $p->plan)->map(function ($patient) use ($groupTypes, $rules, $weekCounts, $allAttendances) {
+            $row = ['patient' => $patient, 'types' => [], 'attendances' => $allAttendances->get($patient->id, collect())];
             foreach ($groupTypes as $gt) {
                 $rule    = $rules->get("{$patient->plan}.{$gt}");
                 $used    = (int) ($weekCounts->get($patient->id)?->get($gt)?->total ?? 0);
