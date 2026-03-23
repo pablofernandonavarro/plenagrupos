@@ -14,14 +14,27 @@
     </div>
 
     {{-- Search & filter --}}
-    <form method="GET" action="{{ route('admin.groups.index') }}" class="flex flex-col sm:flex-row gap-2">
-        <div class="relative flex-1">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-            </svg>
-            <input type="text" name="search" value="{{ request('search') }}"
-                placeholder="Buscar grupo..."
-                class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+    <form method="GET" action="{{ route('admin.groups.index') }}" class="flex flex-col gap-2">
+        <div class="flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                </svg>
+                <input type="text" name="search" value="{{ request('search') }}"
+                    placeholder="Buscar grupo..."
+                    class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+            </div>
+            @if($coordinators->isNotEmpty())
+            <select name="coordinator_id" onchange="this.form.submit()"
+                class="px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white text-gray-600">
+                <option value="">Todos los coordinadores</option>
+                @foreach($coordinators as $c)
+                    <option value="{{ $c->id }}" {{ request('coordinator_id') == $c->id ? 'selected' : '' }}>
+                        {{ $c->name }}
+                    </option>
+                @endforeach
+            </select>
+            @endif
         </div>
         <div class="flex gap-2">
             @foreach([''=>'Todos', 'active'=>'En curso', 'pending'=>'Sin iniciar', 'closed'=>'Finalizados'] as $val => $label)

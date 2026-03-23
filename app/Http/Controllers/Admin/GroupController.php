@@ -26,8 +26,13 @@ class GroupController extends Controller
             $query->where('active', false)->whereNotNull('started_at');
         }
 
+        if ($coordinatorId = $request->input('coordinator_id')) {
+            $query->whereHas('coordinators', fn($q) => $q->where('users.id', $coordinatorId));
+        }
+
+        $coordinators = User::where('role', 'coordinator')->orderBy('name')->get();
         $groups = $query->paginate(10)->withQueryString();
-        return view('admin.groups.index', compact('groups'));
+        return view('admin.groups.index', compact('groups', 'coordinators'));
     }
 
     public function create()
