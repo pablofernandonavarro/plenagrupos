@@ -14,6 +14,15 @@
         <form action="{{ route('admin.groups.update', $group) }}" method="POST" class="space-y-4">
             @csrf
             @method('PUT')
+            @if($errors->any())
+                <div class="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del grupo *</label>
@@ -87,7 +96,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Hora de inicio</label>
-                        <input type="time" name="meeting_time" value="{{ old('meeting_time', $group->meeting_time) }}"
+                        <input type="time" name="meeting_time" value="{{ old('meeting_time', $group->meeting_time_formatted) }}"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
                     </div>
                     <div>
