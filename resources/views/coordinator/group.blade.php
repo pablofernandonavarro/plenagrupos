@@ -49,7 +49,7 @@
                             </span>
                             @if($group->nextSessionAt)
                                 <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">
-                                    → Próxima: {{ $group->nextSessionAt->translatedFormat('D d/m · H:i') }}
+                                    {{ $group->status === 'pending' ? 'Inicio programado' : 'Próxima sesión' }}: {{ $group->nextSessionAt->translatedFormat('D d/m · H:i') }}
                                 </span>
                             @endif
                         @endif
