@@ -11,7 +11,8 @@ class DashboardController extends Controller
 {
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = Group::with(['patients'])
+        $query = Group::whereHas('coordinators', fn($q) => $q->where('users.id', auth()->id()))
+            ->with(['patients'])
             ->withCount(['attendances', 'weightRecords'])
             ->orderBy('created_at', 'desc');
 
