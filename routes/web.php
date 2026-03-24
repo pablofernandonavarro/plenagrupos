@@ -6,6 +6,7 @@ use App\Http\Controllers\Coordinator;
 use App\Http\Controllers\Patient;
 use App\Http\Controllers\GroupJoinController;
 use App\Http\Controllers\Coordinator\PatientController as CoordinatorPatientController;
+use App\Http\Controllers\Coordinator\InbodyController as CoordinatorInbodyController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root based on role
@@ -80,6 +81,11 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
     Route::get('/pacientes', [CoordinatorPatientController::class, 'index'])->name('patients.index');
     Route::get('/pacientes/{patient}', [CoordinatorPatientController::class, 'show'])->name('patients.show');
     Route::post('/pacientes/{patient}/ai-analysis', [CoordinatorPatientController::class, 'aiAnalysis'])->name('patients.ai-analysis');
+
+    Route::get('/pacientes/{patient}/inbody/crear', [CoordinatorInbodyController::class, 'create'])->name('patients.inbody.create');
+    Route::post('/pacientes/{patient}/inbody/extraer', [CoordinatorInbodyController::class, 'extract'])->name('patients.inbody.extract');
+    Route::post('/pacientes/{patient}/inbody', [CoordinatorInbodyController::class, 'store'])->name('patients.inbody.store');
+    Route::delete('/pacientes/{patient}/inbody/{record}', [CoordinatorInbodyController::class, 'destroy'])->name('patients.inbody.destroy');
 });
 
 // Patient routes

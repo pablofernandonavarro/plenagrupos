@@ -91,4 +91,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(WeightRecord::class);
     }
+
+    public function inbodyRecords()
+    {
+        return $this->hasMany(InbodyRecord::class);
+    }
 }

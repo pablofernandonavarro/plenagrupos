@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Coordinator;
 
 use App\Http\Controllers\Controller;
 use App\Models\AiDocument;
+use App\Models\InbodyRecord;
 use App\Models\GroupAttendance;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -133,9 +134,10 @@ class PatientController extends Controller
 
     public function aiAnalysis(User $patient): JsonResponse
     {
-        // Cache key includes a hash of active docs — auto-invalidates when bibliography changes
-        $docsHash = md5(AiDocument::active()->pluck('updated_at', 'id')->toJson());
-        $cacheKey = "ai_analysis_{$patient->id}_{$docsHash}_" . now()->format('Y-m-d');
+        // Cache key includes a hash of active docs and InBody records — auto-invalidates when data changes
+        $docsHash    = md5(AiDocument::active()->pluck('updated_at', 'id')->toJson());
+        $inbodyHash  = md5($patient->inbodyRecords()->pluck('updated_at', 'id')->toJson());
+        $cacheKey = "ai_analysis_{$patient->id}_{$docsHash}_{$inbodyHash}_" . now()->format('Y-m-d');
 
         // ?force=1 bypasses cache (used by the "Regenerar" button)
         if (request()->boolean('force')) {
@@ -203,6 +205,31 @@ class PatientController extends Controller
                 ->map(fn($r) => "  [{$r->recorded_at->format('d/m/Y')}] \"{$r->notes}\"")
                 ->join("\n");
 
+            // InBody records (last 3)
+            $inbodyRecords = $patient->inbodyRecords()
+                ->orderByDesc('test_date')
+                ->take(3)
+                ->get();
+
+            $inbodySection = '';
+            if ($inbodyRecords->isNotEmpty()) {
+                $inbodyLines = $inbodyRecords->map(function ($r) {
+                    $parts = ["  [{$r->test_date->format('d/m/Y')}]"];
+                    if ($r->weight)              $parts[] = "Peso: {$r->weight} kg";
+                    if ($r->body_fat_percentage) $parts[] = "Grasa: {$r->body_fat_percentage}%";
+                    if ($r->skeletal_muscle_mass)$parts[] = "Músculo: {$r->skeletal_muscle_mass} kg";
+                    if ($r->body_fat_mass)       $parts[] = "Masa grasa: {$r->body_fat_mass} kg";
+                    if ($r->visceral_fat_level)  $parts[] = "Visceral: {$r->visceral_fat_level}";
+                    if ($r->bmi)                 $parts[] = "IMC: {$r->bmi}";
+                    if ($r->basal_metabolic_rate)$parts[] = "TMB: {$r->basal_metabolic_rate} kcal";
+                    if ($r->inbody_score)        $parts[] = "Score InBody: {$r->inbody_score}/100";
+                    if ($r->obesity_degree)      $parts[] = "Grado obesidad: {$r->obesity_degree}%";
+                    if ($r->notes)               $parts[] = "Nota: \"{$r->notes}\"";
+                    return implode(' | ', $parts);
+                })->join("\n");
+                $inbodySection = "\n=== ESTUDIOS INBODY ===\n{$inbodyLines}\n";
+            }
+
             // Load active bibliography
             $docs = AiDocument::active()->get();
             $bibliography = $docs->isNotEmpty()
@@ -238,6 +265,7 @@ class PatientController extends Controller
                 "=== HISTORIAL DE PESO (últimas 20 sesiones) ===\n" .
                 ($weightHistory ?: "  Sin registros de peso.") . "\n\n" .
 
+                ($inbodySection ? $inbodySection . "\n" : "") .
                 ($notes ? "=== COMENTARIOS DEL PACIENTE ===\n{$notes}\n\n" : "") .
 
                 "Incluí en tu análisis:\n" .
@@ -245,7 +273,8 @@ class PatientController extends Controller
                 "2. Valoración de la adherencia y regularidad\n" .
                 "3. Relación entre el estado actual y el rango de mantenimiento\n" .
                 ($notes ? "4. Qué revelan emocionalmente las notas según el marco de Ravenna\n" : "") .
-                "5. Una sugerencia clínica concreta para el coordinador";
+                ($inbodySection ? "5. Interpretación de la composición corporal InBody (masa muscular, grasa visceral, tendencia)\n" : "") .
+                ($inbodySection ? "6." : "5.") . " Una sugerencia clínica concreta para el coordinador";
 
             $response = Http::withToken(config('services.groq.key'))
                 ->post('https://api.groq.com/openai/v1/chat/completions', [

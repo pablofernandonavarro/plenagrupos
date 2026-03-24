@@ -171,6 +171,94 @@
     </div>
     @endif
 
+    {{-- InBody --}}
+    @php $latestInbody = $patient->inbodyRecords()->orderByDesc('test_date')->first(); @endphp
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h2 class="font-semibold text-gray-800">InBody</h2>
+                <p class="text-xs text-gray-400 mt-0.5">Composición corporal por bioimpedancia</p>
+            </div>
+            <a href="{{ route('coordinator.patients.inbody.create', $patient) }}"
+               class="flex items-center gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg transition font-medium">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nuevo
+            </a>
+        </div>
+        @if($latestInbody)
+        <div class="px-5 py-4 space-y-4">
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-gray-400">Último estudio: <strong class="text-gray-600">{{ $latestInbody->test_date->format('d/m/Y') }}</strong></p>
+                @if($latestInbody->inbody_score)
+                    <span class="text-sm font-bold px-3 py-1 rounded-full
+                        {{ $latestInbody->inbody_score >= 80 ? 'bg-green-100 text-green-700' : ($latestInbody->inbody_score >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-600') }}">
+                        Score {{ $latestInbody->inbody_score }}
+                    </span>
+                @endif
+            </div>
+
+            {{-- Body composition bar --}}
+            @if($latestInbody->weight && $latestInbody->body_fat_mass && $latestInbody->skeletal_muscle_mass)
+            @php
+                $tbw  = $latestInbody->total_body_water ?? 0;
+                $prot = $latestInbody->proteins ?? 0;
+                $min  = $latestInbody->minerals ?? 0;
+                $fat  = $latestInbody->body_fat_mass;
+                $total = $latestInbody->weight;
+                $leanPct  = $total > 0 ? round(($total - $fat) / $total * 100) : 0;
+                $fatPct   = $total > 0 ? round($fat / $total * 100) : 0;
+            @endphp
+            <div>
+                <div class="flex h-4 rounded-full overflow-hidden text-xs">
+                    <div class="bg-blue-400" style="width:{{ $leanPct }}%" title="Masa magra {{ $leanPct }}%"></div>
+                    <div class="bg-orange-300" style="width:{{ $fatPct }}%" title="Grasa {{ $fatPct }}%"></div>
+                </div>
+                <div class="flex gap-4 mt-1.5 text-xs text-gray-500">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-blue-400 inline-block"></span>Masa magra {{ 100 - $fatPct }}%</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-orange-300 inline-block"></span>Grasa {{ $fatPct }}%</span>
+                </div>
+            </div>
+            @endif
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                @foreach([
+                    ['Peso',         $latestInbody->weight          ? $latestInbody->weight . ' kg'   : null, 'text-teal-600'],
+                    ['Músculo',      $latestInbody->skeletal_muscle_mass ? $latestInbody->skeletal_muscle_mass . ' kg' : null, 'text-blue-600'],
+                    ['Grasa',        $latestInbody->body_fat_percentage ? $latestInbody->body_fat_percentage . '%' : null, 'text-orange-500'],
+                    ['IMC',          $latestInbody->bmi              ? $latestInbody->bmi               : null, 'text-gray-700'],
+                    ['Visceral',     $latestInbody->visceral_fat_level ? $latestInbody->visceral_fat_level : null, 'text-purple-600'],
+                    ['Metabolismo',  $latestInbody->basal_metabolic_rate ? $latestInbody->basal_metabolic_rate . ' kcal' : null, 'text-gray-700'],
+                ] as [$lbl, $val, $col])
+                @if($val)
+                <div class="bg-gray-50 rounded-xl p-3 text-center">
+                    <p class="text-base font-bold {{ $col }}">{{ $val }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $lbl }}</p>
+                </div>
+                @endif
+                @endforeach
+            </div>
+
+            @php $totalInbody = $patient->inbodyRecords()->count(); @endphp
+            @if($totalInbody > 1)
+            <a href="{{ route('coordinator.patients.inbody.create', $patient) }}"
+               class="block text-center text-xs text-indigo-600 hover:underline">
+                Ver todos los registros ({{ $totalInbody }})
+            </a>
+            @endif
+        </div>
+        @else
+        <div class="px-5 py-8 text-center">
+            <p class="text-sm text-gray-400">Sin registros InBody.</p>
+            <a href="{{ route('coordinator.patients.inbody.create', $patient) }}"
+               class="inline-block mt-2 text-xs text-indigo-600 hover:underline">
+                Subir primer estudio
+            </a>
+        </div>
+        @endif
+    </div>
+
     {{-- AI Clinical Analysis --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
