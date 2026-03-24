@@ -91,7 +91,7 @@
                     ] as [$name, $label, $id])
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">{{ $label }}</label>
-                        <input type="number" step="0.1" name="{{ $name }}" id="{{ $id }}"
+                        <input type="number" step="any" name="{{ $name }}" id="{{ $id }}"
                             class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                     </div>
                     @endforeach
@@ -103,18 +103,18 @@
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Métricas adicionales</p>
                 <div class="grid grid-cols-2 gap-3">
                     @foreach([
-                        ['bmi',                 'IMC',                   'f_bmi',   '0.1'],
-                        ['basal_metabolic_rate','Metabolismo basal (kcal)','f_bmr', '1'],
-                        ['visceral_fat_level',  'Grasa visceral',        'f_vfl',   '0.1'],
-                        ['total_body_water',    'Agua corporal (kg)',     'f_tbw',   '0.1'],
-                        ['proteins',            'Proteínas (kg)',         'f_prot',  '0.1'],
-                        ['minerals',            'Minerales (kg)',         'f_min',   '0.1'],
-                        ['inbody_score',        'Puntaje InBody',        'f_score', '1'],
-                        ['obesity_degree',      'Grado de obesidad (%)', 'f_obes',  '0.1'],
-                    ] as [$name, $label, $id, $step])
+                        ['bmi',                 'IMC',                    'f_bmi'],
+                        ['basal_metabolic_rate','Metabolismo basal (kcal)','f_bmr'],
+                        ['visceral_fat_level',  'Grasa visceral',         'f_vfl'],
+                        ['total_body_water',    'Agua corporal (kg)',      'f_tbw'],
+                        ['proteins',            'Proteínas (kg)',          'f_prot'],
+                        ['minerals',            'Minerales (kg)',          'f_min'],
+                        ['inbody_score',        'Puntaje InBody',         'f_score'],
+                        ['obesity_degree',      'Grado de obesidad (%)',  'f_obes'],
+                    ] as [$name, $label, $id])
                     <div>
                         <label class="block text-xs text-gray-500 mb-1">{{ $label }}</label>
-                        <input type="number" step="{{ $step }}" name="{{ $name }}" id="{{ $id }}"
+                        <input type="number" step="any" name="{{ $name }}" id="{{ $id }}"
                             class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                     </div>
                     @endforeach
