@@ -181,13 +181,11 @@
                     <div class="flex items-center gap-3">
                         <x-avatar :user="auth()->user()" size="md" />
                         <div class="flex-1">
-                            <input type="file" name="avatar" id="avatar-input" accept="image/*" class="hidden"
-                                onchange="document.getElementById('avatar-label').textContent = this.files[0]?.name ?? 'Ningún archivo seleccionado'">
-                            <label for="avatar-input"
-                                class="block w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-600 bg-white hover:bg-gray-50 active:bg-gray-100 text-center cursor-pointer transition">
-                                Seleccionar foto
-                            </label>
-                            <p id="avatar-label" class="text-xs text-gray-400 mt-1 truncate text-center">Ningún archivo seleccionado</p>
+                            <input type="file" name="avatar" accept="image/*"
+                                class="block w-full text-sm text-gray-500
+                                       file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
+                                       file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700
+                                       hover:file:bg-teal-100 active:file:bg-teal-200">
                         </div>
                     </div>
                     @error('avatar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror

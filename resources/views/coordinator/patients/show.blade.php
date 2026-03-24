@@ -377,6 +377,33 @@
                 <p class="px-5 py-10 text-center text-sm text-gray-400">Sin grupos ni sesiones registradas.</p>
             @endif
         @endforelse
+
+        {{-- Groups enrolled in but never attended --}}
+        @php
+            $attendedGroupIds = $attendances->pluck('group_id')->unique();
+            $unattenedGroups  = $groups->filter(fn($g) => !$attendedGroupIds->contains($g->id));
+        @endphp
+        @if($unattenedGroups->isNotEmpty() && $timelineWithChange->isNotEmpty())
+            <div class="border-t border-gray-100 px-5 py-3">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Inscripto — sin asistencias</p>
+                <div class="space-y-2">
+                    @foreach($unattenedGroups as $g)
+                    <div class="flex items-center gap-3 rounded-xl border border-dashed border-gray-200 px-4 py-3">
+                        <div class="w-2.5 h-2.5 rounded-full shrink-0 {{ $g->active ? 'bg-yellow-400' : 'bg-gray-300' }}"></div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">{{ $g->name }}</p>
+                            @if($g->started_at)
+                                <p class="text-xs text-gray-400 mt-0.5">Desde {{ $g->started_at->format('d/m/Y') }}</p>
+                            @endif
+                        </div>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0 bg-yellow-50 text-yellow-600">
+                            Sin asistencias
+                        </span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 
 </div>
