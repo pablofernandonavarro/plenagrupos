@@ -352,7 +352,30 @@
                 </div>
             </div>
         @empty
-            <p class="px-5 py-10 text-center text-sm text-gray-400">Sin sesiones registradas.</p>
+            @if($groups->isNotEmpty())
+                {{-- Patient is in groups but hasn't attended yet --}}
+                <div class="px-5 py-6 space-y-3">
+                    <p class="text-sm text-gray-400 text-center mb-4">Sin asistencias registradas aún.</p>
+                    @foreach($groups as $g)
+                    <div class="flex items-center gap-3 rounded-xl border border-dashed border-gray-200 px-4 py-3">
+                        <div class="w-2.5 h-2.5 rounded-full shrink-0
+                            {{ $g->active ? 'bg-green-400' : 'bg-gray-300' }}"></div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-700">{{ $g->name }}</p>
+                            @if($g->started_at)
+                                <p class="text-xs text-gray-400 mt-0.5">Desde {{ $g->started_at->format('d/m/Y') }}</p>
+                            @endif
+                        </div>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0
+                            {{ $g->active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400' }}">
+                            {{ $g->active ? 'Activo' : 'Finalizado' }}
+                        </span>
+                    </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="px-5 py-10 text-center text-sm text-gray-400">Sin grupos ni sesiones registradas.</p>
+            @endif
         @endforelse
     </div>
 
