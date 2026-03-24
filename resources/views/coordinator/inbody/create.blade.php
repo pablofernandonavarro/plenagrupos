@@ -31,12 +31,17 @@
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Foto del reporte InBody</label>
-            <input type="file" id="imageInput" accept="image/*" capture="environment"
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Fotos del reporte InBody
+                <span class="text-gray-400 font-normal">(podés seleccionar hasta 3 imágenes a la vez)</span>
+            </label>
+            <input type="file" id="imageInput" accept="image/*" multiple
                 class="block w-full text-sm text-gray-600
                        file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
                        file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700
-                       hover:file:bg-teal-100 cursor-pointer">
+                       hover:file:bg-teal-100 cursor-pointer"
+                onchange="updateFileCount(this)">
+            <p id="file-count" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
 
         <button id="btn-extract" type="button" onclick="extractData()"
@@ -122,13 +127,13 @@
 
             {{-- Image re-upload for actual storage --}}
             <div>
-                <label class="block text-xs font-medium text-gray-500 mb-1">Imagen del reporte (se guardará)</label>
-                <input type="file" name="image" id="imageStore" accept="image/*"
+                <label class="block text-xs font-medium text-gray-500 mb-1">Imágenes del reporte (se guardarán)</label>
+                <input type="file" name="images[]" id="imageStore" accept="image/*" multiple
                     class="block w-full text-sm text-gray-600
                            file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
                            file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-600
                            hover:file:bg-gray-100 cursor-pointer">
-                <p class="text-xs text-gray-400 mt-1">Pre-seleccionada automáticamente · podés cambiarla</p>
+                <p id="store-count" class="text-xs text-gray-400 mt-1">Pre-seleccionadas automáticamente · podés cambiarlas</p>
             </div>
         </div>
 
@@ -206,33 +211,47 @@
 const extractUrl = '{{ route("coordinator.patients.inbody.extract", $patient) }}';
 const csrfToken  = '{{ csrf_token() }}';
 
+function updateFileCount(input) {
+    const p = document.getElementById('file-count');
+    if (input.files.length > 0) {
+        p.textContent = input.files.length === 1
+            ? '1 imagen seleccionada'
+            : `${input.files.length} imágenes seleccionadas`;
+        p.classList.remove('hidden');
+    } else {
+        p.classList.add('hidden');
+    }
+}
+
 async function extractData() {
     const fileInput = document.getElementById('imageInput');
     if (!fileInput.files.length) {
-        alert('Seleccioná una imagen primero.');
+        alert('Seleccioná al menos una imagen primero.');
         return;
     }
 
-    const btn   = document.getElementById('btn-extract');
-    const label = document.getElementById('extract-label');
-    const icon  = document.getElementById('extract-icon');
+    const btn    = document.getElementById('btn-extract');
+    const label  = document.getElementById('extract-label');
     const errDiv = document.getElementById('extract-error');
 
     btn.disabled = true;
-    icon.outerHTML = '<svg id="extract-icon" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>';
-    label.textContent = 'Extrayendo datos...';
+    label.textContent = fileInput.files.length > 1
+        ? `Analizando ${fileInput.files.length} imágenes...`
+        : 'Extrayendo datos...';
     errDiv.classList.add('hidden');
 
     const formData = new FormData();
-    formData.append('image', fileInput.files[0]);
     formData.append('_token', csrfToken);
+    for (const file of fileInput.files) {
+        formData.append('images[]', file);
+    }
 
     try {
         const res = await fetch(extractUrl, { method: 'POST', body: formData });
         const data = await res.json();
 
         if (!res.ok) {
-            errDiv.textContent = data.error ?? 'Error al procesar la imagen.';
+            errDiv.textContent = data.error ?? 'Error al procesar las imágenes.';
             errDiv.classList.remove('hidden');
             return;
         }
@@ -258,10 +277,13 @@ async function extractData() {
             if (el && data[key] != null) el.value = data[key];
         }
 
-        // Copy the image to the storage upload field
+        // Copy all selected images to the storage upload field
         const dt = new DataTransfer();
-        dt.items.add(fileInput.files[0]);
-        document.getElementById('imageStore').files = dt.files;
+        for (const file of fileInput.files) dt.items.add(file);
+        const storeInput = document.getElementById('imageStore');
+        storeInput.files = dt.files;
+        document.getElementById('store-count').textContent =
+            `${fileInput.files.length} imagen(es) pre-seleccionada(s) · podés cambiarlas`;
 
         document.getElementById('inbody-form').classList.remove('hidden');
         document.getElementById('inbody-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -271,7 +293,6 @@ async function extractData() {
         errDiv.classList.remove('hidden');
     } finally {
         btn.disabled = false;
-        document.getElementById('extract-icon').classList.remove('animate-spin');
         label.textContent = 'Extraer datos con IA';
     }
 }

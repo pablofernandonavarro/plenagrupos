@@ -19,20 +19,16 @@ class InbodyController extends Controller
     }
 
     /**
-     * Receive an InBody image, send to Groq vision, return extracted JSON.
+     * Receive one or more InBody images, send all to Groq vision, return extracted JSON.
      */
     public function extract(Request $request, User $patient): JsonResponse
     {
-        $request->validate(['image' => 'required|image|max:10240']);
-
-        $path     = $request->file('image')->store('inbody-tmp', 'local');
-        $base64   = base64_encode(file_get_contents(storage_path('app/' . $path)));
-        $mimeType = $request->file('image')->getMimeType();
+        $request->validate(['images' => 'required|array|min:1|max:5', 'images.*' => 'image|max:10240']);
 
         $prompt = <<<'PROMPT'
-Analizá esta imagen de un reporte InBody y extraé los siguientes datos.
+Te mando una o varias hojas del mismo reporte InBody. Analizalas en conjunto y extraé todos los datos disponibles.
 Respondé ÚNICAMENTE con un objeto JSON válido, sin texto adicional, con exactamente estas claves
-(usá null si el valor no aparece en la imagen):
+(usá null si el valor no aparece en ninguna de las imágenes):
 
 {
   "test_date":            "YYYY-MM-DD",
@@ -58,23 +54,28 @@ Importante:
 - "obesity_degree" es el porcentaje de obesidad (puede ser negativo si está por debajo del rango)
 PROMPT;
 
+        // Build content blocks: text prompt + one image block per file
+        $content = [['type' => 'text', 'text' => $prompt]];
+        $tmpPaths = [];
+
+        foreach ($request->file('images') as $file) {
+            $path       = $file->store('inbody-tmp', 'local');
+            $tmpPaths[] = $path;
+            $base64     = base64_encode(file_get_contents(storage_path('app/' . $path)));
+            $mimeType   = $file->getMimeType();
+            $content[]  = ['type' => 'image_url', 'image_url' => ['url' => "data:{$mimeType};base64,{$base64}"]];
+        }
+
         $response = Http::withToken(config('services.groq.key'))
+            ->timeout(60)
             ->post('https://api.groq.com/openai/v1/chat/completions', [
                 'model'      => 'meta-llama/llama-4-scout-17b-16e-instruct',
                 'max_tokens' => 500,
-                'messages'   => [[
-                    'role'    => 'user',
-                    'content' => [
-                        ['type' => 'text',       'text'      => $prompt],
-                        ['type' => 'image_url',  'image_url' => [
-                            'url' => "data:{$mimeType};base64,{$base64}",
-                        ]],
-                    ],
-                ]],
+                'messages'   => [['role' => 'user', 'content' => $content]],
             ]);
 
-        // Clean up temp file
-        Storage::disk('local')->delete($path);
+        // Clean up temp files
+        foreach ($tmpPaths as $p) Storage::disk('local')->delete($p);
 
         $raw = $response->json('choices.0.message.content') ?? '';
 
@@ -109,12 +110,14 @@ PROMPT;
             'inbody_score'         => 'nullable|integer|min:0|max:100',
             'obesity_degree'       => 'nullable|numeric',
             'notes'                => 'nullable|string|max:1000',
-            'image'                => 'nullable|image|max:10240',
+            'images'               => 'nullable|array|max:5',
+            'images.*'             => 'image|max:10240',
         ]);
 
+        // Store first uploaded image (main reference)
         $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store("inbody/{$patient->id}", 'public');
+        if ($request->hasFile('images')) {
+            $imagePath = $request->file('images')[0]->store("inbody/{$patient->id}", 'public');
         }
 
         $patient->inbodyRecords()->create(array_merge($validated, ['image_path' => $imagePath]));
