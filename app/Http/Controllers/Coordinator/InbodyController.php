@@ -61,21 +61,26 @@ PROMPT;
         foreach ($request->file('images') as $file) {
             $path       = $file->store('inbody-tmp', 'local');
             $tmpPaths[] = $path;
-            $base64     = base64_encode(file_get_contents(storage_path('app/' . $path)));
+            $base64     = base64_encode(Storage::disk('local')->get($path));
             $mimeType   = $file->getMimeType();
             $content[]  = ['type' => 'image_url', 'image_url' => ['url' => "data:{$mimeType};base64,{$base64}"]];
         }
 
         $response = Http::withToken(config('services.groq.key'))
-            ->timeout(60)
+            ->timeout(90)
             ->post('https://api.groq.com/openai/v1/chat/completions', [
                 'model'      => 'meta-llama/llama-4-scout-17b-16e-instruct',
-                'max_tokens' => 500,
+                'max_tokens' => 600,
                 'messages'   => [['role' => 'user', 'content' => $content]],
             ]);
 
         // Clean up temp files
         foreach ($tmpPaths as $p) Storage::disk('local')->delete($p);
+
+        if ($response->failed()) {
+            $groqError = $response->json('error.message') ?? $response->body();
+            return response()->json(['error' => "Error de Groq ({$response->status()}): {$groqError}"], 502);
+        }
 
         $raw = $response->json('choices.0.message.content') ?? '';
 
@@ -87,7 +92,10 @@ PROMPT;
         $data = json_decode(trim($raw), true);
 
         if (!is_array($data)) {
-            return response()->json(['error' => 'No se pudo extraer los datos del InBody. Intentá con una imagen más clara.'], 422);
+            return response()->json([
+                'error' => 'No se pudo extraer los datos. Intentá con una imagen más clara.',
+                'raw'   => substr($raw, 0, 300),
+            ], 422);
         }
 
         return response()->json($data);

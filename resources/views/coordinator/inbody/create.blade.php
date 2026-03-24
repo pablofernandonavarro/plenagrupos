@@ -287,11 +287,25 @@ async function extractData() {
     files.forEach(f => formData.append('images[]', f));
 
     try {
-        const res  = await fetch(extractUrl, { method: 'POST', body: formData });
-        const data = await res.json();
+        const res  = await fetch(extractUrl, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            body: formData,
+        });
+
+        let data;
+        const contentType = res.headers.get('content-type') ?? '';
+        if (contentType.includes('application/json')) {
+            data = await res.json();
+        } else {
+            const text = await res.text();
+            errDiv.innerHTML = `<strong>Error del servidor (${res.status}):</strong><br><pre class="text-xs mt-1 whitespace-pre-wrap">${text.slice(0, 500)}</pre>`;
+            errDiv.classList.remove('hidden');
+            return;
+        }
 
         if (!res.ok) {
-            errDiv.textContent = data.error ?? 'Error al procesar las imágenes.';
+            errDiv.textContent = data.error ?? `Error ${res.status} al procesar las imágenes.`;
             errDiv.classList.remove('hidden');
             return;
         }
@@ -328,7 +342,7 @@ async function extractData() {
         document.getElementById('inbody-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     } catch (e) {
-        errDiv.textContent = 'Error de conexión. Intentá nuevamente.';
+        errDiv.textContent = 'Error inesperado: ' + e.message;
         errDiv.classList.remove('hidden');
     } finally {
         btn.disabled = false;
