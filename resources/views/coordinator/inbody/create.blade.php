@@ -30,18 +30,21 @@
             <p class="text-xs text-gray-400 mt-0.5">La IA extrae los datos automáticamente. Podés revisarlos antes de guardar.</p>
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+        <div class="space-y-2">
+            <label class="block text-sm font-medium text-gray-700">
                 Fotos del reporte InBody
-                <span class="text-gray-400 font-normal">(podés seleccionar hasta 3 imágenes a la vez)</span>
+                <span class="text-gray-400 font-normal">(una por hoja)</span>
             </label>
-            <input type="file" id="imageInput" accept="image/*" multiple
-                class="block w-full text-sm text-gray-600
-                       file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
-                       file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700
-                       hover:file:bg-teal-100 cursor-pointer"
-                onchange="updateFileCount(this)">
-            <p id="file-count" class="text-xs text-gray-400 mt-1 hidden"></p>
+
+            <div id="image-inputs" class="space-y-2"></div>
+
+            <button type="button" onclick="addImageSlot()"
+                class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 hover:border-teal-400 text-gray-400 hover:text-teal-600 rounded-xl py-3 text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Agregar hoja
+            </button>
         </div>
 
         <button id="btn-extract" type="button" onclick="extractData()"
@@ -210,23 +213,64 @@
 <script>
 const extractUrl = '{{ route("coordinator.patients.inbody.extract", $patient) }}';
 const csrfToken  = '{{ csrf_token() }}';
+let slotCount = 0;
 
-function updateFileCount(input) {
-    const p = document.getElementById('file-count');
-    if (input.files.length > 0) {
-        p.textContent = input.files.length === 1
-            ? '1 imagen seleccionada'
-            : `${input.files.length} imágenes seleccionadas`;
-        p.classList.remove('hidden');
-    } else {
-        p.classList.add('hidden');
+function addImageSlot() {
+    if (slotCount >= 5) return;
+    slotCount++;
+    const idx = slotCount;
+
+    const wrapper = document.createElement('div');
+    wrapper.id = `slot-${idx}`;
+    wrapper.className = 'flex items-center gap-2';
+
+    const label = document.createElement('label');
+    label.className = 'flex-1 flex items-center gap-3 border border-gray-200 rounded-xl px-3 py-2.5 cursor-pointer hover:border-teal-400 transition bg-gray-50';
+    label.innerHTML = `
+        <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <span id="slot-label-${idx}" class="text-sm text-gray-400">Hoja ${idx}</span>
+        <input type="file" accept="image/*" class="hidden" id="slot-file-${idx}"
+            onchange="onSlotChange(${idx}, this)">
+    `;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'text-gray-300 hover:text-red-400 transition p-1 shrink-0';
+    removeBtn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
+    removeBtn.onclick = () => { wrapper.remove(); slotCount = Math.max(0, slotCount - 1); };
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(removeBtn);
+    document.getElementById('image-inputs').appendChild(wrapper);
+
+    // Auto-open the picker on the new slot
+    document.getElementById(`slot-file-${idx}`).click();
+}
+
+function onSlotChange(idx, input) {
+    const lbl = document.getElementById(`slot-label-${idx}`);
+    if (input.files.length) {
+        lbl.textContent = input.files[0].name;
+        lbl.classList.remove('text-gray-400');
+        lbl.classList.add('text-gray-700', 'font-medium');
     }
 }
 
+function collectFiles() {
+    const files = [];
+    document.querySelectorAll('[id^="slot-file-"]').forEach(input => {
+        if (input.files.length) files.push(input.files[0]);
+    });
+    return files;
+}
+
 async function extractData() {
-    const fileInput = document.getElementById('imageInput');
-    if (!fileInput.files.length) {
-        alert('Seleccioná al menos una imagen primero.');
+    const files = collectFiles();
+    if (!files.length) {
+        alert('Agregá al menos una imagen primero.');
         return;
     }
 
@@ -235,19 +279,15 @@ async function extractData() {
     const errDiv = document.getElementById('extract-error');
 
     btn.disabled = true;
-    label.textContent = fileInput.files.length > 1
-        ? `Analizando ${fileInput.files.length} imágenes...`
-        : 'Extrayendo datos...';
+    label.textContent = files.length > 1 ? `Analizando ${files.length} hojas...` : 'Extrayendo datos...';
     errDiv.classList.add('hidden');
 
     const formData = new FormData();
     formData.append('_token', csrfToken);
-    for (const file of fileInput.files) {
-        formData.append('images[]', file);
-    }
+    files.forEach(f => formData.append('images[]', f));
 
     try {
-        const res = await fetch(extractUrl, { method: 'POST', body: formData });
+        const res  = await fetch(extractUrl, { method: 'POST', body: formData });
         const data = await res.json();
 
         if (!res.ok) {
@@ -256,7 +296,6 @@ async function extractData() {
             return;
         }
 
-        // Populate form fields
         const map = {
             test_date:            'f_test_date',
             weight:               'f_weight',
@@ -277,13 +316,13 @@ async function extractData() {
             if (el && data[key] != null) el.value = data[key];
         }
 
-        // Copy all selected images to the storage upload field
+        // Copy files to the storage input
         const dt = new DataTransfer();
-        for (const file of fileInput.files) dt.items.add(file);
+        files.forEach(f => dt.items.add(f));
         const storeInput = document.getElementById('imageStore');
         storeInput.files = dt.files;
         document.getElementById('store-count').textContent =
-            `${fileInput.files.length} imagen(es) pre-seleccionada(s) · podés cambiarlas`;
+            `${files.length} imagen(es) pre-seleccionada(s) · podés cambiarlas`;
 
         document.getElementById('inbody-form').classList.remove('hidden');
         document.getElementById('inbody-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -296,5 +335,8 @@ async function extractData() {
         label.textContent = 'Extraer datos con IA';
     }
 }
+
+// Start with one slot open
+addImageSlot();
 </script>
 @endsection
