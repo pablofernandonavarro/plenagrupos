@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Patient;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\GroupMembershipLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -23,7 +24,11 @@ class DashboardController extends Controller
         $totalLoss     = ($initialWeight && $latestWeight) ? round($initialWeight - $latestWeight, 2) : null;
 
         $groups        = $user->patientGroups()->wherePivot('left_at', null)->get();
-        $pastGroups    = $user->patientGroups()->wherePivotNotNull('left_at')->get();
+        $membershipLogs = GroupMembershipLog::where('user_id', $user->id)
+            ->whereNotNull('left_at')
+            ->with('group')
+            ->orderByDesc('joined_at')
+            ->get();
 
         // Chart data (chronological)
         $chartRecords = $weightRecords->sortBy('recorded_at')->values();
@@ -68,7 +73,7 @@ class DashboardController extends Controller
         ];
 
         return view('patient.dashboard', compact(
-            'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'pastGroups',
+            'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'membershipLogs',
             'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo'
         ));
     }
@@ -110,9 +115,17 @@ class DashboardController extends Controller
             return back()->with('error', 'No estás activo en ese grupo.');
         }
 
-        $user->patientGroups()->updateExistingPivot($group->id, [
-            'left_at' => now(),
-        ]);
+        $now = now();
+
+        $user->patientGroups()->updateExistingPivot($group->id, ['left_at' => $now]);
+
+        // Close the open log entry
+        GroupMembershipLog::where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->whereNull('left_at')
+            ->latest('joined_at')
+            ->first()
+            ?->update(['left_at' => $now]);
 
         return back()->with('success', 'Saliste del grupo "' . $group->name . '".');
     }

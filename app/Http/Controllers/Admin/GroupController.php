@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\GroupMembershipLog;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -226,10 +227,36 @@ class GroupController extends Controller
     public function addPatient(Request $request, Group $group)
     {
         $request->validate(['user_id' => 'required|exists:users,id']);
-        $group->patients()->syncWithoutDetaching([$request->user_id => [
-            'joined_at' => now(),
+
+        $now = now();
+
+        // Check for existing pivot row (may have left before)
+        $existing = \Illuminate\Support\Facades\DB::table('group_patient')
+            ->where('group_id', $group->id)
+            ->where('user_id', $request->user_id)
+            ->first();
+
+        if (! $existing) {
+            $group->patients()->attach($request->user_id, [
+                'joined_at'  => $now,
+                'join_source' => 'manual',
+            ]);
+        } elseif ($existing->left_at !== null) {
+            $group->patients()->updateExistingPivot($request->user_id, [
+                'joined_at' => $now,
+                'left_at'   => null,
+                'join_source' => 'manual',
+            ]);
+        } else {
+            return back()->with('info', 'El paciente ya está activo en este grupo.');
+        }
+
+        GroupMembershipLog::create([
+            'group_id'   => $group->id,
+            'user_id'    => $request->user_id,
+            'joined_at'  => $now,
             'join_source' => 'manual',
-        ]]);
+        ]);
 
         return back()->with('success', 'Paciente agregado.');
     }

@@ -175,33 +175,29 @@
         </form>
     @endforeach
 
-    {{-- Grupos anteriores --}}
-    @if($pastGroups->isNotEmpty())
+    {{-- Historial de membresías --}}
+    @if($membershipLogs->isNotEmpty())
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Grupos anteriores</p>
-            @foreach($pastGroups as $pg)
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Historial de grupos</p>
+            @foreach($membershipLogs as $log)
                 @php
-                    $joinedAt = $pg->pivot->joined_at ? \Carbon\Carbon::parse($pg->pivot->joined_at) : null;
-                    $leftAt   = $pg->pivot->left_at   ? \Carbon\Carbon::parse($pg->pivot->left_at)   : null;
-                    $days     = ($joinedAt && $leftAt) ? (int) $joinedAt->diffInDays($leftAt) : null;
-                    $weeks    = $days !== null ? round($days / 7, 1) : null;
+                    $days  = (int) $log->joined_at->diffInDays($log->left_at);
+                    $weeks = round($days / 7, 1);
                 @endphp
                 <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
                     <div>
-                        <p class="text-sm font-medium text-gray-700">{{ $pg->name }}</p>
-                        @if($joinedAt && $leftAt)
-                            <p class="text-xs text-gray-400">
-                                {{ $joinedAt->format('d/m/Y') }} → {{ $leftAt->format('d/m/Y') }}
-                                &nbsp;·&nbsp;
-                                @if($days < 7)
-                                    {{ $days }} {{ $days === 1 ? 'día' : 'días' }}
-                                @else
-                                    {{ $weeks }} {{ $weeks == 1 ? 'semana' : 'semanas' }}
-                                @endif
-                            </p>
-                        @endif
+                        <p class="text-sm font-medium text-gray-700">{{ $log->group?->name ?? '(grupo eliminado)' }}</p>
+                        <p class="text-xs text-gray-400">
+                            {{ $log->joined_at->format('d/m/Y') }} → {{ $log->left_at->format('d/m/Y') }}
+                            &nbsp;·&nbsp;
+                            @if($days < 7)
+                                {{ $days }} {{ $days === 1 ? 'día' : 'días' }}
+                            @else
+                                {{ $weeks }} {{ $weeks == 1 ? 'semana' : 'semanas' }}
+                            @endif
+                        </p>
                     </div>
-                    <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Finalizado</span>
+                    <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Completado</span>
                 </div>
             @endforeach
         </div>

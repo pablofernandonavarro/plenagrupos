@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Group;
 use App\Models\GroupAttendance;
+use App\Models\GroupMembershipLog;
 use App\Models\PlanRule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -140,20 +141,45 @@ class GroupJoinController extends Controller
             'attended_at' => now(),
         ]);
 
-        // First-time membership: capture channel (QR) + UTM + device
-        if (! $group->patients->contains($user->id)) {
-            $utm = session()->pull('group_join_utm.'.$token, []);
+        // Membership: join new, rejoin, or already active (just record attendance)
+        $utm = session()->pull('group_join_utm.'.$token, []);
+        $pivotData = [
+            'joined_at'               => now(),
+            'left_at'                 => null,
+            'join_source'             => 'qr',
+            'utm_source'              => $utm['utm_source'] ?? null,
+            'utm_medium'              => $utm['utm_medium'] ?? null,
+            'utm_campaign'            => $utm['utm_campaign'] ?? null,
+            'utm_content'             => $utm['utm_content'] ?? null,
+            'first_device_user_agent' => Str::limit((string) $request->userAgent(), 2000),
+        ];
 
-            $group->patients()->attach($user->id, [
-                'joined_at' => now(),
+        // Check for any existing pivot row (active or inactive)
+        $existingPivot = \Illuminate\Support\Facades\DB::table('group_patient')
+            ->where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (! $existingPivot) {
+            // First time joining
+            $group->patients()->attach($user->id, $pivotData);
+            GroupMembershipLog::create([
+                'group_id'   => $group->id,
+                'user_id'    => $user->id,
+                'joined_at'  => now(),
                 'join_source' => 'qr',
-                'utm_source' => $utm['utm_source'] ?? null,
-                'utm_medium' => $utm['utm_medium'] ?? null,
-                'utm_campaign' => $utm['utm_campaign'] ?? null,
-                'utm_content' => $utm['utm_content'] ?? null,
-                'first_device_user_agent' => Str::limit((string) $request->userAgent(), 2000),
+            ]);
+        } elseif ($existingPivot->left_at !== null) {
+            // Rejoining after having left
+            $group->patients()->updateExistingPivot($user->id, $pivotData);
+            GroupMembershipLog::create([
+                'group_id'   => $group->id,
+                'user_id'    => $user->id,
+                'joined_at'  => now(),
+                'join_source' => 'qr',
             ]);
         }
+        // else: already active member, no pivot/log change needed
 
         return redirect()->route('patient.weight.create', ['attendance' => $attendance->id])
             ->with('success', '¡Bienvenido! Registrá tu peso para continuar.');
