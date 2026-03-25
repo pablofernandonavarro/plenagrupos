@@ -15,8 +15,7 @@
 
     {{-- Search & filter --}}
     <form method="GET" action="{{ route('admin.groups.index') }}" class="flex flex-col gap-2">
-        {{-- Preserva el status al buscar con Enter --}}
-        <input type="hidden" name="status" value="{{ $status }}">
+        <input type="hidden" name="status" id="status-input" value="{{ $status }}">
         <div class="flex flex-col sm:flex-row gap-2">
             <div class="relative flex-1">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -52,7 +51,8 @@
         </div>
         <div class="flex items-center gap-2">
             @foreach(['today'=>'Hoy', 'active'=>'Activos', 'closed'=>'Finalizados', ''=>'Todos'] as $val => $label)
-                <button type="submit" name="status" value="{{ $val }}"
+                <button type="button"
+                    onclick="document.getElementById('status-input').value='{{ $val }}'; this.closest('form').submit()"
                     class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium border transition
                         {{ $status === $val
                             ? 'bg-teal-600 text-white border-teal-600'
