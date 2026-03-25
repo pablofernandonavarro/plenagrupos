@@ -129,11 +129,23 @@ class DashboardController extends Controller
                 'attended_at'   => $a->attended_at->format('H:i'),
                 'left_at'       => $a->left_at?->format('H:i'),
                 'weight'        => $a->weightRecord?->weight,
+                'ideal_weight'  => $a->user->ideal_weight,
             ]);
 
+        $patients = $group->patients()->get()->map(fn ($p) => [
+            'id'          => $p->id,
+            'name'        => $p->name,
+            'initials'    => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
+            'color'       => $colors[$p->id % count($colors)],
+            'avatar_url'  => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
+            'joined_at'   => $p->pivot->joined_at ? \Carbon\Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
+            'join_source' => $p->pivot->join_source,
+        ]);
+
         return response()->json([
-            'count'      => $attendances->count(),
+            'count'       => $attendances->count(),
             'attendances' => $attendances,
+            'patients'    => $patients,
         ]);
     }
 

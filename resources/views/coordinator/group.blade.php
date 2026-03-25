@@ -234,6 +234,29 @@
         @endif
     </div>
 
+    {{-- Pacientes del grupo --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Pacientes del grupo (<span id="patients-count">{{ $group->patients->count() }}</span>)</h2>
+        </div>
+        <div id="patients-list" class="divide-y divide-gray-50">
+            @forelse($group->patients as $patient)
+                <div class="px-5 py-3 flex items-center gap-3">
+                    <x-avatar :user="$patient" size="sm" />
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5">
+                            Alta: {{ \Carbon\Carbon::parse($patient->pivot->joined_at)->format('d/m/Y H:i') }}
+                            · {{ $patient->pivot->join_source === 'qr' ? 'QR' : 'Manual' }}
+                        </p>
+                    </div>
+                </div>
+            @empty
+                <p class="px-5 py-4 text-sm text-gray-400 text-center">Sin pacientes inscriptos.</p>
+            @endforelse
+        </div>
+    </div>
+
     {{-- Estadísticas del grupo --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100">
@@ -297,6 +320,8 @@ const groupClosed  = {{ $group->status === 'closed' ? 'true' : 'false' }};
 const listEl       = document.getElementById('live-list');
 const countEl      = document.getElementById('stat-count');
 const updateEl     = document.getElementById('last-update');
+const patientsList  = document.getElementById('patients-list');
+const patientsCount = document.getElementById('patients-count');
 
 const patientRanges = {
     @foreach($group->patients as $p)
@@ -387,22 +412,46 @@ function renderRow(a) {
 }
 
 
+function renderPatients(patients) {
+    patientsCount.textContent = patients.length;
+    if (patients.length === 0) {
+        patientsList.innerHTML = '<p class="px-5 py-4 text-sm text-gray-400 text-center">Sin pacientes inscriptos.</p>';
+        return;
+    }
+    patientsList.innerHTML = patients.map(p => `
+        <div class="px-5 py-3 flex items-center gap-3">
+            ${avatarHtml(p)}
+            <div class="min-w-0">
+                <p class="text-sm font-medium text-gray-800">${p.name}</p>
+                <p class="text-[10px] text-gray-400 mt-0.5">
+                    Alta: ${p.joined_at ?? '—'} · ${p.join_source === 'qr' ? 'QR' : 'Manual'}
+                </p>
+            </div>
+        </div>`).join('');
+}
+
 async function fetchAttendances() {
+    let data;
     try {
-        const res  = await fetch(liveUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        const data = await res.json();
+        const res = await fetch(liveUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        data = await res.json();
+    } catch (e) { return; }
 
-        countEl.textContent = data.count;
+    // Update patients section (independent of attendance rendering)
+    if (data.patients !== undefined) renderPatients(data.patients);
 
+    countEl.textContent = data.count;
+
+    try {
         if (data.attendances.length === 0) {
             listEl.innerHTML = '<p class="px-5 py-6 text-center text-gray-400 text-sm">Esperando pacientes...</p>';
         } else {
             listEl.innerHTML = data.attendances.map(renderRow).join('');
         }
-
-        const now = new Date();
-        updateEl.textContent = 'Act. ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
     } catch (e) {}
+
+    const now = new Date();
+    updateEl.textContent = 'Act. ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
 }
 
 fetchAttendances();
