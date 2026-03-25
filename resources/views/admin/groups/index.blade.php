@@ -15,6 +15,8 @@
 
     {{-- Search & filter --}}
     <form method="GET" action="{{ route('admin.groups.index') }}" class="flex flex-col gap-2">
+        {{-- Preserva el status al buscar con Enter --}}
+        <input type="hidden" name="status" value="{{ $status }}">
         <div class="flex flex-col sm:flex-row gap-2">
             <div class="relative flex-1">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -22,7 +24,12 @@
                 </svg>
                 <input type="text" name="search" value="{{ request('search') }}"
                     placeholder="Buscar grupo..."
-                    class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+                    class="w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+                <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                    </svg>
+                </button>
             </div>
             @if($coordinators->isNotEmpty())
             <select name="coordinator_id" onchange="this.form.submit()"
@@ -80,9 +87,15 @@
                                     En curso
                                 </span>
                             @elseif($group->status === 'pending')
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">
-                                    Sin iniciar
-                                </span>
+                                @if($group->auto_sessions)
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
+                                        Fuera de horario
+                                    </span>
+                                @else
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+                                        Sin iniciar
+                                    </span>
+                                @endif
                             @else
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
                                     Finalizado

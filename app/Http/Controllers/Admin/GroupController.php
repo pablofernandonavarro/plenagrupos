@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -21,13 +22,30 @@ class GroupController extends Controller
         // Default to active groups unless a status filter is explicitly set
         $status = $request->input('status', 'active');
         if ($status === 'active') {
-            // Manual active OR recurring groups that haven't expired
-            $query->where(function ($q) {
+            $tz        = 'America/Argentina/Buenos_Aires';
+            $now       = Carbon::now($tz);
+            $timeNow   = $now->format('H:i:s');
+            $dayNames  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+            $todayName = $dayNames[$now->dayOfWeek];
+
+            $query->where(function ($q) use ($timeNow, $todayName) {
+                // Grupos no-recurrentes iniciados manualmente
                 $q->where('active', true)
-                  ->orWhere(function ($q2) {
+                // Grupos recurrentes actualmente en su ventana horaria
+                  ->orWhere(function ($q2) use ($timeNow, $todayName) {
                       $q2->whereNotIn('recurrence_type', ['none'])
+                         ->whereNotNull('meeting_time')
                          ->where(fn($q3) => $q3->whereNull('recurrence_end_date')
-                             ->orWhere('recurrence_end_date', '>=', today()));
+                             ->orWhere('recurrence_end_date', '>=', today()))
+                         ->whereRaw(
+                             "? BETWEEN meeting_time AND ADDTIME(meeting_time, SEC_TO_TIME(COALESCE(session_duration_minutes, 120) * 60))",
+                             [$timeNow]
+                         )
+                         ->where(function ($q3) use ($todayName) {
+                             $q3->whereIn('recurrence_type', ['daily', 'monthly', 'yearly'])
+                                ->orWhere(fn($q4) => $q4->where('recurrence_type', 'weekly')
+                                    ->whereJsonContains('meeting_days', $todayName));
+                         });
                   });
             });
         } elseif ($status === 'pending') {
