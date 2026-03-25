@@ -17,7 +17,7 @@
     </div>
 
     <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-700">
-        Definí cuántas veces por mes puede asistir un paciente a cada tipo de grupo según su plan.<br>
+        Definí cuántas veces por mes puede asistir un paciente a cada tipo de grupo según la <strong>fase aplicable</strong> (fase clínica que cargó el coordinador, o el plan contratado si no hay fase). Los valores de fila coinciden con descenso / mantenimiento / mantenimiento pleno.<br>
         Dejá el límite <strong>vacío</strong> para permitir acceso ilimitado. Marcá <strong>Finde libre</strong> para que los sábados y domingos no aplique el límite.
     </div>
 

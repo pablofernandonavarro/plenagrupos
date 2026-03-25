@@ -97,15 +97,22 @@
                 Cambiar fase
             </button>
         </div>
+        <p class="text-xs text-gray-400 mt-2 leading-relaxed">
+            Los <strong class="font-medium text-gray-600">límites de asistencia</strong> (por tipo de grupo y ciclo) se aplican según la <strong class="font-medium text-gray-600">fase efectiva</strong>: la fase clínica si la definís acá, o el plan contratado si elegís «Usar plan». El ciclo de facturación sigue el plan.
+        </p>
 
         {{-- Inline fase change form --}}
         <div id="fase-panel" class="hidden mt-4 pt-4 border-t border-gray-100">
             <form method="POST" action="{{ route('coordinator.patients.fase', $patient) }}" class="flex flex-wrap items-center gap-3">
                 @csrf @method('PATCH')
-                <p class="text-xs text-gray-500 w-full">
-                    Cambiá la fase clínica sin modificar el plan de facturación.
-                    Las reglas de asistencia a grupos usarán esta fase.
-                </p>
+                <div class="text-xs text-gray-500 w-full space-y-2 leading-relaxed">
+                    <p>
+                        Las reglas de límites (matriz en administración) se buscan por <strong class="text-gray-700">fase efectiva</strong> —la fase clínica que elijas o, si usás «Usar plan», el plan contratado.
+                    </p>
+                    <p>
+                        Cambiar la fase clínica <strong class="text-gray-700">no modifica el plan de facturación</strong> ni las fechas de ciclo, pero <strong class="text-gray-700">sí puede cambiar los topes de asistencia</strong> si difieren entre filas de la matriz.
+                    </p>
+                </div>
                 <div class="flex flex-wrap gap-2 flex-1">
                     @foreach(['descenso' => 'Descenso', 'mantenimiento' => 'Mantenimiento', 'mantenimiento_pleno' => 'Mantenimiento Pleno'] as $val => $lbl)
                     <label class="flex items-center gap-2 cursor-pointer border rounded-lg px-3 py-2 text-sm transition

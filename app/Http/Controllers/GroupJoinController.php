@@ -88,9 +88,10 @@ class GroupJoinController extends Controller
                 ->with('info', 'Ya registraste tu asistencia a este grupo hoy.');
         }
 
-        // Enforce plan rules based on contracted plan (billing), not clinical phase
-        if ($user->plan) {
-            $rule = PlanRule::where('patient_plan', $user->plan)
+        // Límites según plan_rules: clave = fase efectiva (fase_actual o, si no hay, plan contratado)
+        $faseParaReglas = $user->faseEfectiva();
+        if ($faseParaReglas) {
+            $rule = PlanRule::where('patient_plan', $faseParaReglas)
                 ->where('group_type', $group->group_type)
                 ->first();
 
@@ -114,7 +115,7 @@ class GroupJoinController extends Controller
                         $label = $typeLabels[$group->group_type] ?? $group->group_type;
 
                         return back()->with('error',
-                            "Llegaste al límite mensual de {$rule->monthly_limit} grupo(s) de {$label} para tu plan.");
+                            "Llegaste al límite mensual de {$rule->monthly_limit} grupo(s) de {$label} para tu fase aplicable (fase clínica o plan contratado).");
                     }
                 }
             }

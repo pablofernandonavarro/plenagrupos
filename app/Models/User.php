@@ -63,8 +63,9 @@ class User extends Authenticatable
     }
 
     /**
-     * The current clinical phase for display and AI analysis purposes.
-     * Does NOT affect group access rules — those always use the contracted plan.
+     * Fase efectiva: `fase_actual` o, si el coordinador no definió una, el plan contratado.
+     * Se usa para límites de asistencia (PlanRule), vista del coordinador e informes (IA).
+     * El ciclo de 30 días sigue usando `plan_start_date` / facturación.
      */
     public function faseEfectiva(): ?string
     {
