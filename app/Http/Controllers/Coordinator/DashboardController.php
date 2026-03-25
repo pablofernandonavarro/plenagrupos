@@ -30,13 +30,15 @@ class DashboardController extends Controller
         $collection = $query->get();
         $totalAfterSearch = $collection->count();
 
-        // Igual que admin «Vigentes»: programas no finalizados (isProgramVigente; no es «en sesión» ahora)
-        $allowedStatuses = ['', 'active', 'pending', 'closed'];
+        // live = sesión en vivo ahora (accessor status === active). active = vigentes como admin.
+        $allowedStatuses = ['', 'live', 'active', 'pending', 'closed'];
         $status = $request->input('status', '');
         if (! in_array($status, $allowedStatuses, true)) {
             $status = '';
         }
-        if ($status === 'active') {
+        if ($status === 'live') {
+            $collection = $collection->filter(fn (Group $g) => $g->status === 'active')->values();
+        } elseif ($status === 'active') {
             $collection = $collection->filter(fn (Group $g) => $g->isProgramVigente())->values();
         } elseif ($status === 'pending') {
             $collection = $collection->filter(fn (Group $g) => $g->isProgramPending())->values();

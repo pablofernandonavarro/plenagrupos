@@ -2,9 +2,9 @@
 @section('title', 'Mis Grupos')
 
 @php
-    // Vigente = programa no finalizado (mismo filtro que admin). No confundir con «en sesión» (ventana horaria).
     $statusLabels = [
         '' => 'Todos',
+        'live' => 'En curso',
         'active' => 'Vigentes',
         'pending' => 'Sin iniciar',
         'closed' => 'Finalizados',
@@ -58,7 +58,7 @@
             <div class="space-y-2">
                 <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide block">Estado del programa</span>
                 <p class="text-xs text-gray-500 leading-snug">
-                    <strong class="text-gray-600">En sesión</strong> en la tarjeta = ventana horaria de hoy. <strong class="text-gray-600">Programa vigente</strong> = aún no finalizado (no es «en curso» de sesión).
+                    <strong class="text-gray-600">En curso</strong> = grupo con sesión en vivo ahora. <strong class="text-gray-600">Vigentes</strong> = programas no finalizados (como en admin).
                 </p>
                 <div class="flex flex-wrap gap-1.5 p-1 bg-gray-100 rounded-xl border border-gray-200/80" role="tablist" aria-label="Filtrar por estado del programa">
                     @foreach($statusLabels as $val => $label)
