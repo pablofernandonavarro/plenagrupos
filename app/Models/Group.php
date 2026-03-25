@@ -75,11 +75,56 @@ class Group extends Model
             return false;
         }
 
+        return $this->isWithinSessionWindowNow($now);
+    }
+
+    private function isWithinSessionWindowNow(Carbon $now): bool
+    {
         [$h, $m] = array_pad(explode(':', $this->meeting_time), 2, '0');
         $start = $now->copy()->setTime((int) $h, (int) $m, 0);
-        $end = $start->copy()->addMinutes($this->attributes['session_duration_minutes'] ?? 120);
+        $end = $start->copy()->addMinutes((int) ($this->attributes['session_duration_minutes'] ?? 120));
 
         return $now->between($start, $end);
+    }
+
+    /** Grupo manual: hoy es día de reunión (activo y día de la semana configurado). */
+    private function isManualMeetingDay(Carbon $date): bool
+    {
+        if (! ($this->attributes['active'] ?? false)) {
+            return false;
+        }
+        $days = $this->meeting_days ?? ($this->attributes['meeting_day'] ? [$this->attributes['meeting_day']] : []);
+        if (empty($days)) {
+            return false;
+        }
+        $dayMap = ['Domingo' => 0, 'Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6];
+        $dayNums = array_values(array_filter(
+            array_map(fn ($d) => $dayMap[$d] ?? null, $days),
+            fn ($d) => $d !== null
+        ));
+
+        return in_array($date->dayOfWeek, $dayNums, true);
+    }
+
+    /** Sesión en curso ahora (ventana horaria de hoy): recurrente o manual con día/hora. */
+    public function isLiveSessionNow(): bool
+    {
+        if (! $this->meeting_time) {
+            return false;
+        }
+        $tz = 'America/Argentina/Buenos_Aires';
+        $now = Carbon::now($tz);
+        $type = $this->attributes['recurrence_type'] ?? 'none';
+
+        if ($type === 'none') {
+            if (! $this->isManualMeetingDay($now)) {
+                return false;
+            }
+        } elseif (! $this->isTodayMeetingDay($now)) {
+            return false;
+        }
+
+        return $this->isWithinSessionWindowNow($now);
     }
 
     /** True when $date falls on a scheduled meeting day for this group. */
@@ -325,6 +370,69 @@ class Group extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Próxima ocurrencia de sesión para ordenar listados: lo más cercano a ahora primero.
+     * Sesión en curso ahora (isLiveSessionNow) primero; programas cerrados al final.
+     */
+    public function nextOccurrenceForSort(): Carbon
+    {
+        $tz = 'America/Argentina/Buenos_Aires';
+        $now = Carbon::now($tz);
+
+        if ($this->isProgramClosed()) {
+            return $now->copy()->addYears(100);
+        }
+
+        if ($this->isLiveSessionNow()) {
+            return $now->copy();
+        }
+
+        if (($this->attributes['recurrence_type'] ?? 'none') !== 'none') {
+            $n = $this->nextSessionAt;
+
+            return $n ? $n->copy()->timezone($tz) : $now->copy()->addYears(50);
+        }
+
+        if (! $this->meeting_time) {
+            return $now->copy()->addYears(50);
+        }
+
+        $days = $this->meeting_days ?? ($this->attributes['meeting_day'] ? [$this->attributes['meeting_day']] : []);
+        if (empty($days)) {
+            return $now->copy()->addYears(50);
+        }
+
+        [$hour, $minute] = array_pad(explode(':', $this->meeting_time), 2, '0');
+        $dayMap = [
+            'Domingo' => Carbon::SUNDAY,  'Lunes' => Carbon::MONDAY,
+            'Martes' => Carbon::TUESDAY, 'Miércoles' => Carbon::WEDNESDAY,
+            'Jueves' => Carbon::THURSDAY, 'Viernes' => Carbon::FRIDAY,
+            'Sábado' => Carbon::SATURDAY,
+        ];
+        $candidates = [];
+        foreach ($days as $dayName) {
+            $targetDay = $dayMap[$dayName] ?? null;
+            if ($targetDay === null) {
+                continue;
+            }
+            if ($now->dayOfWeek === $targetDay) {
+                $today = $now->copy()->setTime((int) $hour, (int) $minute);
+                if ($now->lt($today)) {
+                    $candidates[] = $today;
+
+                    continue;
+                }
+            }
+            $candidates[] = $now->copy()->next($targetDay)->setTime((int) $hour, (int) $minute);
+        }
+
+        if (empty($candidates)) {
+            return $now->copy()->addYears(50);
+        }
+
+        return collect($candidates)->sortBy(fn ($c) => $c->timestamp)->first();
     }
 
     protected static function boot(): void

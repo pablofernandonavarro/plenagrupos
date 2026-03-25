@@ -122,7 +122,7 @@
                 <div class="flex flex-wrap gap-1.5">
                     @if($group->isProgramClosed())
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
-                    @elseif($group->status === 'active')
+                    @elseif($group->isLiveSessionNow())
                         <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true"></span>En sesión
                         </span>

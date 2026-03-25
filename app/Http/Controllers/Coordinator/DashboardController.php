@@ -19,8 +19,7 @@ class DashboardController extends Controller
 
         $query = Group::whereHas('coordinators', fn ($q) => $q->where('users.id', auth()->id()))
             ->with(['patients'])
-            ->withCount(['attendances', 'weightRecords'])
-            ->orderBy('created_at', 'desc');
+            ->withCount(['attendances', 'weightRecords']);
 
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
@@ -30,14 +29,14 @@ class DashboardController extends Controller
         $collection = $query->get();
         $totalAfterSearch = $collection->count();
 
-        // live = sesión en vivo ahora (accessor status === active). active = vigentes como admin.
+        // live = sesión en curso ahora (ventana horaria). active = vigentes como admin.
         $allowedStatuses = ['', 'live', 'active', 'pending', 'closed'];
         $status = $request->input('status', '');
         if (! in_array($status, $allowedStatuses, true)) {
             $status = '';
         }
         if ($status === 'live') {
-            $collection = $collection->filter(fn (Group $g) => $g->status === 'active')->values();
+            $collection = $collection->filter(fn (Group $g) => $g->isLiveSessionNow())->values();
         } elseif ($status === 'active') {
             $collection = $collection->filter(fn (Group $g) => $g->isProgramVigente())->values();
         } elseif ($status === 'pending') {
@@ -45,6 +44,13 @@ class DashboardController extends Controller
         } elseif ($status === 'closed') {
             $collection = $collection->filter(fn (Group $g) => $g->isProgramClosed())->values();
         }
+
+        // Más próximo a hoy/ahora arriba: sesión en curso ahora primero, luego por próxima ocurrencia, nombre
+        $collection = $collection->sortBy([
+            fn (Group $g) => $g->isLiveSessionNow() ? 0 : 1,
+            fn (Group $g) => $g->nextOccurrenceForSort()->timestamp,
+            fn (Group $g) => mb_strtolower($g->name),
+        ])->values();
 
         $perPage = 10;
         $page = LengthAwarePaginator::resolveCurrentPage();
