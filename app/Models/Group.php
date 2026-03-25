@@ -148,6 +148,61 @@ class Group extends Model
         return $this->isTodayMeetingDay($date);
     }
 
+    /**
+     * Programa vigente (misma idea que admin "Activos"): activo manual o recurrente sin superar fecha de fin.
+     */
+    public function isProgramVigente(): bool
+    {
+        if ($this->attributes['active'] ?? false) {
+            return true;
+        }
+        $type = $this->attributes['recurrence_type'] ?? 'none';
+        if ($type === 'none') {
+            return false;
+        }
+        if ($this->recurrence_end_date) {
+            $end = Carbon::parse($this->recurrence_end_date)->startOfDay();
+
+            return ! Carbon::now('America/Argentina/Buenos_Aires')->startOfDay()->gt($end);
+        }
+
+        return true;
+    }
+
+    /**
+     * Programa cerrado (misma idea que admin "Finalizados").
+     */
+    public function isProgramClosed(): bool
+    {
+        $type = $this->attributes['recurrence_type'] ?? 'none';
+        if ($type === 'none') {
+            return ! ($this->attributes['active'] ?? false) && $this->getRawOriginal('started_at') != null;
+        }
+        if (! $this->recurrence_end_date) {
+            return false;
+        }
+
+        return Carbon::now('America/Argentina/Buenos_Aires')->startOfDay()->gt(
+            Carbon::parse($this->recurrence_end_date)->startOfDay()
+        );
+    }
+
+    /**
+     * Sin iniciar: no vigente ni cerrado (p. ej. grupo manual creado y aún no iniciado).
+     */
+    public function isProgramPending(): bool
+    {
+        if ($this->isProgramClosed() || $this->isProgramVigente()) {
+            return false;
+        }
+        $type = $this->attributes['recurrence_type'] ?? 'none';
+        if ($type === 'none') {
+            return ! ($this->attributes['active'] ?? false) && $this->getRawOriginal('started_at') == null;
+        }
+
+        return $this->getRawOriginal('started_at') == null;
+    }
+
     /** Days label for display: "Lun a Vie", "Lunes, Miércoles", or single day name */
     public function getMeetingDaysDisplayAttribute(): ?string
     {
