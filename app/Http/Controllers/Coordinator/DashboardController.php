@@ -30,7 +30,11 @@ class DashboardController extends Controller
         $collection = $query->get();
         $totalAfterSearch = $collection->count();
 
+        $allowedStatuses = ['', 'active', 'pending', 'closed'];
         $status = $request->input('status', '');
+        if (! in_array($status, $allowedStatuses, true)) {
+            $status = '';
+        }
         if ($status === 'active') {
             $collection = $collection->filter(fn (Group $g) => $g->isProgramVigente())->values();
         } elseif ($status === 'pending') {

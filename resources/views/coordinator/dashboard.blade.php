@@ -2,7 +2,6 @@
 @section('title', 'Mis Grupos')
 
 @php
-    use Illuminate\Support\Js;
     $statusLabels = ['' => 'Todos', 'active' => 'En curso', 'pending' => 'Sin iniciar', 'closed' => 'Finalizados'];
     $curStatus = request('status', '');
 @endphp
@@ -54,9 +53,10 @@
                 <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide block">Estado del programa</span>
                 <div class="flex flex-wrap gap-1.5 p-1 bg-gray-100 rounded-xl border border-gray-200/80" role="tablist" aria-label="Filtrar por estado del programa">
                     @foreach($statusLabels as $val => $label)
+                        {{-- onclick con comillas simples en el atributo: si usáramos " y Js::from, las comillas JSON cerrarían el atributo y el status no se envía --}}
                         <button type="button"
                             id="coord-filter-{{ $val === '' ? 'all' : $val }}"
-                            onclick="document.getElementById('coordinator-dashboard-status').value={{ Js::from($val) }}; this.closest('form').submit();"
+                            onclick='document.getElementById("coordinator-dashboard-status").value=@json($val); this.closest("form").submit();'
                             role="tab"
                             aria-selected="{{ $curStatus === $val ? 'true' : 'false' }}"
                             aria-pressed="{{ $curStatus === $val ? 'true' : 'false' }}"
