@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\DataExportController;
+use App\Http\Controllers\Admin\PatientAdherenceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Coordinator;
 use App\Http\Controllers\Coordinator\InbodyController as CoordinatorInbodyController;
@@ -46,6 +48,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/grupos', [AnalyticsController::class, 'groups'])->name('groups');
         Route::get('/inbody', [AnalyticsController::class, 'inbody'])->name('inbody');
         Route::get('/cohortes', [AnalyticsController::class, 'cohorts'])->name('cohorts');
+    });
+
+    Route::get('/adherencia', [PatientAdherenceController::class, 'index'])->name('adherencia.index');
+
+    Route::prefix('exports')->name('exports.')->group(function () {
+        Route::get('/asistencias', [DataExportController::class, 'attendances'])->name('attendances');
+        Route::get('/pesos', [DataExportController::class, 'weights'])->name('weights');
+        Route::get('/inbody', [DataExportController::class, 'inbody'])->name('inbody');
     });
 
     Route::resource('groups', Admin\GroupController::class);
