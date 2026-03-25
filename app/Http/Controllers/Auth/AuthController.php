@@ -56,6 +56,7 @@ class AuthController extends Controller
             'phone' => $data['phone'] ?? null,
             'password' => Hash::make($data['password']),
             'role' => 'patient',
+            'patient_status' => 'active',
         ]);
 
         Auth::login($user);
@@ -74,6 +75,7 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 

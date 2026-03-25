@@ -19,14 +19,14 @@ class Group extends Model
     ];
 
     protected $casts = [
-        'active'                   => 'boolean',
-        'auto_sessions'            => 'boolean',
-        'recurrence_interval'      => 'integer',
-        'recurrence_end_date'      => 'date',
+        'active' => 'boolean',
+        'auto_sessions' => 'boolean',
+        'recurrence_interval' => 'integer',
+        'recurrence_end_date' => 'date',
         'session_duration_minutes' => 'integer',
-        'meeting_days'             => 'array',
-        'started_at'               => 'datetime',
-        'ended_at'                 => 'datetime',
+        'meeting_days' => 'array',
+        'started_at' => 'datetime',
+        'ended_at' => 'datetime',
     ];
 
     // Backwards-compat: derive auto_sessions from recurrence_type
@@ -42,8 +42,13 @@ class Group extends Model
 
         // Non-recurring groups: honour the manual active flag
         if ($type === 'none') {
-            if ($this->attributes['active']) return 'active';
-            if ($this->getRawOriginal('started_at'))  return 'closed';
+            if ($this->attributes['active']) {
+                return 'active';
+            }
+            if ($this->getRawOriginal('started_at')) {
+                return 'closed';
+            }
+
             return 'pending';
         }
 
@@ -59,16 +64,20 @@ class Group extends Model
     /** True when the current wall-clock time is inside today's session window. */
     private function isCurrentlyInSession(): bool
     {
-        if (!$this->meeting_time) return false;
+        if (! $this->meeting_time) {
+            return false;
+        }
 
-        $tz  = 'America/Argentina/Buenos_Aires';
+        $tz = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz);
 
-        if (!$this->isTodayMeetingDay($now)) return false;
+        if (! $this->isTodayMeetingDay($now)) {
+            return false;
+        }
 
         [$h, $m] = array_pad(explode(':', $this->meeting_time), 2, '0');
         $start = $now->copy()->setTime((int) $h, (int) $m, 0);
-        $end   = $start->copy()->addMinutes($this->attributes['session_duration_minutes'] ?? 120);
+        $end = $start->copy()->addMinutes($this->attributes['session_duration_minutes'] ?? 120);
 
         return $now->between($start, $end);
     }
@@ -76,23 +85,28 @@ class Group extends Model
     /** True when $date falls on a scheduled meeting day for this group. */
     private function isTodayMeetingDay(Carbon $date): bool
     {
-        $type     = $this->attributes['recurrence_type'] ?? 'none';
+        $type = $this->attributes['recurrence_type'] ?? 'none';
         $interval = max(1, (int) ($this->attributes['recurrence_interval'] ?? 1));
-        $ref      = Carbon::parse($this->getRawOriginal('created_at'))->startOfDay();
+        $ref = Carbon::parse($this->getRawOriginal('created_at'))->startOfDay();
 
         if ($type === 'daily') {
             return (int) $ref->diffInDays($date) % $interval === 0;
         }
 
         if ($type === 'weekly') {
-            $days    = $this->meeting_days ?? ($this->attributes['meeting_day'] ? [$this->attributes['meeting_day']] : []);
-            $dayMap  = ['Domingo'=>0,'Lunes'=>1,'Martes'=>2,'Miércoles'=>3,'Jueves'=>4,'Viernes'=>5,'Sábado'=>6];
+            $days = $this->meeting_days ?? ($this->attributes['meeting_day'] ? [$this->attributes['meeting_day']] : []);
+            $dayMap = ['Domingo' => 0, 'Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6];
             $dayNums = array_values(array_filter(
-                array_map(fn($d) => $dayMap[$d] ?? null, $days),
-                fn($d) => $d !== null
+                array_map(fn ($d) => $dayMap[$d] ?? null, $days),
+                fn ($d) => $d !== null
             ));
-            if (!in_array($date->dayOfWeek, $dayNums, true)) return false;
-            if ($interval === 1) return true;
+            if (! in_array($date->dayOfWeek, $dayNums, true)) {
+                return false;
+            }
+            if ($interval === 1) {
+                return true;
+            }
+
             return (int) $ref->startOfWeek()->diffInWeeks($date->copy()->startOfWeek()) % $interval === 0;
         }
 
@@ -108,13 +122,19 @@ class Group extends Model
     public function getMeetingDaysDisplayAttribute(): ?string
     {
         $days = $this->meeting_days ?? ($this->meeting_day ? [$this->meeting_day] : []);
-        if (empty($days)) return null;
+        if (empty($days)) {
+            return null;
+        }
+
         return $this->formatDaysLabel($days);
     }
 
     public function getMeetingTimeFormattedAttribute(): ?string
     {
-        if (!$this->meeting_time) return null;
+        if (! $this->meeting_time) {
+            return null;
+        }
+
         return date('H:i', strtotime($this->meeting_time));
     }
 
@@ -127,73 +147,96 @@ class Group extends Model
         if (($this->attributes['recurrence_type'] ?? 'none') === 'weekly') {
             $days = $this->meeting_days ?? ($this->meeting_day ? [$this->meeting_day] : []);
             $prefix = $n > 1 ? "Cada {$n} semanas" : 'Semanal';
-            return $prefix . (count($days) ? ' · ' . $this->formatDaysLabel($days) : '');
+
+            return $prefix.(count($days) ? ' · '.$this->formatDaysLabel($days) : '');
         }
+
         return match ($this->attributes['recurrence_type'] ?? 'none') {
-            'daily'   => $n > 1 ? "Cada {$n} días" : 'Diario',
+            'daily' => $n > 1 ? "Cada {$n} días" : 'Diario',
             'monthly' => $n > 1 ? "Cada {$n} meses" : 'Mensual',
-            'yearly'  => $n > 1 ? "Cada {$n} años" : 'Anual',
-            default   => 'Sin repetición',
+            'yearly' => $n > 1 ? "Cada {$n} años" : 'Anual',
+            default => 'Sin repetición',
         };
     }
 
     private function formatDaysLabel(array $days): string
     {
-        $order = ['Lunes'=>1,'Martes'=>2,'Miércoles'=>3,'Jueves'=>4,'Viernes'=>5,'Sábado'=>6,'Domingo'=>7];
-        $abbr  = ['Lunes'=>'Lun','Martes'=>'Mar','Miércoles'=>'Mié','Jueves'=>'Jue','Viernes'=>'Vie','Sábado'=>'Sáb','Domingo'=>'Dom'];
-        usort($days, fn($a, $b) => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
-        if (count($days) === 1) return $days[0];
-        $nums = array_map(fn($d) => $order[$d] ?? 99, $days);
+        $order = ['Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6, 'Domingo' => 7];
+        $abbr = ['Lunes' => 'Lun', 'Martes' => 'Mar', 'Miércoles' => 'Mié', 'Jueves' => 'Jue', 'Viernes' => 'Vie', 'Sábado' => 'Sáb', 'Domingo' => 'Dom'];
+        usort($days, fn ($a, $b) => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
+        if (count($days) === 1) {
+            return $days[0];
+        }
+        $nums = array_map(fn ($d) => $order[$d] ?? 99, $days);
         $consecutive = true;
         for ($i = 1; $i < count($nums); $i++) {
-            if ($nums[$i] - $nums[$i - 1] !== 1) { $consecutive = false; break; }
+            if ($nums[$i] - $nums[$i - 1] !== 1) {
+                $consecutive = false;
+                break;
+            }
         }
         if ($consecutive) {
-            return ($abbr[$days[0]] ?? $days[0]) . ' a ' . ($abbr[end($days)] ?? end($days));
+            return ($abbr[$days[0]] ?? $days[0]).' a '.($abbr[end($days)] ?? end($days));
         }
-        return implode(', ', array_map(fn($d) => $abbr[$d] ?? $d, $days));
+
+        return implode(', ', array_map(fn ($d) => $abbr[$d] ?? $d, $days));
     }
 
     public function getNextSessionAtAttribute(): ?Carbon
     {
-        if (($this->attributes['recurrence_type'] ?? 'none') === 'none') return null;
-        if (!$this->meeting_time) return null;
+        if (($this->attributes['recurrence_type'] ?? 'none') === 'none') {
+            return null;
+        }
+        if (! $this->meeting_time) {
+            return null;
+        }
 
-        $tz  = 'America/Argentina/Buenos_Aires';
+        $tz = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz);
         [$hour, $minute] = explode(':', $this->meeting_time);
 
         switch ($this->attributes['recurrence_type']) {
             case 'daily':
-                return $now->copy()->addDay()->setTime((int)$hour, (int)$minute);
+                return $now->copy()->addDay()->setTime((int) $hour, (int) $minute);
 
             case 'weekly':
                 $days = $this->meeting_days ?? ($this->meeting_day ? [$this->meeting_day] : []);
-                if (empty($days)) return null;
+                if (empty($days)) {
+                    return null;
+                }
                 $dayMap = [
-                    'Domingo' => Carbon::SUNDAY,  'Lunes'     => Carbon::MONDAY,
-                    'Martes'  => Carbon::TUESDAY, 'Miércoles' => Carbon::WEDNESDAY,
-                    'Jueves'  => Carbon::THURSDAY,'Viernes'   => Carbon::FRIDAY,
-                    'Sábado'  => Carbon::SATURDAY,
+                    'Domingo' => Carbon::SUNDAY,  'Lunes' => Carbon::MONDAY,
+                    'Martes' => Carbon::TUESDAY, 'Miércoles' => Carbon::WEDNESDAY,
+                    'Jueves' => Carbon::THURSDAY, 'Viernes' => Carbon::FRIDAY,
+                    'Sábado' => Carbon::SATURDAY,
                 ];
                 $candidates = [];
                 foreach ($days as $dayName) {
                     $targetDay = $dayMap[$dayName] ?? null;
-                    if ($targetDay === null) continue;
-                    if ($now->dayOfWeek === $targetDay) {
-                        $today = $now->copy()->setTime((int)$hour, (int)$minute);
-                        if ($now->lt($today)) { $candidates[] = $today; continue; }
+                    if ($targetDay === null) {
+                        continue;
                     }
-                    $candidates[] = $now->copy()->next($targetDay)->setTime((int)$hour, (int)$minute);
+                    if ($now->dayOfWeek === $targetDay) {
+                        $today = $now->copy()->setTime((int) $hour, (int) $minute);
+                        if ($now->lt($today)) {
+                            $candidates[] = $today;
+
+                            continue;
+                        }
+                    }
+                    $candidates[] = $now->copy()->next($targetDay)->setTime((int) $hour, (int) $minute);
                 }
-                if (empty($candidates)) return null;
-                return collect($candidates)->sortBy(fn($c) => $c->timestamp)->first();
+                if (empty($candidates)) {
+                    return null;
+                }
+
+                return collect($candidates)->sortBy(fn ($c) => $c->timestamp)->first();
 
             case 'monthly':
-                return $now->copy()->addMonth()->setTime((int)$hour, (int)$minute);
+                return $now->copy()->addMonth()->setTime((int) $hour, (int) $minute);
 
             case 'yearly':
-                return $now->copy()->addYear()->setTime((int)$hour, (int)$minute);
+                return $now->copy()->addYear()->setTime((int) $hour, (int) $minute);
         }
 
         return null;
@@ -209,9 +252,37 @@ class Group extends Model
         });
     }
 
-    public function admin()       { return $this->belongsTo(User::class, 'admin_id'); }
-    public function coordinators(){ return $this->belongsToMany(User::class, 'group_coordinator'); }
-    public function patients()    { return $this->belongsToMany(User::class, 'group_patient')->withPivot('joined_at', 'maintenance_weight'); }
-    public function attendances() { return $this->hasMany(GroupAttendance::class); }
-    public function weightRecords(){ return $this->hasMany(WeightRecord::class); }
+    public function admin()
+    {
+        return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    public function coordinators()
+    {
+        return $this->belongsToMany(User::class, 'group_coordinator');
+    }
+
+    public function patients()
+    {
+        return $this->belongsToMany(User::class, 'group_patient')->withPivot(
+            'joined_at',
+            'maintenance_weight',
+            'join_source',
+            'utm_source',
+            'utm_medium',
+            'utm_campaign',
+            'utm_content',
+            'first_device_user_agent',
+        );
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(GroupAttendance::class);
+    }
+
+    public function weightRecords()
+    {
+        return $this->hasMany(WeightRecord::class);
+    }
 }

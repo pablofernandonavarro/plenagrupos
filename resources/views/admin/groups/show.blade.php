@@ -86,6 +86,10 @@
             <div class="mt-3 p-2 bg-gray-50 rounded-lg">
                 <p class="text-xs text-gray-400 break-all">{{ $joinUrl }}</p>
             </div>
+            <p class="text-xs text-gray-500 mt-2 text-left leading-relaxed">
+                Para <strong>campañas</strong>, añadí a la URL parámetros UTM y generá el QR con esa dirección completa, por ejemplo:<br>
+                <code class="text-[10px] break-all bg-white border border-gray-100 rounded px-1 py-0.5 block mt-1">{{ $joinUrl }}?utm_source=facebook&amp;utm_medium=qr_sala&amp;utm_campaign=2026-03</code>
+            </p>
             <a href="{{ $joinUrl }}" target="_blank" class="mt-2 inline-block text-xs text-teal-600 hover:underline">
                 Abrir enlace directo
             </a>
@@ -164,12 +168,20 @@
         </div>
         <div class="divide-y divide-gray-50">
             @forelse($group->patients as $patient)
-                <div class="px-5 py-3 flex justify-between items-center">
-                    <div class="flex items-center gap-3">
+                <div class="px-5 py-3 flex justify-between items-center gap-2">
+                    <div class="flex items-center gap-3 min-w-0">
                         <x-avatar :user="$patient" size="sm" />
-                        <div>
+                        <div class="min-w-0">
                             <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
                             <p class="text-xs text-gray-400">{{ $patient->email }}@if($patient->phone) · {{ $patient->phone }}@endif</p>
+                            @php $p = $patient->pivot; @endphp
+                            <p class="text-[10px] text-gray-400 mt-0.5">
+                                Alta: {{ \Carbon\Carbon::parse($p->joined_at)->format('d/m/Y H:i') }}
+                                · <span class="text-gray-600">{{ $p->join_source === 'qr' ? 'QR' : 'Manual' }}</span>
+                                @if($p->utm_source)
+                                    · UTM: {{ $p->utm_source }}{{ $p->utm_campaign ? ' / '.$p->utm_campaign : '' }}
+                                @endif
+                            </p>
                         </div>
                     </div>
                     @if($group->active)

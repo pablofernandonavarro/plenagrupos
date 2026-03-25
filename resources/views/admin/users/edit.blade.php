@@ -85,6 +85,26 @@
                     placeholder="Ej: 70.50">
                 @error('ideal_weight')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
+            <div class="rounded-lg border border-gray-200 bg-gray-50/80 p-4 space-y-3">
+                <p class="text-sm font-medium text-gray-800">Estado en el programa</p>
+                <p class="text-xs text-gray-500">Sirve para cohortes y reportes. «Egreso» excluye al paciente de las métricas de retención.</p>
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">Estado</label>
+                    <select name="patient_status" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                        <option value="active" {{ old('patient_status', $user->patient_status ?? 'active') === 'active' ? 'selected' : '' }}>Activo</option>
+                        <option value="pause" {{ old('patient_status', $user->patient_status ?? 'active') === 'pause' ? 'selected' : '' }}>Pausa</option>
+                        <option value="exited" {{ old('patient_status', $user->patient_status ?? 'active') === 'exited' ? 'selected' : '' }}>Egreso</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">Nota (motivo de pausa/egreso, opcional)</label>
+                    <textarea name="patient_status_note" rows="2" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                        placeholder="Ej.: derivado a otro centro, viaje prolongado…">{{ old('patient_status_note', $user->patient_status_note) }}</textarea>
+                </div>
+                @if($user->patient_status_at)
+                    <p class="text-xs text-gray-400">Último cambio de estado: {{ $user->patient_status_at->format('d/m/Y H:i') }}</p>
+                @endif
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Rango de mantenimiento (kg)</label>
                 <p class="text-xs text-gray-400 mb-2">Peso mínimo y máximo aceptable para este paciente.</p>

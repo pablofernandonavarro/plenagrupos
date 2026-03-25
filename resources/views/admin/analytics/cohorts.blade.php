@@ -8,6 +8,7 @@
         <p class="text-gray-500 text-sm mt-1">
             Basado en la fecha de alta en cada grupo (<code class="text-xs bg-gray-100 px-1 rounded">group_patient.joined_at</code>) y asistencias en ese mismo grupo.
             Solo cuentan altas donde ya pasó el período (p. ej. 30 días desde el alta).
+            <span class="text-gray-600">No se incluyen pacientes con estado <strong>Egreso</strong> en el usuario.</span>
         </p>
     </div>
 

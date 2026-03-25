@@ -182,11 +182,20 @@ class AnalyticsController extends Controller
     {
         $groupId = $request->integer('group_id') ?: null;
 
-        $q = DB::table('group_patient');
+        $q = DB::table('group_patient')
+            ->join('users', 'users.id', '=', 'group_patient.user_id')
+            ->where(function ($q) {
+                $q->whereNull('users.patient_status')
+                    ->orWhere('users.patient_status', '<>', 'exited');
+            });
         if ($groupId) {
-            $q->where('group_id', $groupId);
+            $q->where('group_patient.group_id', $groupId);
         }
-        $enrollments = $q->get(['user_id', 'group_id', 'joined_at']);
+        $enrollments = $q->get([
+            'group_patient.user_id as user_id',
+            'group_patient.group_id as group_id',
+            'group_patient.joined_at as joined_at',
+        ]);
 
         $now = Carbon::now();
 

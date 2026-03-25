@@ -5,20 +5,44 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\Models\GroupAttendance;
 use App\Models\PlanRule;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class GroupJoinController extends Controller
 {
-    public function show(string $token)
+    /** @return array<string, string> */
+    private function utmFromRequest(Request $request): array
+    {
+        return array_filter([
+            'utm_source' => $request->query('utm_source'),
+            'utm_medium' => $request->query('utm_medium'),
+            'utm_campaign' => $request->query('utm_campaign'),
+            'utm_content' => $request->query('utm_content'),
+        ], fn ($v) => $v !== null && $v !== '');
+    }
+
+    private function groupJoinUrl(string $token, Request $request): string
+    {
+        return route('group.join', array_merge(['token' => $token], $this->utmFromRequest($request)));
+    }
+
+    public function show(Request $request, string $token)
     {
         $group = Group::where('qr_token', $token)->firstOrFail();
 
-        if (!auth()->check()) {
-            return redirect()->route('login', ['redirect' => route('group.join', $token)]);
+        $utm = $this->utmFromRequest($request);
+        if ($utm !== []) {
+            session(['group_join_utm.'.$token => $utm]);
+        }
+
+        if (! auth()->check()) {
+            return redirect()->route('login', ['redirect' => $this->groupJoinUrl($token, $request)]);
         }
 
         $user = auth()->user();
 
-        if (!$user->isPatient()) {
+        if (! $user->isPatient()) {
             return redirect()->route('admin.dashboard')->with('info', 'Solo los pacientes pueden registrarse por QR.');
         }
 
@@ -34,17 +58,17 @@ class GroupJoinController extends Controller
         return view('group.join', ['group' => $group, 'groupStatus' => 'active', 'alreadyCheckedIn' => $alreadyCheckedIn]);
     }
 
-    public function join(string $token)
+    public function join(Request $request, string $token)
     {
         $group = Group::where('qr_token', $token)->firstOrFail();
 
-        if (!auth()->check()) {
-            return redirect()->route('login', ['redirect' => route('group.join', $token)]);
+        if (! auth()->check()) {
+            return redirect()->route('login', ['redirect' => $this->groupJoinUrl($token, $request)]);
         }
 
         $user = auth()->user();
 
-        if (!$user->isPatient()) {
+        if (! $user->isPatient()) {
             return redirect()->route('admin.dashboard');
         }
 
@@ -73,21 +97,22 @@ class GroupJoinController extends Controller
             if ($rule && $rule->monthly_limit !== null) {
                 $isWeekend = now()->isWeekend();
 
-                if (!($isWeekend && $rule->weekend_unlimited)) {
+                if (! ($isWeekend && $rule->weekend_unlimited)) {
                     [$cycleStart, $cycleEnd] = $user->currentPlanCycle();
 
                     $monthlyCount = GroupAttendance::where('user_id', $user->id)
-                        ->whereHas('group', fn($q) => $q->where('group_type', $group->group_type))
+                        ->whereHas('group', fn ($q) => $q->where('group_type', $group->group_type))
                         ->whereBetween('attended_at', [$cycleStart, $cycleEnd])
                         ->count();
 
                     if ($monthlyCount >= $rule->monthly_limit) {
                         $typeLabels = [
-                            'descenso'           => 'descenso de peso',
-                            'mantenimiento'      => 'mantenimiento',
-                            'mantenimiento_pleno'=> 'mantenimiento pleno',
+                            'descenso' => 'descenso de peso',
+                            'mantenimiento' => 'mantenimiento',
+                            'mantenimiento_pleno' => 'mantenimiento pleno',
                         ];
                         $label = $typeLabels[$group->group_type] ?? $group->group_type;
+
                         return back()->with('error',
                             "Llegaste al límite mensual de {$rule->monthly_limit} grupo(s) de {$label} para tu plan.");
                     }
@@ -98,11 +123,11 @@ class GroupJoinController extends Controller
         // Auto-record session start for recurring groups on first scan of the day
         if (($group->attributes['recurrence_type'] ?? 'none') !== 'none') {
             $tz = 'America/Argentina/Buenos_Aires';
-            $todayStart = \Carbon\Carbon::today($tz);
-            if (!$group->getRawOriginal('started_at') ||
-                \Carbon\Carbon::parse($group->getRawOriginal('started_at'))->lt($todayStart)) {
+            $todayStart = Carbon::today($tz);
+            if (! $group->getRawOriginal('started_at') ||
+                Carbon::parse($group->getRawOriginal('started_at'))->lt($todayStart)) {
                 $group->started_at = now();
-                $group->ended_at   = null;
+                $group->ended_at = null;
                 $group->saveQuietly();
             }
         }
@@ -114,8 +139,20 @@ class GroupJoinController extends Controller
             'attended_at' => now(),
         ]);
 
-        // Also add to group_patient if not already a member
-        $group->patients()->syncWithoutDetaching([$user->id => ['joined_at' => now()]]);
+        // First-time membership: capture channel (QR) + UTM + device
+        if (! $group->patients->contains($user->id)) {
+            $utm = session()->pull('group_join_utm.'.$token, []);
+
+            $group->patients()->attach($user->id, [
+                'joined_at' => now(),
+                'join_source' => 'qr',
+                'utm_source' => $utm['utm_source'] ?? null,
+                'utm_medium' => $utm['utm_medium'] ?? null,
+                'utm_campaign' => $utm['utm_campaign'] ?? null,
+                'utm_content' => $utm['utm_content'] ?? null,
+                'first_device_user_agent' => Str::limit((string) $request->userAgent(), 2000),
+            ]);
+        }
 
         return redirect()->route('patient.weight.create', ['attendance' => $attendance->id])
             ->with('success', '¡Bienvenido! Registrá tu peso para continuar.');

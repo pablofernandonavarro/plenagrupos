@@ -22,6 +22,9 @@ class User extends Authenticatable
         'plan',
         'fase_actual',
         'plan_start_date',
+        'patient_status',
+        'patient_status_at',
+        'patient_status_note',
         'password',
     ];
 
@@ -34,8 +37,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'plan_start_date'   => 'date',
-            'password'          => 'hashed',
+            'plan_start_date' => 'date',
+            'patient_status_at' => 'datetime',
+            'password' => 'hashed',
         ];
     }
 
@@ -45,7 +49,7 @@ class User extends Authenticatable
      */
     public function currentPlanCycle(): array
     {
-        if (!$this->plan_start_date) {
+        if (! $this->plan_start_date) {
             return [now()->startOfMonth(), now()->endOfMonth()];
         }
 
@@ -89,7 +93,16 @@ class User extends Authenticatable
 
     public function patientGroups()
     {
-        return $this->belongsToMany(Group::class, 'group_patient')->withPivot('joined_at');
+        return $this->belongsToMany(Group::class, 'group_patient')->withPivot(
+            'joined_at',
+            'maintenance_weight',
+            'join_source',
+            'utm_source',
+            'utm_medium',
+            'utm_campaign',
+            'utm_content',
+            'first_device_user_agent',
+        );
     }
 
     public function attendances()

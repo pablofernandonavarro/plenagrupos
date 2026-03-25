@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\GroupAttendance;
 use App\Models\InbodyRecord;
 use App\Models\WeightRecord;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DataExportController extends Controller
@@ -32,6 +33,7 @@ class DataExportController extends Controller
                 'user_id',
                 'patient_name',
                 'patient_email',
+                'patient_status',
                 'attended_at',
                 'created_at',
             ]);
@@ -47,6 +49,7 @@ class DataExportController extends Controller
                     $a->user_id,
                     $a->user?->name,
                     $a->user?->email,
+                    $a->user?->patient_status,
                     $a->attended_at?->format('Y-m-d H:i:s'),
                     $a->created_at?->format('Y-m-d H:i:s'),
                 ]);
@@ -62,6 +65,7 @@ class DataExportController extends Controller
                 'user_id',
                 'patient_name',
                 'patient_email',
+                'patient_status',
                 'group_id',
                 'group_name',
                 'attendance_id',
@@ -80,6 +84,7 @@ class DataExportController extends Controller
                     $w->user_id,
                     $w->user?->name,
                     $w->user?->email,
+                    $w->user?->patient_status,
                     $w->group_id,
                     $w->group?->name,
                     $w->attendance_id,
@@ -100,6 +105,7 @@ class DataExportController extends Controller
                 'user_id',
                 'patient_name',
                 'patient_email',
+                'patient_status',
                 'test_date',
                 'weight',
                 'skeletal_muscle_mass',
@@ -126,6 +132,7 @@ class DataExportController extends Controller
                     $r->user_id,
                     $r->patient?->name,
                     $r->patient?->email,
+                    $r->patient?->patient_status,
                     $r->test_date?->format('Y-m-d'),
                     $r->weight,
                     $r->skeletal_muscle_mass,
@@ -144,5 +151,65 @@ class DataExportController extends Controller
                 ]);
             }
         }, 'inbody_'.now()->format('Y-m-d_His').'.csv');
+    }
+
+    /** Una fila por cada paciente en cada grupo (canal, UTM, dispositivo al primer QR). */
+    public function groupPatients(): StreamedResponse
+    {
+        return $this->csvResponse(function ($handle) {
+            fputcsv($handle, [
+                'group_id',
+                'group_name',
+                'user_id',
+                'patient_name',
+                'patient_email',
+                'patient_status',
+                'joined_at',
+                'join_source',
+                'utm_source',
+                'utm_medium',
+                'utm_campaign',
+                'utm_content',
+                'first_device_user_agent',
+            ]);
+
+            foreach (DB::table('group_patient')
+                ->join('groups', 'groups.id', '=', 'group_patient.group_id')
+                ->join('users', 'users.id', '=', 'group_patient.user_id')
+                ->orderBy('groups.name')
+                ->orderBy('users.name')
+                ->select([
+                    'group_patient.group_id',
+                    'groups.name as group_name',
+                    'group_patient.user_id',
+                    'users.name as patient_name',
+                    'users.email as patient_email',
+                    'users.patient_status',
+                    'group_patient.joined_at',
+                    'group_patient.join_source',
+                    'group_patient.utm_source',
+                    'group_patient.utm_medium',
+                    'group_patient.utm_campaign',
+                    'group_patient.utm_content',
+                    'group_patient.first_device_user_agent',
+                ])
+                ->cursor() as $row) {
+                fputcsv($handle, [
+                    $row->group_id,
+                    $row->group_name,
+                    $row->user_id,
+                    $row->patient_name,
+                    $row->patient_email,
+                    $row->patient_status,
+                    $row->joined_at,
+                    $row->join_source,
+                    $row->utm_source,
+                    $row->utm_medium,
+                    $row->utm_campaign,
+                    $row->utm_content,
+                    $row->first_device_user_agent,
+                ]);
+            }
+        }, 'pacientes_por_grupo_'.now()->format('Y-m-d_His').'.csv');
     }
 }

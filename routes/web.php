@@ -56,6 +56,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/asistencias', [DataExportController::class, 'attendances'])->name('attendances');
         Route::get('/pesos', [DataExportController::class, 'weights'])->name('weights');
         Route::get('/inbody', [DataExportController::class, 'inbody'])->name('inbody');
+        Route::get('/pacientes-por-grupo', [DataExportController::class, 'groupPatients'])->name('group-patients');
     });
 
     Route::resource('groups', Admin\GroupController::class);

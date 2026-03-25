@@ -52,6 +52,7 @@ class DatabaseSeeder extends Seeder
                 'name' => $name,
                 'email' => $email,
                 'role' => 'patient',
+                'patient_status' => 'active',
                 'password' => Hash::make('password'),
             ]);
         }
@@ -65,7 +66,10 @@ class DatabaseSeeder extends Seeder
 
         $group->coordinators()->attach([$coord1->id, $coord2->id]);
         foreach ($patients as $patient) {
-            $group->patients()->attach($patient->id, ['joined_at' => now()]);
+            $group->patients()->attach($patient->id, [
+                'joined_at' => now(),
+                'join_source' => 'manual',
+            ]);
         }
 
         // Sample attendance + weight records for first 2 patients
@@ -87,6 +91,6 @@ class DatabaseSeeder extends Seeder
         $this->command->info('✓ Admin:        admin@plena.com / password');
         $this->command->info('✓ Coordinador:  maria@plena.com / password');
         $this->command->info('✓ Paciente:     paciente1@plena.com / password');
-        $this->command->info('✓ QR del grupo: /grupo/' . $group->qr_token);
+        $this->command->info('✓ QR del grupo: /grupo/'.$group->qr_token);
     }
 }

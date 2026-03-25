@@ -25,7 +25,20 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 InBody
             </a>
+            <a href="{{ route('admin.exports.group-patients') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-teal-200 text-teal-800 text-sm font-medium hover:bg-teal-50 transition" title="Canal QR/manual y UTM por alta">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Pacientes × grupo
+            </a>
         </div>
+        <details class="mt-4 text-xs text-gray-600 border-t border-gray-100 pt-4">
+            <summary class="cursor-pointer font-medium text-gray-700">Cómo usar UTM y el QR</summary>
+            <ul class="mt-2 space-y-1 list-disc list-inside text-gray-500">
+                <li>En <strong>Grupo → QR</strong> podés copiar la URL base o añadir parámetros para campañas, p. ej. <code class="bg-gray-100 px-1 rounded">?utm_source=instagram&amp;utm_medium=story&amp;utm_campaign=marzo2026</code>.</li>
+                <li>Generá un QR apuntando a esa URL completa: al escanear, se guardan el canal (<strong>qr</strong>) y los UTM en la primera vez que el paciente entra al grupo.</li>
+                <li>Si el paciente lo da de alta un admin desde el panel, el canal queda <strong>manual</strong>.</li>
+                <li>El <strong>estado del paciente</strong> (activo / pausa / egreso) se edita en <strong>Usuarios → Editar</strong>; los egresados no entran en cohortes de retención.</li>
+            </ul>
+        </details>
     </div>
 
     <form method="get" action="{{ route('admin.adherence.index') }}" class="flex flex-wrap items-end gap-4 bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -50,6 +63,7 @@
             <thead>
                 <tr class="bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide">
                     <th class="px-4 py-3 font-medium">Paciente</th>
+                    <th class="px-4 py-3 font-medium">Estado</th>
                     <th class="px-4 py-3 font-medium">Última visita</th>
                     <th class="px-4 py-3 font-medium text-right">Días sin visitar</th>
                     <th class="px-4 py-3 font-medium">Último peso</th>
@@ -70,6 +84,15 @@
                         <td class="px-4 py-3">
                             <p class="font-medium text-gray-800">{{ $row['patient']->name }}</p>
                             <p class="text-xs text-gray-400">{{ $row['patient']->email }}</p>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            @php $st = $row['patient']->patient_status ?? 'active'; @endphp
+                            <span class="text-xs font-medium px-2 py-0.5 rounded
+                                @if($st === 'active') bg-green-50 text-green-800
+                                @elseif($st === 'pause') bg-yellow-50 text-yellow-800
+                                @else bg-gray-100 text-gray-700 @endif">
+                                {{ $st === 'active' ? 'Activo' : ($st === 'pause' ? 'Pausa' : 'Egreso') }}
+                            </span>
                         </td>
                         <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ $att ? $att->format('d/m/Y H:i') : '—' }}</td>
                         <td class="px-4 py-3 text-right">
@@ -99,7 +122,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-10 text-center text-gray-400">No hay pacientes que coincidan con el filtro.</td>
+                        <td colspan="9" class="px-4 py-10 text-center text-gray-400">No hay pacientes que coincidan con el filtro.</td>
                     </tr>
                 @endforelse
             </tbody>
