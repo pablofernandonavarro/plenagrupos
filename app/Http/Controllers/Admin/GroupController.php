@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\BuildsGroupHistorial;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\GroupAttendance;
@@ -15,6 +16,8 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class GroupController extends Controller
 {
+    use BuildsGroupHistorial;
+
     public function index(Request $request)
     {
         $tz = 'America/Argentina/Buenos_Aires';
@@ -190,7 +193,7 @@ class GroupController extends Controller
         return redirect()->route('admin.groups.show', $group)->with('success', 'Grupo actualizado.');
     }
 
-    public function show(Group $group)
+    public function show(Request $request, Group $group)
     {
         $group->load(['coordinators', 'patients', 'patientsAll']);
         $allCoordinators = User::where('role', 'coordinator')->get();
@@ -204,9 +207,10 @@ class GroupController extends Controller
         $totalVisits = $attendances->count();
         $avgWeight = $group->weightRecords()->avg('weight');
 
-        return view('admin.groups.show', compact(
-            'group', 'allCoordinators', 'allPatients',
-            'qrCode', 'joinUrl', 'attendances', 'totalVisits', 'avgWeight'
+        return view('admin.groups.show', array_merge(
+            compact('group', 'allCoordinators', 'allPatients', 'qrCode', 'joinUrl', 'attendances', 'totalVisits', 'avgWeight'),
+            $this->buildGroupHistorialData($group, $request),
+            ['historialFormAction' => route('admin.groups.show', $group)]
         ));
     }
 

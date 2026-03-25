@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\Coordinator;
 
+use App\Http\Controllers\Concerns\BuildsGroupHistorial;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\GroupAttendance;
-use App\Models\GroupMembershipLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DashboardController extends Controller
 {
+    use BuildsGroupHistorial;
+
     public function index(Request $request)
     {
         $assignedGroupsCount = Group::whereHas('coordinators', fn ($q) => $q->where('users.id', auth()->id()))->count();
@@ -107,62 +108,10 @@ class DashboardController extends Controller
         $stats = $this->weightRangeStats($todayAttendances);
         $todayVisits = $todayAttendances->count();
 
-        $historyDates = $group->attendances()
-            ->orderByDesc('attended_at')
-            ->get(['attended_at'])
-            ->map(fn ($a) => $a->attended_at->format('Y-m-d'))
-            ->unique()
-            ->sort()
-            ->reverse()
-            ->values();
-
-        $historialRaw = $request->query('historial');
-        $historialDate = null;
-        if (is_string($historialRaw) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $historialRaw)) {
-            try {
-                $parsed = Carbon::createFromFormat('Y-m-d', $historialRaw)->format('Y-m-d');
-                if ($historyDates->contains($parsed)) {
-                    $historialDate = $parsed;
-                }
-            } catch (\Throwable) {
-            }
-        }
-
-        $historialStats = null;
-        $historialAttendances = null;
-        $historialMembershipEvents = null;
-
-        if ($historialDate !== null) {
-            $day = Carbon::parse($historialDate)->startOfDay();
-            $historialAttendances = $group->attendances()
-                ->with(['user', 'weightRecord'])
-                ->whereDate('attended_at', $day)
-                ->orderBy('attended_at')
-                ->get();
-            $historialStats = $this->weightRangeStats($historialAttendances);
-            $historialMembershipEvents = GroupMembershipLog::query()
-                ->where('group_id', $group->id)
-                ->with('user')
-                ->where(function ($q) use ($day) {
-                    $q->whereDate('joined_at', $day)
-                        ->orWhereDate('left_at', $day);
-                })
-                ->orderBy('joined_at')
-                ->get();
-        }
-
-        return view('coordinator.group', compact(
-            'group',
-            'attendances',
-            'avgWeight',
-            'totalVisits',
-            'todayVisits',
-            'stats',
-            'historyDates',
-            'historialDate',
-            'historialStats',
-            'historialAttendances',
-            'historialMembershipEvents',
+        return view('coordinator.group', array_merge(
+            compact('group', 'attendances', 'avgWeight', 'totalVisits', 'todayVisits', 'stats'),
+            $this->buildGroupHistorialData($group, $request),
+            ['historialFormAction' => route('coordinator.groups.show', $group)]
         ));
     }
 
@@ -302,35 +251,5 @@ class DashboardController extends Controller
             $group->coordinators()->where('users.id', auth()->id())->exists(),
             403
         );
-    }
-
-    /**
-     * @param  Collection<int, GroupAttendance>  $attendances
-     * @return array{inRange: int, above: int, below: int, noWeight: int}
-     */
-    private function weightRangeStats(Collection $attendances): array
-    {
-        $inRange = 0;
-        $above = 0;
-        $below = 0;
-        $noWeight = 0;
-        foreach ($attendances as $a) {
-            $rw = $a->weightRecord?->weight;
-            $piso = $a->user->peso_piso;
-            $techo = $a->user->peso_techo;
-            if (! $rw) {
-                $noWeight++;
-            } elseif ($techo && $rw > $techo) {
-                $above++;
-            } elseif ($piso && $rw < $piso) {
-                $below++;
-            } elseif ($piso || $techo) {
-                $inRange++;
-            } else {
-                $noWeight++;
-            }
-        }
-
-        return compact('inRange', 'above', 'below', 'noWeight');
     }
 }

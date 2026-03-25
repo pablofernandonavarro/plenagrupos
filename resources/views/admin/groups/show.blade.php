@@ -155,6 +155,8 @@
         </div>
     </div>
 
+    @include('partials.group-historial')
+
     {{-- Patients --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
