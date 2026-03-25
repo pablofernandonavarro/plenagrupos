@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Coordinator;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
@@ -151,18 +152,39 @@ class DashboardController extends Controller
 
     public function toggleGroup(Group $group)
     {
-        if (! $group->active && $group->started_at) {
+        $type = $group->recurrence_type ?? 'none';
+        $isRecurring = $type !== 'none';
+        $tz = 'America/Argentina/Buenos_Aires';
+
+        if ($group->active) {
+            $updates = ['active' => false, 'ended_at' => now()];
+            if ($isRecurring) {
+                $updates['recurrence_end_date'] = Carbon::now($tz)->subDay()->startOfDay()->toDateString();
+            }
+            $group->update($updates);
+
+            return back()->with('success', $isRecurring ? 'Programa finalizado.' : 'Grupo finalizado.');
+        }
+
+        if ($isRecurring && $group->isProgramVigente()) {
+            $group->update([
+                'recurrence_end_date' => Carbon::now($tz)->subDay()->startOfDay()->toDateString(),
+                'ended_at' => $group->ended_at ?? now(),
+            ]);
+
+            return back()->with('success', 'Programa finalizado.');
+        }
+
+        if (! $isRecurring && $group->started_at) {
             return back()->with('error', 'Un grupo finalizado no puede volver a iniciarse.');
         }
 
-        if ($group->active) {
-            $group->update(['active' => false, 'ended_at' => now()]);
+        if (! $isRecurring && ! $group->started_at) {
+            $group->update(['active' => true, 'started_at' => now()]);
 
-            return back()->with('success', 'Grupo finalizado.');
+            return back()->with('success', 'Grupo iniciado.');
         }
 
-        $group->update(['active' => true, 'started_at' => now()]);
-
-        return back()->with('success', 'Grupo iniciado.');
+        return back()->with('error', 'No se pudo actualizar el grupo.');
     }
 }

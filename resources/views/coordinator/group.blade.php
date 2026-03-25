@@ -57,16 +57,18 @@
                 @endif
             </div>
         </div>
-        @if($group->active)
+        @if($group->isProgramClosed())
+            <span class="text-xs px-4 py-2 rounded-lg border border-gray-200 text-gray-400 shrink-0">Finalizado</span>
+        @elseif($group->isProgramVigente())
             <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST" class="shrink-0"
-                  onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
+                  onsubmit="return confirm('¿Finalizar {{ $group->auto_sessions ? 'el programa' : 'el grupo' }}? Esta acción no se puede deshacer.')">
                 @csrf
                 <button type="submit"
                     class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
                     Finalizar
                 </button>
             </form>
-        @elseif(!$group->started_at)
+        @elseif($group->isProgramPending() && ! $group->auto_sessions)
             <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST" class="shrink-0">
                 @csrf
                 <button type="submit"
