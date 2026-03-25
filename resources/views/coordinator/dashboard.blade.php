@@ -152,26 +152,6 @@
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-sky-50 text-sky-700">Descenso</span>
                     @endif
                 </div>
-
-                {{-- Acciones primarias --}}
-                @if($group->isProgramVigente())
-                    <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST"
-                          onsubmit="return confirm('¿Finalizar {{ $group->auto_sessions ? 'el programa' : 'el grupo' }}? Esta acción no se puede deshacer.')">
-                        @csrf
-                        <button type="submit"
-                            class="w-full sm:w-auto min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
-                            Finalizar {{ $group->auto_sessions ? 'programa' : 'grupo' }}
-                        </button>
-                    </form>
-                @elseif($group->isProgramPending() && ! $group->auto_sessions)
-                    <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
-                        @csrf
-                        <button type="submit"
-                            class="w-full sm:w-auto min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-lg transition border border-teal-400 text-teal-600 hover:bg-teal-50">
-                            Iniciar grupo
-                        </button>
-                    </form>
-                @endif
             </div>
 
             {{-- Recurrencia / fechas --}}
@@ -253,6 +233,29 @@
                     </svg>
                 </a>
             </div>
+
+            @if($group->isProgramVigente())
+                <div class="px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+                    <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST"
+                          onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
+                        @csrf
+                        <button type="submit"
+                            class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-red-300 text-red-600 hover:bg-red-50 bg-white">
+                            Finalizar grupo
+                        </button>
+                    </form>
+                </div>
+            @elseif($group->isProgramPending() && ! $group->auto_sessions)
+                <div class="px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+                    <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                            class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-teal-400 text-teal-600 hover:bg-teal-50 bg-white">
+                            Iniciar grupo
+                        </button>
+                    </form>
+                </div>
+            @endif
         </article>
 
     @empty
