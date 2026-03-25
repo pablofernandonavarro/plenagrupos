@@ -186,23 +186,23 @@
         </div>
     </div>
 
-    {{-- Attendance & Weight History --}}
+    @php
+        $todayAttendances = $attendances->filter(fn($a) => $a->attended_at->isToday());
+        $pastAttendances  = $attendances->filter(fn($a) => !$a->attended_at->isToday());
+    @endphp
+
+    {{-- Presentes hoy --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 class="font-semibold text-gray-800">
-                Historial de visitas y pesos
-                @if($group->active)
-                    <span class="ml-2 inline-flex items-center gap-1 text-xs text-green-600 font-normal">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                        En vivo
-                    </span>
-                @endif
+            <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                Presentes hoy
+                <span class="inline-flex items-center gap-1 text-xs text-green-600 font-normal">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    En vivo
+                </span>
             </h2>
-            @if($group->active)
-                <span id="last-update" class="text-xs text-gray-400"></span>
-            @endif
+            <span id="last-update" class="text-xs text-gray-400"></span>
         </div>
-
         <div id="attendance-table" class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
@@ -215,7 +215,7 @@
                     </tr>
                 </thead>
                 <tbody id="attendance-body" class="divide-y divide-gray-50">
-                    @forelse($attendances as $att)
+                    @forelse($todayAttendances as $att)
                         @php
                             $rw   = $att->weightRecord?->weight;
                             $iw   = $att->user->ideal_weight;
@@ -228,30 +228,22 @@
                                     <span class="font-medium text-gray-800">{{ $att->user->name }}</span>
                                 </div>
                             </td>
-                            <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('H:i') }}</td>
                             <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
                                 {{ $rw ? $rw . ' kg' : '—' }}
                             </td>
-                            <td class="px-5 py-3 text-right text-gray-400">
-                                {{ $iw ? $iw . ' kg' : '—' }}
-                            </td>
+                            <td class="px-5 py-3 text-right text-gray-400">{{ $iw ? $iw . ' kg' : '—' }}</td>
                             <td class="px-5 py-3 text-right font-semibold">
                                 @if($diff !== null)
-                                    @if($diff > 0)
-                                        <span class="text-red-500">↑ +{{ $diff }} kg</span>
-                                    @elseif($diff < 0)
-                                        <span class="text-green-600">↓ {{ $diff }} kg</span>
-                                    @else
-                                        <span class="text-gray-400">= ideal</span>
-                                    @endif
-                                @else
-                                    <span class="text-gray-300">—</span>
-                                @endif
+                                    @if($diff > 0)<span class="text-red-500">↑ +{{ $diff }} kg</span>
+                                    @elseif($diff < 0)<span class="text-green-600">↓ {{ $diff }} kg</span>
+                                    @else<span class="text-gray-400">= ideal</span>@endif
+                                @else<span class="text-gray-300">—</span>@endif
                             </td>
                         </tr>
                     @empty
                         <tr id="empty-row">
-                            <td colspan="5" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td>
+                            <td colspan="5" class="px-5 py-8 text-center text-gray-400">Nadie se ha registrado hoy todavía.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -259,9 +251,60 @@
         </div>
     </div>
 
+    {{-- Historial de visitas anteriores --}}
+    @if($pastAttendances->isNotEmpty())
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Historial de visitas anteriores</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+                    <tr>
+                        <th class="px-5 py-3 text-left">Paciente</th>
+                        <th class="px-5 py-3 text-left">Fecha y hora</th>
+                        <th class="px-5 py-3 text-right">Peso</th>
+                        <th class="px-5 py-3 text-right">Peso ideal</th>
+                        <th class="px-5 py-3 text-right">Dif.</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach($pastAttendances as $att)
+                        @php
+                            $rw   = $att->weightRecord?->weight;
+                            $iw   = $att->user->ideal_weight;
+                            $diff = ($rw && $iw) ? round($rw - $iw, 2) : null;
+                        @endphp
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-5 py-3">
+                                <div class="flex items-center gap-2">
+                                    <x-avatar :user="$att->user" size="sm" />
+                                    <span class="font-medium text-gray-800">{{ $att->user->name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
+                                {{ $rw ? $rw . ' kg' : '—' }}
+                            </td>
+                            <td class="px-5 py-3 text-right text-gray-400">{{ $iw ? $iw . ' kg' : '—' }}</td>
+                            <td class="px-5 py-3 text-right font-semibold">
+                                @if($diff !== null)
+                                    @if($diff > 0)<span class="text-red-500">↑ +{{ $diff }} kg</span>
+                                    @elseif($diff < 0)<span class="text-green-600">↓ {{ $diff }} kg</span>
+                                    @else<span class="text-gray-400">= ideal</span>@endif
+                                @else<span class="text-gray-300">—</span>@endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
 </div>
 
-@if($group->active)
+@if($group->status === 'active')
 <script>
 const liveUrl  = '{{ route('admin.groups.live', $group) }}';
 const tbody    = document.getElementById('attendance-body');

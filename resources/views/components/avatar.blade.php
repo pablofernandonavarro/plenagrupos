@@ -9,17 +9,8 @@
     ];
     $cls = $sizes[$size] ?? $sizes['sm'];
 
-    $colors = [
-        'style="background-color:#09cda6"',
-        'style="background-color:#3b82f6"',
-        'style="background-color:#8b5cf6"',
-        'style="background-color:#6366f1"',
-        'style="background-color:#f43f5e"',
-        'style="background-color:#f59e0b"',
-        'style="background-color:#06b6d4"',
-        'style="background-color:#10b981"',
-    ];
-    $colorStyle = $colors[$user->id % count($colors)];
+    $colorValues = ['#09cda6','#3b82f6','#8b5cf6','#6366f1','#f43f5e','#f59e0b','#06b6d4','#10b981'];
+    $bgColor = $colorValues[$user->id % count($colorValues)];
 
     $parts    = explode(' ', trim($user->name));
     $initials = strtoupper(substr($parts[0], 0, 1));
@@ -30,12 +21,14 @@
     <img src="{{ secure_asset('storage/' . $user->avatar) }}"
          alt="{{ $user->name }}"
          class="{{ $cls }} rounded-full object-cover shrink-0"
-         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-    <div class="{{ $cls }} rounded-full items-center justify-center shrink-0 font-semibold text-white" {!! $colorStyle !!} style="display:none">
+         onerror="this.style.display='none';this.nextElementSibling.style.cssText='display:flex;background-color:{{ $bgColor }}'">
+    <div class="{{ $cls }} rounded-full items-center justify-center shrink-0 font-semibold text-white"
+         style="display:none">
         {{ $initials }}
     </div>
 @else
-    <div class="{{ $cls }} rounded-full flex items-center justify-center shrink-0 font-semibold text-white" {!! $colorStyle !!}>
+    <div class="{{ $cls }} rounded-full flex items-center justify-center shrink-0 font-semibold text-white"
+         style="background-color:{{ $bgColor }}">
         {{ $initials }}
     </div>
 @endif
