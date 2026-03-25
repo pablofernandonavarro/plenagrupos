@@ -8,6 +8,7 @@ use App\Models\GroupMembershipLog;
 use App\Models\PlanRule;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class GroupJoinController extends Controller
@@ -51,7 +52,7 @@ class GroupJoinController extends Controller
             return view('group.join', ['group' => $group, 'groupStatus' => $group->status]);
         }
 
-        $isActiveMember = \Illuminate\Support\Facades\DB::table('group_patient')
+        $isActiveMember = DB::table('group_patient')
             ->where('group_id', $group->id)
             ->where('user_id', $user->id)
             ->whereNull('left_at')
@@ -86,7 +87,7 @@ class GroupJoinController extends Controller
         }
 
         // Check pivot state: null = never joined, left_at null = active, left_at set = left
-        $existingPivot = \Illuminate\Support\Facades\DB::table('group_patient')
+        $existingPivot = DB::table('group_patient')
             ->where('group_id', $group->id)
             ->where('user_id', $user->id)
             ->first();
@@ -161,13 +162,18 @@ class GroupJoinController extends Controller
 
         // Register attendance — reuse today's record if the patient already had one
         // (they left and are rejoining the same session: same visit, clear the exit time)
+        $session = $group->findOrCreateSessionForDate(now());
         if ($todayAttendance) {
-            $todayAttendance->update(['left_at' => null]);
-            $attendance = $todayAttendance;
+            $todayAttendance->update([
+                'left_at' => null,
+                'group_session_id' => $todayAttendance->group_session_id ?? $session->id,
+            ]);
+            $attendance = $todayAttendance->fresh();
         } else {
             $attendance = GroupAttendance::create([
-                'group_id'   => $group->id,
-                'user_id'    => $user->id,
+                'group_id' => $group->id,
+                'group_session_id' => $session->id,
+                'user_id' => $user->id,
                 'attended_at' => now(),
             ]);
         }
@@ -175,13 +181,13 @@ class GroupJoinController extends Controller
         // Membership: join new, rejoin, or already active (just record attendance)
         $utm = session()->pull('group_join_utm.'.$token, []);
         $pivotData = [
-            'joined_at'               => now(),
-            'left_at'                 => null,
-            'join_source'             => 'qr',
-            'utm_source'              => $utm['utm_source'] ?? null,
-            'utm_medium'              => $utm['utm_medium'] ?? null,
-            'utm_campaign'            => $utm['utm_campaign'] ?? null,
-            'utm_content'             => $utm['utm_content'] ?? null,
+            'joined_at' => now(),
+            'left_at' => null,
+            'join_source' => 'qr',
+            'utm_source' => $utm['utm_source'] ?? null,
+            'utm_medium' => $utm['utm_medium'] ?? null,
+            'utm_campaign' => $utm['utm_campaign'] ?? null,
+            'utm_content' => $utm['utm_content'] ?? null,
             'first_device_user_agent' => Str::limit((string) $request->userAgent(), 2000),
         ];
 
@@ -189,22 +195,22 @@ class GroupJoinController extends Controller
             // First time joining
             $group->patients()->attach($user->id, $pivotData);
             GroupMembershipLog::create([
-                'group_id'   => $group->id,
-                'user_id'    => $user->id,
-                'joined_at'  => now(),
+                'group_id' => $group->id,
+                'user_id' => $user->id,
+                'joined_at' => now(),
                 'join_source' => 'qr',
             ]);
         } elseif ($existingPivot->left_at !== null) {
             // Rejoining after having left — use DB directly because the relationship
             // has wherePivotNull('left_at') and updateExistingPivot would not find the row
-            \Illuminate\Support\Facades\DB::table('group_patient')
+            DB::table('group_patient')
                 ->where('group_id', $group->id)
                 ->where('user_id', $user->id)
                 ->update($pivotData);
             GroupMembershipLog::create([
-                'group_id'   => $group->id,
-                'user_id'    => $user->id,
-                'joined_at'  => now(),
+                'group_id' => $group->id,
+                'user_id' => $user->id,
+                'joined_at' => now(),
                 'join_source' => 'qr',
             ]);
         }

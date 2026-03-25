@@ -123,7 +123,7 @@
                 <div class="px-5 py-3 flex justify-between items-center">
                     <div>
                         <p class="font-medium text-gray-800 text-sm">{{ $att->user->name }}</p>
-                        <p class="text-xs text-gray-400">{{ $att->group->name }} · {{ $att->attended_at->format('d/m/Y H:i') }}</p>
+                        <p class="text-xs text-gray-400">{{ $att->group->name }} · {{ $att->attended_at->format('d/m/Y H:i') }}@if($att->groupSession) · Sesión n.º {{ $att->groupSession->sequence_number }}@endif</p>
                     </div>
                     @if($att->weightRecord)
                         <span class="text-sm font-semibold text-teal-600">{{ $att->weightRecord->weight }} kg</span>

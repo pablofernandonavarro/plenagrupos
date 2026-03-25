@@ -91,8 +91,11 @@
 
     {{-- Asistencia con pesos --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 class="font-semibold text-gray-800">Asistentes</h2>
+        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center gap-2 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap min-w-0">
+                <h2 class="font-semibold text-gray-800">Asistentes</h2>
+                <span id="live-session-badge" class="text-xs font-semibold text-teal-700 tabular-nums shrink-0">@if($todaySessionRecord)Sesión n.º {{ $todaySessionRecord->sequence_number }}@else<span class="text-gray-400 font-normal">—</span>@endif</span>
+            </div>
             <span id="last-update" class="text-xs text-gray-400"></span>
         </div>
 
@@ -338,6 +341,7 @@ const csrfToken    = '{{ csrf_token() }}';
 const groupClosed  = {{ $group->isProgramClosed() ? 'true' : 'false' }};
 const listEl       = document.getElementById('live-list');
 const countEl      = document.getElementById('stat-count');
+const sessionBadge = document.getElementById('live-session-badge');
 const updateEl     = document.getElementById('last-update');
 const patientsList  = document.getElementById('patients-list');
 const patientsCount = document.getElementById('patients-count');
@@ -410,7 +414,7 @@ function renderRow(a) {
             ${avatarHtml(a)}
             <div class="min-w-0">
                 <p class="font-medium text-gray-800 text-sm leading-tight">${a.name}</p>
-                <p class="text-xs text-gray-400">Entrada: ${a.attended_at} &nbsp;·&nbsp; <span class="checkout-cell inline">${leftHtml}</span></p>
+                <p class="text-xs text-gray-400">Entrada: ${a.attended_at}${a.session_number != null ? ` &nbsp;·&nbsp; Sesión n.º ${a.session_number}` : ''} &nbsp;·&nbsp; <span class="checkout-cell inline">${leftHtml}</span></p>
             </div>
         </div>
         <div class="grid grid-cols-3 gap-2 text-xs">
@@ -460,6 +464,9 @@ async function fetchAttendances() {
     if (data.patients !== undefined) renderPatients(data.patients);
 
     countEl.textContent = data.count;
+    if (sessionBadge) {
+        sessionBadge.textContent = data.session_number != null ? 'Sesión n.º ' + data.session_number : '—';
+    }
 
     try {
         if (data.attendances.length === 0) {

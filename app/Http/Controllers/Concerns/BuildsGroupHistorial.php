@@ -80,7 +80,7 @@ trait BuildsGroupHistorial
         if ($historialDate !== null) {
             $day = Carbon::parse($historialDate)->startOfDay();
             $historialAttendances = $group->attendances()
-                ->with(['user', 'weightRecord'])
+                ->with(['user', 'weightRecord', 'groupSession'])
                 ->whereDate('attended_at', $day)
                 ->orderBy('attended_at')
                 ->get();

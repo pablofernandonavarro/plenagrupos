@@ -6,16 +6,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class GroupAttendance extends Model
 {
-    protected $fillable = ['group_id', 'user_id', 'attended_at', 'left_at'];
+    protected $fillable = ['group_id', 'group_session_id', 'user_id', 'attended_at', 'left_at'];
 
     protected $casts = [
         'attended_at' => 'datetime',
-        'left_at'     => 'datetime',
+        'left_at' => 'datetime',
     ];
 
     public function group()
     {
         return $this->belongsTo(Group::class);
+    }
+
+    public function groupSession()
+    {
+        return $this->belongsTo(GroupSession::class, 'group_session_id');
     }
 
     public function user()

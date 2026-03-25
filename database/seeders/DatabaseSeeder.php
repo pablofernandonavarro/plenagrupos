@@ -75,8 +75,10 @@ class DatabaseSeeder extends Seeder
         // Sample attendance + weight records for first 2 patients
         $sampleWeights = [78.5, 92.0];
         foreach (array_slice($patients, 0, 2) as $i => $patient) {
+            $session = $group->findOrCreateSessionForDate(now()->subDays(7));
             $attendance = GroupAttendance::create([
                 'group_id' => $group->id,
+                'group_session_id' => $session->id,
                 'user_id' => $patient->id,
                 'attended_at' => now()->subDays(7),
             ]);

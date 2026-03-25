@@ -159,6 +159,7 @@ $typeBadge = [
                 <tr class="border-b border-gray-100 text-left" style="background:#f8fafc">
                     <th class="px-5 py-3 font-semibold text-gray-600">Paciente</th>
                     <th class="px-5 py-3 font-semibold text-gray-600">Grupo</th>
+                    <th class="px-5 py-3 font-semibold text-gray-600 text-center">Sesión</th>
                     <th class="px-5 py-3 font-semibold text-gray-600">Fecha y hora</th>
                     <th class="px-5 py-3 font-semibold text-gray-600 text-center">Peso</th>
                     <th class="px-5 py-3"></th>
@@ -176,6 +177,13 @@ $typeBadge = [
                             </span>
                             <span class="text-gray-700">{{ $att->group?->name ?? '—' }}</span>
                         </div>
+                    </td>
+                    <td class="px-5 py-3 text-center text-gray-600 tabular-nums">
+                        @if($att->groupSession)
+                            <span class="text-xs font-semibold text-teal-700">n.º {{ $att->groupSession->sequence_number }}</span>
+                        @else
+                            <span class="text-gray-300">—</span>
+                        @endif
                     </td>
                     <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
                     <td class="px-5 py-3 text-center">
@@ -195,7 +203,7 @@ $typeBadge = [
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-5 py-8 text-center text-gray-400">Sin asistencias registradas.</td>
+                    <td colspan="6" class="px-5 py-8 text-center text-gray-400">Sin asistencias registradas.</td>
                 </tr>
                 @endforelse
             </tbody>

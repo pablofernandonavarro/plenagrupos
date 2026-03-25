@@ -85,6 +85,7 @@ class GroupController extends Controller
                     'query' => $request->query(),
                 ]
             );
+            $groups->getCollection()->load(['groupSessions' => fn ($q) => $q->where('session_date', $now->toDateString())]);
         } else {
             $groups = $query->paginate($perPage)->withQueryString();
         }
@@ -203,12 +204,16 @@ class GroupController extends Controller
         $qrCode = QrCode::size(220)->generate($joinUrl);
 
         // Attendance stats
-        $attendances = $group->attendances()->with(['user', 'weightRecord'])->latest('attended_at')->get();
+        $attendances = $group->attendances()->with(['user', 'weightRecord', 'groupSession'])->latest('attended_at')->get();
         $totalVisits = $attendances->count();
         $avgWeight = $group->weightRecords()->avg('weight');
 
+        $todaySessionRecord = $group->groupSessions()
+            ->where('session_date', Carbon::now('America/Argentina/Buenos_Aires')->toDateString())
+            ->first();
+
         return view('admin.groups.show', array_merge(
-            compact('group', 'allCoordinators', 'allPatients', 'qrCode', 'joinUrl', 'attendances', 'totalVisits', 'avgWeight'),
+            compact('group', 'allCoordinators', 'allPatients', 'qrCode', 'joinUrl', 'attendances', 'totalVisits', 'avgWeight', 'todaySessionRecord'),
             $this->buildGroupHistorialData($group, $request),
             ['historialFormAction' => route('admin.groups.show', $group)]
         ));
@@ -282,9 +287,15 @@ class GroupController extends Controller
     {
         $colors = ['#09cda6', '#3b82f6', '#8b5cf6', '#6366f1', '#f43f5e', '#f59e0b', '#06b6d4', '#10b981'];
 
+        $tz = 'America/Argentina/Buenos_Aires';
+        $todayDate = Carbon::now($tz)->toDateString();
+        $todaySession = $group->groupSessions()
+            ->where('session_date', $todayDate)
+            ->first();
+
         $attendances = $group->attendances()
-            ->with(['user', 'weightRecord'])
-            ->whereDate('attended_at', today())
+            ->with(['user', 'weightRecord', 'groupSession'])
+            ->whereDate('attended_at', $todayDate)
             ->latest('attended_at')
             ->get()
             ->map(fn ($a) => [
@@ -298,9 +309,10 @@ class GroupController extends Controller
                 'left_at' => $a->left_at?->format('H:i'),
                 'weight' => $a->weightRecord?->weight,
                 'ideal_weight' => $a->user->ideal_weight,
+                'session_number' => $a->groupSession?->sequence_number,
             ]);
 
-        $avg = $group->weightRecords()->whereDate('recorded_at', today())->avg('weight');
+        $avg = $group->weightRecords()->whereDate('recorded_at', $todayDate)->avg('weight');
 
         $patients = $group->patientsAll()->get()->map(fn ($p) => [
             'id' => $p->id,
@@ -319,6 +331,7 @@ class GroupController extends Controller
         return response()->json([
             'count' => $attendances->count(),
             'avg_weight' => $avg ? number_format($avg, 1) : null,
+            'session_number' => $todaySession?->sequence_number,
             'attendances' => $attendances,
             'patients' => $patients,
         ]);

@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Group extends Model
@@ -485,6 +486,43 @@ class Group extends Model
     public function attendances()
     {
         return $this->hasMany(GroupAttendance::class);
+    }
+
+    public function groupSessions()
+    {
+        return $this->hasMany(GroupSession::class)->orderBy('sequence_number');
+    }
+
+    /**
+     * Una fila por día calendario (zona AR) por grupo; número de secuencia global del programa.
+     */
+    public function findOrCreateSessionForDate(Carbon $date): GroupSession
+    {
+        $tz = 'America/Argentina/Buenos_Aires';
+        $sessionDate = $date->copy()->timezone($tz)->toDateString();
+
+        return DB::transaction(function () use ($sessionDate) {
+            $existing = GroupSession::query()
+                ->where('group_id', $this->id)
+                ->where('session_date', $sessionDate)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
+
+            $next = ((int) GroupSession::query()
+                ->where('group_id', $this->id)
+                ->lockForUpdate()
+                ->max('sequence_number')) + 1;
+
+            return GroupSession::create([
+                'group_id' => $this->id,
+                'session_date' => $sessionDate,
+                'sequence_number' => $next,
+            ]);
+        });
     }
 
     public function membershipLogs()

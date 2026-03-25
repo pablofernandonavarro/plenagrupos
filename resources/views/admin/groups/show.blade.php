@@ -217,8 +217,9 @@
     {{-- Presentes hoy --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+            <h2 class="font-semibold text-gray-800 flex items-center gap-2 flex-wrap">
                 Presentes hoy
+                <span id="live-session-badge" class="text-xs font-semibold text-teal-700 tabular-nums">@if($todaySessionRecord)Sesión n.º {{ $todaySessionRecord->sequence_number }}@else<span class="text-gray-400 font-normal">—</span>@endif</span>
                 <span class="inline-flex items-center gap-1 text-xs text-green-600 font-normal">
                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                     En vivo
@@ -231,6 +232,7 @@
                 <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
                     <tr>
                         <th class="px-5 py-3 text-left">Paciente</th>
+                        <th class="px-5 py-3 text-center">Sesión</th>
                         <th class="px-5 py-3 text-left">Entrada</th>
                         <th class="px-5 py-3 text-left">Salida</th>
                         <th class="px-5 py-3 text-right">Peso</th>
@@ -250,6 +252,13 @@
                                     <x-avatar :user="$att->user" size="sm" />
                                     <span class="font-medium text-gray-800">{{ $att->user->name }}</span>
                                 </div>
+                            </td>
+                            <td class="px-5 py-3 text-center text-gray-600 tabular-nums text-xs">
+                                @if($att->groupSession)
+                                    n.º {{ $att->groupSession->sequence_number }}
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
                             </td>
                             <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('H:i') }}</td>
                             <td class="px-5 py-3">
@@ -275,7 +284,7 @@
                         </tr>
                     @empty
                         <tr id="empty-row">
-                            <td colspan="5" class="px-5 py-8 text-center text-gray-400">Nadie se ha registrado hoy todavía.</td>
+                            <td colspan="6" class="px-5 py-8 text-center text-gray-400">Nadie se ha registrado hoy todavía.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -295,6 +304,7 @@
                     <tr>
                         <th class="px-5 py-3 text-left">Paciente</th>
                         <th class="px-5 py-3 text-left">Fecha y hora</th>
+                        <th class="px-5 py-3 text-center">Sesión</th>
                         <th class="px-5 py-3 text-right">Peso</th>
                         <th class="px-5 py-3 text-right">Peso ideal</th>
                         <th class="px-5 py-3 text-right">Dif.</th>
@@ -315,6 +325,13 @@
                                 </div>
                             </td>
                             <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
+                            <td class="px-5 py-3 text-center text-gray-600 tabular-nums text-xs">
+                                @if($att->groupSession)
+                                    n.º {{ $att->groupSession->sequence_number }}
+                                @else
+                                    <span class="text-gray-300">—</span>
+                                @endif
+                            </td>
                             <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
                                 {{ $rw ? $rw . ' kg' : '—' }}
                             </td>
@@ -344,6 +361,7 @@ const csrfToken      = '{{ csrf_token() }}';
 const groupClosed    = {{ $group->status === 'closed' ? 'true' : 'false' }};
 const canRemove      = {{ $group->isProgramVigente() ? 'true' : 'false' }};
 const tbody          = document.getElementById('attendance-body');
+const sessionBadge   = document.getElementById('live-session-badge');
 const updateEl       = document.getElementById('last-update');
 const statVisits     = document.getElementById('stat-visits');
 const statAvg        = document.getElementById('stat-avg');
@@ -420,11 +438,14 @@ async function fetchAttendances() {
     // Update stats
     statVisits.textContent = data.count;
     statAvg.textContent    = data.avg_weight ? data.avg_weight + ' kg' : '—';
+    if (sessionBadge) {
+        sessionBadge.textContent = data.session_number != null ? 'Sesión n.º ' + data.session_number : '—';
+    }
 
     // Update attendance table
     try {
         if (data.attendances.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td></tr>';
         } else {
             tbody.innerHTML = data.attendances.map(a => {
                 const rw   = a.weight;
@@ -443,6 +464,9 @@ async function fetchAttendances() {
                         class="text-xs text-teal-600 border border-teal-200 rounded px-2 py-0.5 hover:bg-teal-50 transition">
                         Marcar salida
                        </button>`;
+                const sessCell = a.session_number != null
+                    ? `n.º ${a.session_number}`
+                    : '<span class="text-gray-300">—</span>';
                 return `<tr>
                     <td class="px-5 py-3">
                         <div class="flex items-center gap-2">
@@ -450,6 +474,7 @@ async function fetchAttendances() {
                             <span class="font-medium text-gray-800">${a.name}</span>
                         </div>
                     </td>
+                    <td class="px-5 py-3 text-center text-gray-600 tabular-nums text-xs">${sessCell}</td>
                     <td class="px-5 py-3 text-gray-500">${a.attended_at}</td>
                     <td class="px-5 py-3">${leftHtml}</td>
                     <td class="px-5 py-3 text-right font-semibold ${rw ? 'text-teal-600' : 'text-gray-300'}">${rw ? rw + ' kg' : '—'}</td>

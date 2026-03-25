@@ -91,6 +91,9 @@
                             <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 <span class="text-sm font-semibold text-gray-600">Hoy {{ $group->meeting_time_formatted }} hs</span>
+                                @if($group->groupSessions->isNotEmpty())
+                                    <span class="text-xs font-medium text-teal-700 border-l border-gray-200 pl-2 ml-0.5">Sesión n.º {{ $group->groupSessions->first()->sequence_number }}</span>
+                                @endif
                             </div>
                         @endif
                     </div>

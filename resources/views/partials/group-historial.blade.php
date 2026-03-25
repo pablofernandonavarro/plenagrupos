@@ -32,6 +32,9 @@
                 @endphp
                 <div class="rounded-lg border border-teal-100 bg-teal-50/40 px-4 py-3">
                     <p class="text-sm font-semibold text-teal-900 capitalize">{{ $hd->translatedFormat('l j \d\e F Y') }}</p>
+                    @if($historialAttendances->first()?->groupSession)
+                        <p class="text-xs font-semibold text-teal-800 mt-1">Sesión n.º {{ $historialAttendances->first()->groupSession->sequence_number }}</p>
+                    @endif
                     <p class="text-xs text-teal-700/80 mt-0.5">{{ $historialAttendances->count() }} {{ $historialAttendances->count() === 1 ? 'asistencia' : 'asistencias' }}</p>
                 </div>
 

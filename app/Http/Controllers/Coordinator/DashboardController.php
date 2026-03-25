@@ -96,20 +96,27 @@ class DashboardController extends Controller
         $this->ensureCoordinator($group);
 
         $group->load(['patients', 'coordinators']);
-        $attendances = $group->attendances()->with(['user', 'weightRecord'])->latest('attended_at')->paginate(20);
+        $attendances = $group->attendances()->with(['user', 'weightRecord', 'groupSession'])->latest('attended_at')->paginate(20);
         $avgWeight = $group->weightRecords()->avg('weight');
         $totalVisits = $group->attendances()->count();
 
+        $tzAr = 'America/Argentina/Buenos_Aires';
+        $todayDateAr = Carbon::now($tzAr)->toDateString();
+
         $todayAttendances = $group->attendances()
-            ->with(['user', 'weightRecord'])
-            ->whereDate('attended_at', today())
+            ->with(['user', 'weightRecord', 'groupSession'])
+            ->whereDate('attended_at', $todayDateAr)
             ->get();
 
         $stats = $this->weightRangeStats($todayAttendances);
         $todayVisits = $todayAttendances->count();
 
+        $todaySessionRecord = $group->groupSessions()
+            ->where('session_date', $todayDateAr)
+            ->first();
+
         return view('coordinator.group', array_merge(
-            compact('group', 'attendances', 'avgWeight', 'totalVisits', 'todayVisits', 'stats'),
+            compact('group', 'attendances', 'avgWeight', 'totalVisits', 'todayVisits', 'stats', 'todaySessionRecord'),
             $this->buildGroupHistorialData($group, $request),
             ['historialFormAction' => route('coordinator.groups.show', $group)]
         ));
@@ -137,9 +144,15 @@ class DashboardController extends Controller
 
         $colors = ['#09cda6', '#3b82f6', '#8b5cf6', '#6366f1', '#f43f5e', '#f59e0b', '#06b6d4', '#10b981'];
 
+        $tz = 'America/Argentina/Buenos_Aires';
+        $todayDate = Carbon::now($tz)->toDateString();
+        $todaySession = $group->groupSessions()
+            ->where('session_date', $todayDate)
+            ->first();
+
         $attendances = $group->attendances()
-            ->with(['user', 'weightRecord'])
-            ->whereDate('attended_at', today())
+            ->with(['user', 'weightRecord', 'groupSession'])
+            ->whereDate('attended_at', $todayDate)
             ->latest('attended_at')
             ->get()
             ->map(fn ($a) => [
@@ -153,6 +166,7 @@ class DashboardController extends Controller
                 'left_at' => $a->left_at?->format('H:i'),
                 'weight' => $a->weightRecord?->weight,
                 'ideal_weight' => $a->user->ideal_weight,
+                'session_number' => $a->groupSession?->sequence_number,
             ]);
 
         $patients = $group->patients()->get()->map(fn ($p) => [
@@ -167,6 +181,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'count' => $attendances->count(),
+            'session_number' => $todaySession?->sequence_number,
             'attendances' => $attendances,
             'patients' => $patients,
         ]);

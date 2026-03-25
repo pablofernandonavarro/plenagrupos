@@ -13,7 +13,7 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = GroupAttendance::with(['group', 'user', 'weightRecord'])
+        $query = GroupAttendance::with(['group', 'user', 'weightRecord', 'groupSession'])
             ->orderBy('attended_at', 'desc');
 
         if ($request->filled('group_id')) {
@@ -47,7 +47,7 @@ class AttendanceController extends Controller
         $patientIds = $summaryPatients->pluck('id');
 
         // All-time attendances for the detail modal
-        $allAttendances = GroupAttendance::with('group')
+        $allAttendances = GroupAttendance::with(['group', 'groupSession'])
             ->whereIn('user_id', $patientIds)
             ->orderBy('attended_at', 'desc')
             ->get()
