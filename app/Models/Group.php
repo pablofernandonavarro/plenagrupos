@@ -149,7 +149,7 @@ class Group extends Model
     }
 
     /**
-     * Programa vigente (misma idea que admin "Activos"): activo manual o recurrente sin superar fecha de fin.
+     * Programa vigente (misma idea que admin «Vigentes»): manual con flag activo o recurrente sin superar fecha de fin.
      */
     public function isProgramVigente(): bool
     {

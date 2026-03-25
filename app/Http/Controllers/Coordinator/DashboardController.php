@@ -30,7 +30,7 @@ class DashboardController extends Controller
         $collection = $query->get();
         $totalAfterSearch = $collection->count();
 
-        // Igual que admin «Activos»: programas vigentes (isProgramVigente / misma consulta conceptual)
+        // Igual que admin «Vigentes»: programas no finalizados (isProgramVigente; no es «en sesión» ahora)
         $allowedStatuses = ['', 'active', 'pending', 'closed'];
         $status = $request->input('status', '');
         if (! in_array($status, $allowedStatuses, true)) {

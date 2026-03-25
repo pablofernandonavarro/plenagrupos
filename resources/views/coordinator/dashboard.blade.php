@@ -2,10 +2,10 @@
 @section('title', 'Mis Grupos')
 
 @php
-    // Mismos criterios que admin (Activos = vigentes); el coordinador además filtra Sin iniciar.
+    // Vigente = programa no finalizado (mismo filtro que admin). No confundir con «en sesión» (ventana horaria).
     $statusLabels = [
         '' => 'Todos',
-        'active' => 'Activos',
+        'active' => 'Vigentes',
         'pending' => 'Sin iniciar',
         'closed' => 'Finalizados',
     ];
@@ -57,6 +57,9 @@
 
             <div class="space-y-2">
                 <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide block">Estado del programa</span>
+                <p class="text-xs text-gray-500 leading-snug">
+                    <strong class="text-gray-600">En sesión</strong> en la tarjeta = ventana horaria de hoy. <strong class="text-gray-600">Programa vigente</strong> = aún no finalizado (no es «en curso» de sesión).
+                </p>
                 <div class="flex flex-wrap gap-1.5 p-1 bg-gray-100 rounded-xl border border-gray-200/80" role="tablist" aria-label="Filtrar por estado del programa">
                     @foreach($statusLabels as $val => $label)
                         {{-- onclick con comillas simples en el atributo: si usáramos " y Js::from, las comillas JSON cerrarían el atributo y el status no se envía --}}
@@ -124,7 +127,7 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true"></span>En sesión
                         </span>
                     @elseif($group->isProgramVigente())
-                        <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa activo</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa vigente</span>
                     @elseif($group->status === 'pending' && ! $group->auto_sessions)
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @else

@@ -50,7 +50,7 @@
             </select>
         </div>
         <div class="flex items-center gap-2">
-            @foreach(['today'=>'Hoy', 'active'=>'Activos', 'closed'=>'Finalizados', ''=>'Todos'] as $val => $label)
+            @foreach(['today'=>'Hoy', 'active'=>'Vigentes', 'closed'=>'Finalizados', ''=>'Todos'] as $val => $label)
                 <button type="button"
                     onclick="document.getElementById('status-input').value='{{ $val }}'; this.closest('form').submit()"
                     class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium border transition
@@ -112,7 +112,7 @@
                                         En sesión
                                     </span>
                                 @elseif($group->isProgramVigente())
-                                    <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa activo</span>
+                                    <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa vigente</span>
                                 @elseif($group->status === 'pending' && ! $group->auto_sessions)
                                     <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Sin iniciar</span>
                                 @else
@@ -225,7 +225,7 @@
                     <p class="font-medium text-gray-500">No hay grupos programados para hoy</p>
                     <p class="text-sm mt-1 text-gray-400">Los grupos con sesión hoy aparecerán aquí</p>
                 @elseif($status === 'active')
-                    <p class="font-medium text-gray-500">No hay grupos activos</p>
+                    <p class="font-medium text-gray-500">No hay grupos vigentes</p>
                     <a href="{{ route('admin.groups.create') }}" class="mt-2 inline-block text-teal-600 hover:underline text-sm">Crear grupo</a>
                 @elseif($status === 'closed')
                     <p class="font-medium text-gray-500">No hay grupos finalizados</p>

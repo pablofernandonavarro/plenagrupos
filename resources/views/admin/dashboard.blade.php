@@ -95,7 +95,7 @@
     {{-- Groups overview --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 class="font-semibold text-gray-800">Grupos activos</h2>
+            <h2 class="font-semibold text-gray-800">Grupos vigentes</h2>
             <a href="{{ route('admin.groups.index') }}" class="text-sm text-teal-600 hover:underline">Ver todos</a>
         </div>
         <div class="divide-y divide-gray-50">

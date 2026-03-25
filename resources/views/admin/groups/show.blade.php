@@ -20,7 +20,7 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En sesión
                         </span>
                     @elseif($group->isProgramVigente())
-                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa activo</span>
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa vigente</span>
                     @elseif($group->status === 'pending' && ! $group->auto_sessions)
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @else
