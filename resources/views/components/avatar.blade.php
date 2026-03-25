@@ -27,9 +27,13 @@
 @endphp
 
 @if($user->avatar)
-    <img src="{{ asset('storage/' . $user->avatar) }}"
+    <img src="{{ secure_asset('storage/' . $user->avatar) }}"
          alt="{{ $user->name }}"
-         class="{{ $cls }} rounded-full object-cover shrink-0">
+         class="{{ $cls }} rounded-full object-cover shrink-0"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <div class="{{ $cls }} rounded-full items-center justify-center shrink-0 font-semibold text-white" {!! $colorStyle !!} style="display:none">
+        {{ $initials }}
+    </div>
 @else
     <div class="{{ $cls }} rounded-full flex items-center justify-center shrink-0 font-semibold text-white" {!! $colorStyle !!}>
         {{ $initials }}
