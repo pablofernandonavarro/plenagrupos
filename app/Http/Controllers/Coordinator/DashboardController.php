@@ -15,16 +15,20 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        $assignedGroupsCount = Group::whereHas('coordinators', fn ($q) => $q->where('users.id', auth()->id()))->count();
+
         $query = Group::whereHas('coordinators', fn ($q) => $q->where('users.id', auth()->id()))
             ->with(['patients'])
             ->withCount(['attendances', 'weightRecords'])
             ->orderBy('created_at', 'desc');
 
-        if ($search = $request->input('search')) {
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
             $query->where('name', 'like', '%'.$search.'%');
         }
 
         $collection = $query->get();
+        $totalAfterSearch = $collection->count();
 
         $status = $request->input('status', '');
         if ($status === 'active') {
@@ -54,7 +58,12 @@ class DashboardController extends Controller
             return $group;
         });
 
-        return view('coordinator.dashboard', ['groups' => $groups]);
+        return view('coordinator.dashboard', [
+            'groups' => $groups,
+            'assignedGroupsCount' => $assignedGroupsCount,
+            'totalAfterSearch' => $totalAfterSearch,
+            'search' => $search,
+        ]);
     }
 
     public function showGroup(Group $group)
@@ -112,7 +121,7 @@ class DashboardController extends Controller
 
     public function liveAttendances(Group $group)
     {
-        $colors = ['#09cda6','#3b82f6','#8b5cf6','#6366f1','#f43f5e','#f59e0b','#06b6d4','#10b981'];
+        $colors = ['#09cda6', '#3b82f6', '#8b5cf6', '#6366f1', '#f43f5e', '#f59e0b', '#06b6d4', '#10b981'];
 
         $attendances = $group->attendances()
             ->with(['user', 'weightRecord'])
@@ -121,31 +130,31 @@ class DashboardController extends Controller
             ->get()
             ->map(fn ($a) => [
                 'attendance_id' => $a->id,
-                'id'            => $a->user_id,
-                'name'          => $a->user->name,
-                'initials'      => collect(explode(' ', $a->user->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
-                'color'         => $colors[$a->user_id % count($colors)],
-                'avatar_url'    => $a->user->avatar ? secure_asset('storage/'.$a->user->avatar) : null,
-                'attended_at'   => $a->attended_at->format('H:i'),
-                'left_at'       => $a->left_at?->format('H:i'),
-                'weight'        => $a->weightRecord?->weight,
-                'ideal_weight'  => $a->user->ideal_weight,
+                'id' => $a->user_id,
+                'name' => $a->user->name,
+                'initials' => collect(explode(' ', $a->user->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
+                'color' => $colors[$a->user_id % count($colors)],
+                'avatar_url' => $a->user->avatar ? secure_asset('storage/'.$a->user->avatar) : null,
+                'attended_at' => $a->attended_at->format('H:i'),
+                'left_at' => $a->left_at?->format('H:i'),
+                'weight' => $a->weightRecord?->weight,
+                'ideal_weight' => $a->user->ideal_weight,
             ]);
 
         $patients = $group->patients()->get()->map(fn ($p) => [
-            'id'          => $p->id,
-            'name'        => $p->name,
-            'initials'    => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
-            'color'       => $colors[$p->id % count($colors)],
-            'avatar_url'  => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
-            'joined_at'   => $p->pivot->joined_at ? \Carbon\Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
+            'id' => $p->id,
+            'name' => $p->name,
+            'initials' => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
+            'color' => $colors[$p->id % count($colors)],
+            'avatar_url' => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
+            'joined_at' => $p->pivot->joined_at ? Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
             'join_source' => $p->pivot->join_source,
         ]);
 
         return response()->json([
-            'count'       => $attendances->count(),
+            'count' => $attendances->count(),
             'attendances' => $attendances,
-            'patients'    => $patients,
+            'patients' => $patients,
         ]);
     }
 

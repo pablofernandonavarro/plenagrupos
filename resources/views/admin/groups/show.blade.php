@@ -167,24 +167,29 @@
             </form>
         </div>
         <div id="patients-list" class="divide-y divide-gray-50">
-            @forelse($group->patients as $patient)
+            @forelse($group->patientsAll as $patient)
+                @php $piv = $patient->pivot; $left = $piv->left_at; @endphp
                 <div class="px-5 py-3 flex justify-between items-center gap-2">
                     <div class="flex items-center gap-3 min-w-0">
                         <x-avatar :user="$patient" size="sm" />
                         <div class="min-w-0">
-                            <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
+                                @if($left)
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Salió</span>
+                                @endif
+                            </div>
                             <p class="text-xs text-gray-400">{{ $patient->email }}@if($patient->phone) · {{ $patient->phone }}@endif</p>
-                            @php $p = $patient->pivot; @endphp
                             <p class="text-[10px] text-gray-400 mt-0.5">
-                                Alta: {{ \Carbon\Carbon::parse($p->joined_at)->format('d/m/Y H:i') }}
-                                · <span class="text-gray-600">{{ $p->join_source === 'qr' ? 'QR' : 'Manual' }}</span>
-                                @if($p->utm_source)
-                                    · UTM: {{ $p->utm_source }}{{ $p->utm_campaign ? ' / '.$p->utm_campaign : '' }}
+                                Alta: {{ \Carbon\Carbon::parse($piv->joined_at)->format('d/m/Y H:i') }}
+                                · <span class="text-gray-600">{{ $piv->join_source === 'qr' ? 'QR' : 'Manual' }}</span>
+                                @if($piv->utm_source)
+                                    · UTM: {{ $piv->utm_source }}{{ $piv->utm_campaign ? ' / '.$piv->utm_campaign : '' }}
                                 @endif
                             </p>
                         </div>
                     </div>
-                    @if($group->active)
+                    @if($group->active && !$left)
                     <form action="{{ route('admin.groups.patients.remove', $group) }}" method="POST">
                         @csrf @method('DELETE')
                         <input type="hidden" name="user_id" value="{{ $patient->id }}">

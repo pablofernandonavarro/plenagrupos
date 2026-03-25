@@ -362,6 +362,18 @@ class Group extends Model
         )->wherePivotNull('left_at');
     }
 
+    /** All patients ever in this group, including those who have left. */
+    public function patientsAll()
+    {
+        return $this->belongsToMany(User::class, 'group_patient')->withPivot(
+            'joined_at',
+            'left_at',
+            'join_source',
+            'utm_source',
+            'utm_campaign',
+        );
+    }
+
     public function attendances()
     {
         return $this->hasMany(GroupAttendance::class);

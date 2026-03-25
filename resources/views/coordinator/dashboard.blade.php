@@ -9,19 +9,27 @@
         <p class="text-gray-500 text-sm mt-0.5">Bienvenido, {{ auth()->user()->name }}</p>
     </div>
 
-    {{-- Search & filter --}}
+    {{-- Search & filter (status vía campo oculto: Enter en búsqueda no resetea el filtro) --}}
     <form method="GET" action="{{ route('coordinator.dashboard') }}" class="space-y-2">
-        <div class="relative">
+        <input type="hidden" name="status" id="coordinator-dashboard-status" value="{{ request('status', '') }}">
+        <div class="relative flex-1">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
             </svg>
             <input type="text" name="search" value="{{ request('search') }}"
                 placeholder="Buscar grupo..."
-                class="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                class="w-full pl-9 pr-11 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+            <button type="submit" title="Buscar"
+                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                </svg>
+            </button>
         </div>
         <div class="grid grid-cols-2 sm:flex gap-2">
             @foreach([''=>'Todos', 'active'=>'En curso', 'pending'=>'Sin iniciar', 'closed'=>'Finalizados'] as $val => $label)
-                <button type="submit" name="status" value="{{ $val }}"
+                <button type="button"
+                    onclick="document.getElementById('coordinator-dashboard-status').value='{{ $val }}'; this.closest('form').submit();"
                     class="py-2 rounded-lg text-sm font-medium border transition text-center
                         {{ request('status', '') === $val
                             ? 'bg-teal-600 text-white border-teal-600'
@@ -50,14 +58,18 @@
                     </div>
                 </div>
 
-                {{-- Badges --}}
+                {{-- Badges: igual criterio que admin — "En sesión" solo en ventana horaria; vigente sin ventana = activo sin pulso --}}
                 <div class="flex flex-wrap gap-1.5">
                     @if($group->isProgramClosed())
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
-                    @elseif($group->isProgramVigente())
+                    @elseif($group->status === 'active')
                         <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-green-100 text-green-700">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En curso
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En sesión
                         </span>
+                    @elseif($group->isProgramVigente())
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa activo</span>
+                    @elseif($group->status === 'pending' && ! $group->auto_sessions)
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @else
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @endif
@@ -103,14 +115,14 @@
             </div>
 
             {{-- Recurrencia / fechas --}}
-            @if($group->started_at || $group->auto_sessions || ($group->status === 'pending' && !$group->auto_sessions && ($group->meeting_day || $group->meeting_time)))
+            @if($group->started_at || $group->auto_sessions || ($group->isProgramPending() && ! $group->auto_sessions && ($group->meetingDaysDisplay || $group->meeting_time)))
             <div class="px-4 py-2 flex flex-wrap gap-1.5 border-b border-gray-50 bg-gray-50/50">
                 @if($group->started_at)
                     <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-medium">
                         <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         {{ $group->started_at->format('d/m/Y · H:i') }}@if($group->ended_at) → {{ $group->started_at->isSameDay($group->ended_at) ? $group->ended_at->format('H:i') : $group->ended_at->format('d/m/Y · H:i') }}@endif
                     </span>
-                @elseif($group->status === 'pending' && !$group->auto_sessions && ($group->meetingDaysDisplay || $group->meeting_time))
+                @elseif($group->isProgramPending() && ! $group->auto_sessions && ($group->meetingDaysDisplay || $group->meeting_time))
                     <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-medium">
                         <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time_formatted ? $group->meeting_time_formatted . ' hs' : '' }}
@@ -121,9 +133,9 @@
                         <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         {{ $group->recurrenceLabel }}
                     </span>
-                    @if($group->nextSessionAt)
+                    @if($group->nextSessionAt && ! $group->isProgramClosed())
                         <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">
-                            {{ $group->status === 'pending' ? 'Inicio programado' : 'Próxima' }}: {{ $group->nextSessionAt->translatedFormat('D d/m · H:i') }}
+                            {{ $group->isProgramVigente() ? 'Próxima sesión' : 'Inicio programado' }}: {{ $group->nextSessionAt->translatedFormat('D d/m · H:i') }}
                         </span>
                     @endif
                 @endif
@@ -175,8 +187,16 @@
         </a>
 
     @empty
-        <div class="bg-white rounded-xl p-12 text-center text-gray-400">
-            <p>No tenés grupos asignados aún.</p>
+        <div class="bg-white rounded-xl p-12 text-center text-gray-400 space-y-3">
+            @if(($assignedGroupsCount ?? 0) === 0)
+                <p>No tenés grupos asignados aún.</p>
+            @elseif(($totalAfterSearch ?? 0) === 0 && ($search ?? '') !== '')
+                <p>No hay grupos con ese nombre.</p>
+                <a href="{{ route('coordinator.dashboard', array_filter(request()->except('search'))) }}" class="inline-block text-sm font-semibold text-teal-600 hover:text-teal-800">Limpiar búsqueda</a>
+            @else
+                <p>No hay grupos que coincidan con el filtro seleccionado.</p>
+                <a href="{{ route('coordinator.dashboard', array_filter(request()->except('status'))) }}" class="inline-block text-sm font-semibold text-teal-600 hover:text-teal-800">Ver todos los estados</a>
+            @endif
         </div>
     @endforelse
 

@@ -10,6 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class GroupController extends Controller
@@ -191,7 +192,7 @@ class GroupController extends Controller
 
     public function show(Group $group)
     {
-        $group->load(['coordinators', 'patients']);
+        $group->load(['coordinators', 'patients', 'patientsAll']);
         $allCoordinators = User::where('role', 'coordinator')->get();
         $allPatients = User::where('role', 'patient')->get();
 
@@ -232,18 +233,18 @@ class GroupController extends Controller
         $now = now();
 
         // Check for existing pivot row (may have left before)
-        $existing = \Illuminate\Support\Facades\DB::table('group_patient')
+        $existing = DB::table('group_patient')
             ->where('group_id', $group->id)
             ->where('user_id', $request->user_id)
             ->first();
 
         if (! $existing) {
             $group->patients()->attach($request->user_id, [
-                'joined_at'  => $now,
+                'joined_at' => $now,
                 'join_source' => 'manual',
             ]);
         } elseif ($existing->left_at !== null) {
-            \Illuminate\Support\Facades\DB::table('group_patient')
+            DB::table('group_patient')
                 ->where('group_id', $group->id)
                 ->where('user_id', $request->user_id)
                 ->update(['joined_at' => $now, 'left_at' => null, 'join_source' => 'manual']);
@@ -252,9 +253,9 @@ class GroupController extends Controller
         }
 
         GroupMembershipLog::create([
-            'group_id'   => $group->id,
-            'user_id'    => $request->user_id,
-            'joined_at'  => $now,
+            'group_id' => $group->id,
+            'user_id' => $request->user_id,
+            'joined_at' => $now,
             'join_source' => 'manual',
         ]);
 
@@ -275,7 +276,7 @@ class GroupController extends Controller
 
     public function liveAttendances(Group $group)
     {
-        $colors = ['#09cda6','#3b82f6','#8b5cf6','#6366f1','#f43f5e','#f59e0b','#06b6d4','#10b981'];
+        $colors = ['#09cda6', '#3b82f6', '#8b5cf6', '#6366f1', '#f43f5e', '#f59e0b', '#06b6d4', '#10b981'];
 
         $attendances = $group->attendances()
             ->with(['user', 'weightRecord'])
@@ -284,37 +285,38 @@ class GroupController extends Controller
             ->get()
             ->map(fn ($a) => [
                 'attendance_id' => $a->id,
-                'id'            => $a->user_id,
-                'name'          => $a->user->name,
-                'initials'      => collect(explode(' ', $a->user->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
-                'color'         => $colors[$a->user_id % count($colors)],
-                'avatar_url'    => $a->user->avatar ? secure_asset('storage/'.$a->user->avatar) : null,
-                'attended_at'   => $a->attended_at->format('H:i'),
-                'left_at'       => $a->left_at?->format('H:i'),
-                'weight'        => $a->weightRecord?->weight,
-                'ideal_weight'  => $a->user->ideal_weight,
+                'id' => $a->user_id,
+                'name' => $a->user->name,
+                'initials' => collect(explode(' ', $a->user->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
+                'color' => $colors[$a->user_id % count($colors)],
+                'avatar_url' => $a->user->avatar ? secure_asset('storage/'.$a->user->avatar) : null,
+                'attended_at' => $a->attended_at->format('H:i'),
+                'left_at' => $a->left_at?->format('H:i'),
+                'weight' => $a->weightRecord?->weight,
+                'ideal_weight' => $a->user->ideal_weight,
             ]);
 
         $avg = $group->weightRecords()->whereDate('recorded_at', today())->avg('weight');
 
-        $patients = $group->patients()->get()->map(fn ($p) => [
-            'id'          => $p->id,
-            'name'        => $p->name,
-            'email'       => $p->email,
-            'initials'    => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
-            'color'       => $colors[$p->id % count($colors)],
-            'avatar_url'  => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
-            'joined_at'   => $p->pivot->joined_at ? \Carbon\Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
+        $patients = $group->patientsAll()->get()->map(fn ($p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'email' => $p->email,
+            'initials' => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
+            'color' => $colors[$p->id % count($colors)],
+            'avatar_url' => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
+            'joined_at' => $p->pivot->joined_at ? Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
             'join_source' => $p->pivot->join_source,
-            'utm_source'  => $p->pivot->utm_source,
+            'utm_source' => $p->pivot->utm_source,
             'utm_campaign' => $p->pivot->utm_campaign,
+            'left_at' => $p->pivot->left_at ? Carbon::parse($p->pivot->left_at)->format('d/m/Y H:i') : null,
         ]);
 
         return response()->json([
-            'count'      => $attendances->count(),
+            'count' => $attendances->count(),
             'avg_weight' => $avg ? number_format($avg, 1) : null,
             'attendances' => $attendances,
-            'patients'   => $patients,
+            'patients' => $patients,
         ]);
     }
 
