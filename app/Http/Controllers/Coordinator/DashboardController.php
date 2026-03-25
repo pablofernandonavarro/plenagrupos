@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Coordinator;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\GroupAttendance;
+use App\Models\GroupMembershipLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -88,8 +90,10 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function showGroup(Group $group)
+    public function showGroup(Request $request, Group $group)
     {
+        $this->ensureCoordinator($group);
+
         $group->load(['patients', 'coordinators']);
         $attendances = $group->attendances()->with(['user', 'weightRecord'])->latest('attended_at')->paginate(20);
         $avgWeight = $group->weightRecords()->avg('weight');
@@ -100,35 +104,72 @@ class DashboardController extends Controller
             ->whereDate('attended_at', today())
             ->get();
 
-        $inRange = 0;
-        $above = 0;
-        $below = 0;
-        $noWeight = 0;
-        foreach ($todayAttendances as $a) {
-            $rw = $a->weightRecord?->weight;
-            $piso = $a->user->peso_piso;
-            $techo = $a->user->peso_techo;
-            if (! $rw) {
-                $noWeight++;
-            } elseif ($techo && $rw > $techo) {
-                $above++;
-            } elseif ($piso && $rw < $piso) {
-                $below++;
-            } elseif ($piso || $techo) {
-                $inRange++;
-            } else {
-                $noWeight++;
+        $stats = $this->weightRangeStats($todayAttendances);
+        $todayVisits = $todayAttendances->count();
+
+        $historyDates = $group->attendances()
+            ->orderByDesc('attended_at')
+            ->get(['attended_at'])
+            ->map(fn ($a) => $a->attended_at->format('Y-m-d'))
+            ->unique()
+            ->sort()
+            ->reverse()
+            ->values();
+
+        $historialRaw = $request->query('historial');
+        $historialDate = null;
+        if (is_string($historialRaw) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $historialRaw)) {
+            try {
+                $parsed = Carbon::createFromFormat('Y-m-d', $historialRaw)->format('Y-m-d');
+                if ($historyDates->contains($parsed)) {
+                    $historialDate = $parsed;
+                }
+            } catch (\Throwable) {
             }
         }
 
-        $todayVisits = $todayAttendances->count();
-        $stats = compact('inRange', 'above', 'below', 'noWeight');
+        $historialStats = null;
+        $historialAttendances = null;
+        $historialMembershipEvents = null;
 
-        return view('coordinator.group', compact('group', 'attendances', 'avgWeight', 'totalVisits', 'todayVisits', 'stats'));
+        if ($historialDate !== null) {
+            $day = Carbon::parse($historialDate)->startOfDay();
+            $historialAttendances = $group->attendances()
+                ->with(['user', 'weightRecord'])
+                ->whereDate('attended_at', $day)
+                ->orderBy('attended_at')
+                ->get();
+            $historialStats = $this->weightRangeStats($historialAttendances);
+            $historialMembershipEvents = GroupMembershipLog::query()
+                ->where('group_id', $group->id)
+                ->with('user')
+                ->where(function ($q) use ($day) {
+                    $q->whereDate('joined_at', $day)
+                        ->orWhereDate('left_at', $day);
+                })
+                ->orderBy('joined_at')
+                ->get();
+        }
+
+        return view('coordinator.group', compact(
+            'group',
+            'attendances',
+            'avgWeight',
+            'totalVisits',
+            'todayVisits',
+            'stats',
+            'historyDates',
+            'historialDate',
+            'historialStats',
+            'historialAttendances',
+            'historialMembershipEvents',
+        ));
     }
 
     public function updateMaintenanceWeight(Group $group, Request $request)
     {
+        $this->ensureCoordinator($group);
+
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
             'maintenance_weight' => 'nullable|numeric|min:1|max:300',
@@ -143,6 +184,8 @@ class DashboardController extends Controller
 
     public function liveAttendances(Group $group)
     {
+        $this->ensureCoordinator($group);
+
         $colors = ['#09cda6', '#3b82f6', '#8b5cf6', '#6366f1', '#f43f5e', '#f59e0b', '#06b6d4', '#10b981'];
 
         $attendances = $group->attendances()
@@ -182,6 +225,8 @@ class DashboardController extends Controller
 
     public function checkoutAttendance(Group $group, GroupAttendance $attendance)
     {
+        $this->ensureCoordinator($group);
+
         abort_if($attendance->group_id !== $group->id, 404);
 
         $attendance->update(['left_at' => now()]);
@@ -213,6 +258,8 @@ class DashboardController extends Controller
 
     public function toggleGroup(Group $group)
     {
+        $this->ensureCoordinator($group);
+
         $type = $group->recurrence_type ?? 'none';
         $isRecurring = $type !== 'none';
         $tz = 'America/Argentina/Buenos_Aires';
@@ -247,5 +294,43 @@ class DashboardController extends Controller
         }
 
         return back()->with('error', 'No se pudo actualizar el grupo.');
+    }
+
+    private function ensureCoordinator(Group $group): void
+    {
+        abort_unless(
+            $group->coordinators()->where('users.id', auth()->id())->exists(),
+            403
+        );
+    }
+
+    /**
+     * @param  Collection<int, GroupAttendance>  $attendances
+     * @return array{inRange: int, above: int, below: int, noWeight: int}
+     */
+    private function weightRangeStats(Collection $attendances): array
+    {
+        $inRange = 0;
+        $above = 0;
+        $below = 0;
+        $noWeight = 0;
+        foreach ($attendances as $a) {
+            $rw = $a->weightRecord?->weight;
+            $piso = $a->user->peso_piso;
+            $techo = $a->user->peso_techo;
+            if (! $rw) {
+                $noWeight++;
+            } elseif ($techo && $rw > $techo) {
+                $above++;
+            } elseif ($piso && $rw < $piso) {
+                $below++;
+            } elseif ($piso || $techo) {
+                $inRange++;
+            } else {
+                $noWeight++;
+            }
+        }
+
+        return compact('inRange', 'above', 'below', 'noWeight');
     }
 }

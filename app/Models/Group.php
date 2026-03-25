@@ -487,6 +487,11 @@ class Group extends Model
         return $this->hasMany(GroupAttendance::class);
     }
 
+    public function membershipLogs()
+    {
+        return $this->hasMany(GroupMembershipLog::class)->orderByDesc('joined_at');
+    }
+
     public function weightRecords()
     {
         return $this->hasMany(WeightRecord::class);
