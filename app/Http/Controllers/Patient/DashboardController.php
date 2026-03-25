@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Patient;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\GroupAttendance;
 use App\Models\GroupMembershipLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -124,6 +125,15 @@ class DashboardController extends Controller
             ->where('user_id', $user->id)
             ->whereNull('left_at')
             ->latest('joined_at')
+            ->first()
+            ?->update(['left_at' => $now]);
+
+        // Mark exit on today's attendance if not already marked
+        GroupAttendance::where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->whereDate('attended_at', today())
+            ->whereNull('left_at')
+            ->latest('attended_at')
             ->first()
             ?->update(['left_at' => $now]);
 
