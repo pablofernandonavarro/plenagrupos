@@ -36,9 +36,16 @@ class GroupController extends Controller
                          ->where(fn($q3) => $q3->whereNull('recurrence_end_date')
                              ->orWhere('recurrence_end_date', '>=', today()))
                          ->where(function ($q3) use ($todayName) {
+                             // Diario/mensual/anual: siempre aplica hoy
                              $q3->whereIn('recurrence_type', ['daily', 'monthly', 'yearly'])
-                                ->orWhere(fn($q4) => $q4->where('recurrence_type', 'weekly')
-                                    ->whereJsonContains('meeting_days', $todayName));
+                             // Semanal: verificar si hoy está en meeting_days o meeting_day
+                                ->orWhere(function ($q4) use ($todayName) {
+                                    $q4->where('recurrence_type', 'weekly')
+                                       ->where(function ($q5) use ($todayName) {
+                                           $q5->whereRaw('meeting_days LIKE ?', ['%"' . $todayName . '"%'])
+                                              ->orWhere('meeting_day', $todayName);
+                                       });
+                                });
                          });
                   });
             });
