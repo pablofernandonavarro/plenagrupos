@@ -101,16 +101,14 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
             <h2 class="font-semibold text-gray-800">Asistentes</h2>
-            @if($group->status === 'active')
-                <span id="last-update" class="text-xs text-gray-400"></span>
-            @endif
+            <span id="last-update" class="text-xs text-gray-400"></span>
         </div>
 
-        @if($group->status === 'active')
-            <div id="live-list" class="divide-y divide-gray-50 min-h-[60px]">
-                <p class="px-5 py-6 text-center text-gray-400 text-sm">Esperando pacientes...</p>
-            </div>
-        @else
+        <div id="live-list" class="divide-y divide-gray-50 min-h-[60px]">
+            <p class="px-5 py-6 text-center text-gray-400 text-sm">Cargando...</p>
+        </div>
+
+        @if(false) {{-- static fallback no longer needed, JS handles all states --}}
             {{-- Mobile: card list. Desktop: table --}}
             <div class="hidden sm:block overflow-x-auto">
                 <table class="w-full text-sm">
@@ -291,11 +289,11 @@
 
 </div>
 
-@if($group->status === 'active')
 <script>
 const liveUrl      = '{{ route('coordinator.groups.live', $group) }}';
 const checkoutBase = '{{ url('coordinator/grupos/' . $group->id . '/asistencias') }}';
 const csrfToken    = '{{ csrf_token() }}';
+const groupClosed  = {{ $group->status === 'closed' ? 'true' : 'false' }};
 const listEl       = document.getElementById('live-list');
 const countEl      = document.getElementById('stat-count');
 const updateEl     = document.getElementById('last-update');
@@ -407,8 +405,9 @@ async function fetchAttendances() {
 }
 
 fetchAttendances();
-setInterval(fetchAttendances, 4000);
+if (!groupClosed) {
+    setInterval(fetchAttendances, 4000);
+}
 </script>
-@endif
 
 @endsection

@@ -325,15 +325,15 @@
 
 </div>
 
-@if($group->status === 'active')
 <script>
-const liveUrl     = '{{ route('admin.groups.live', $group) }}';
+const liveUrl      = '{{ route('admin.groups.live', $group) }}';
 const checkoutBase = '{{ url('admin/groups/' . $group->id . '/attendances') }}';
-const csrfToken   = '{{ csrf_token() }}';
-const tbody       = document.getElementById('attendance-body');
-const updateEl    = document.getElementById('last-update');
-const statVisits  = document.getElementById('stat-visits');
-const statAvg     = document.getElementById('stat-avg');
+const csrfToken    = '{{ csrf_token() }}';
+const groupClosed  = {{ $group->status === 'closed' ? 'true' : 'false' }};
+const tbody        = document.getElementById('attendance-body');
+const updateEl     = document.getElementById('last-update');
+const statVisits   = document.getElementById('stat-visits');
+const statAvg      = document.getElementById('stat-avg');
 
 function avatarHtml(a) {
     if (a.avatar_url) {
@@ -407,8 +407,9 @@ async function fetchAttendances() {
 }
 
 fetchAttendances();
-setInterval(fetchAttendances, 4000);
+if (!groupClosed) {
+    setInterval(fetchAttendances, 4000);
+}
 </script>
-@endif
 
 @endsection
