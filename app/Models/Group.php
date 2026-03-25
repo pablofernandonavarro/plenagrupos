@@ -115,7 +115,37 @@ class Group extends Model
                    (int) $ref->diffInMonths($date) % $interval === 0;
         }
 
+        if ($type === 'yearly') {
+            return $date->month === $ref->month && $date->day === $ref->day
+                && (int) $ref->diffInYears($date) % $interval === 0;
+        }
+
         return false;
+    }
+
+    /**
+     * Whether this group has a scheduled session on $date (same rules as status / QR availability).
+     * Non-recurring: only when manually active. Recurring: not past recurrence_end_date and falls on a meeting day.
+     */
+    public function meetsOnDate(?Carbon $date = null): bool
+    {
+        $tz = 'America/Argentina/Buenos_Aires';
+        $date = ($date ?? Carbon::now($tz))->copy()->timezone($tz);
+
+        $type = $this->attributes['recurrence_type'] ?? 'none';
+
+        if ($type === 'none') {
+            return (bool) ($this->attributes['active'] ?? false);
+        }
+
+        if ($this->recurrence_end_date) {
+            $end = Carbon::parse($this->recurrence_end_date)->startOfDay();
+            if ($date->copy()->startOfDay()->gt($end)) {
+                return false;
+            }
+        }
+
+        return $this->isTodayMeetingDay($date);
     }
 
     /** Days label for display: "Lun a Vie", "Lunes, Miércoles", or single day name */

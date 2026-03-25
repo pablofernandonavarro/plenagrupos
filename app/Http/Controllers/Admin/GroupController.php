@@ -7,6 +7,7 @@ use App\Models\Group;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class GroupController extends Controller
@@ -15,40 +16,17 @@ class GroupController extends Controller
     {
         $tz = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz);
-        $dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        $todayName = $dayNames[$now->dayOfWeek];
-        $timeNow = $now->format('H:i:s');
 
         $status = $request->input('status', 'today');
 
         if ($status === 'today') {
-            // Grupos que tienen sesión HOY (sin importar la hora exacta)
+            // Candidatos: luego filtramos con Group::meetsOnDate() (misma lógica que el modelo / QR)
             $query = Group::with(['coordinators', 'patients'])
                 ->orderByRaw('CASE WHEN meeting_time IS NULL THEN 1 ELSE 0 END')
                 ->orderBy('meeting_time');
             if ($search = $request->input('search')) {
                 $query->where('name', 'like', '%'.$search.'%');
             }
-            $query->where(function ($q) use ($todayName) {
-                $q->where('active', true)
-                    ->orWhere(function ($q2) use ($todayName) {
-                        $q2->whereNotIn('recurrence_type', ['none'])
-                            ->where(fn ($q3) => $q3->whereNull('recurrence_end_date')
-                                ->orWhere('recurrence_end_date', '>=', today()))
-                            ->where(function ($q3) use ($todayName) {
-                                // Diario/mensual/anual: siempre aplica hoy
-                                $q3->whereIn('recurrence_type', ['daily', 'monthly', 'yearly'])
-                                // Semanal: verificar si hoy está en meeting_days o meeting_day
-                                    ->orWhere(function ($q4) use ($todayName) {
-                                        $q4->where('recurrence_type', 'weekly')
-                                            ->where(function ($q5) use ($todayName) {
-                                                $q5->whereRaw('meeting_days LIKE ?', ['%"'.$todayName.'"%'])
-                                                    ->orWhere('meeting_day', $todayName);
-                                            });
-                                    });
-                            });
-                    });
-            });
         } else {
             $query = Group::with(['coordinators', 'patients'])->latest();
             if ($search = $request->input('search')) {
@@ -87,7 +65,23 @@ class GroupController extends Controller
 
         $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 10;
         $coordinators = User::where('role', 'coordinator')->orderBy('name')->get();
-        $groups = $query->paginate($perPage)->withQueryString();
+
+        if ($status === 'today') {
+            $filtered = $query->get()->filter(fn (Group $group) => $group->meetsOnDate($now))->values();
+            $page = LengthAwarePaginator::resolveCurrentPage();
+            $groups = new LengthAwarePaginator(
+                $filtered->forPage($page, $perPage)->values(),
+                $filtered->count(),
+                $perPage,
+                $page,
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                ]
+            );
+        } else {
+            $groups = $query->paginate($perPage)->withQueryString();
+        }
 
         return view('admin.groups.index', compact('groups', 'coordinators', 'status'));
     }
