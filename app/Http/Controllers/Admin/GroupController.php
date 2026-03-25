@@ -240,6 +240,7 @@ class GroupController extends Controller
             return back()->with('error', 'No se pueden remover pacientes de un grupo finalizado.');
         }
         $request->validate(['user_id' => 'required|exists:users,id']);
+
         $group->patients()->detach($request->user_id);
 
         return back()->with('success', 'Paciente removido.');

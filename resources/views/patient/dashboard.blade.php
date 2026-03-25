@@ -120,20 +120,38 @@
     @endif
 
     {{-- Groups info --}}
-    @if($groups->isNotEmpty())
-        <div class="bg-teal-50 border border-teal-200 rounded-xl p-4 space-y-3">
-            <p class="text-sm font-medium text-teal-800">
-                Estás en {{ $groups->count() === 1 ? 'el grupo' : 'los grupos' }}:
-                <span class="font-semibold">{{ $groups->pluck('name')->join(', ') }}</span>
-            </p>
-            @foreach($groups->where('modality', 'virtual') as $vg)
-                @php $joinUrl = route('group.join', $vg->qr_token); @endphp
+    @foreach($groups as $vg)
+        @php
+            $joinUrl   = $vg->modality === 'virtual' ? route('group.join', $vg->qr_token) : null;
+            $enSesion  = $vg->status === 'active';
+        @endphp
+        <div class="rounded-xl border overflow-hidden {{ $enSesion ? 'border-green-300 shadow-green-100 shadow-md' : 'border-gray-200' }}">
+
+            {{-- Header --}}
+            <div class="px-4 py-3 flex items-start justify-between gap-2 {{ $enSesion ? 'bg-green-50' : 'bg-teal-50' }}">
                 <div>
-                    <p class="text-xs font-medium text-teal-700 mb-1.5">
-                        <svg class="inline w-3.5 h-3.5 mr-0.5 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
-                        Link de acceso virtual — {{ $vg->name }}
-                    </p>
-                    <div class="flex items-center gap-2 bg-white border border-teal-200 rounded-lg px-3 py-2">
+                    <p class="font-semibold text-gray-800 leading-snug">{{ $vg->name }}</p>
+                    @if($vg->meetingDaysDisplay || $vg->meeting_time)
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            {{ $vg->meetingDaysDisplay }}{{ $vg->meetingDaysDisplay && $vg->meeting_time ? ' · ' : '' }}{{ $vg->meeting_time ? $vg->meeting_time_formatted . ' hs' : '' }}
+                        </p>
+                    @endif
+                </div>
+                @if($enSesion)
+                    <span class="shrink-0 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-green-500 text-white">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                        EN SESIÓN
+                    </span>
+                @else
+                    <span class="shrink-0 text-xs px-2.5 py-1 rounded-full bg-teal-100 text-teal-700 font-medium">Mi grupo</span>
+                @endif
+            </div>
+
+            {{-- Link virtual --}}
+            @if($joinUrl)
+                <div class="px-4 py-3 border-t border-gray-100 bg-white space-y-1.5">
+                    <p class="text-xs font-medium text-gray-500">Link de acceso virtual</p>
+                    <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                         <a href="{{ $joinUrl }}" class="text-xs text-teal-600 truncate flex-1 underline underline-offset-2">{{ $joinUrl }}</a>
                         <button type="button"
                             onclick="navigator.clipboard.writeText('{{ $joinUrl }}').then(() => { this.textContent = '✓'; setTimeout(() => this.textContent = 'Copiar', 1500) })"
@@ -141,6 +159,49 @@
                             Copiar
                         </button>
                     </div>
+                </div>
+            @endif
+
+        </div>
+
+        {{-- Botón salir — fuera del card --}}
+        <form action="{{ route('patient.groups.leave', $vg) }}" method="POST"
+              onsubmit="return confirm('¿Confirmás que querés salir del grupo «{{ $vg->name }}»?')">
+            @csrf
+            <button type="submit"
+                class="w-full text-sm font-medium text-red-600 border border-red-200 bg-white rounded-xl px-4 py-3 hover:bg-red-50 transition">
+                Salir del grupo «{{ $vg->name }}»
+            </button>
+        </form>
+    @endforeach
+
+    {{-- Grupos anteriores --}}
+    @if($pastGroups->isNotEmpty())
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Grupos anteriores</p>
+            @foreach($pastGroups as $pg)
+                @php
+                    $joinedAt = $pg->pivot->joined_at ? \Carbon\Carbon::parse($pg->pivot->joined_at) : null;
+                    $leftAt   = $pg->pivot->left_at   ? \Carbon\Carbon::parse($pg->pivot->left_at)   : null;
+                    $days     = ($joinedAt && $leftAt) ? (int) $joinedAt->diffInDays($leftAt) : null;
+                    $weeks    = $days !== null ? round($days / 7, 1) : null;
+                @endphp
+                <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+                    <div>
+                        <p class="text-sm font-medium text-gray-700">{{ $pg->name }}</p>
+                        @if($joinedAt && $leftAt)
+                            <p class="text-xs text-gray-400">
+                                {{ $joinedAt->format('d/m/Y') }} → {{ $leftAt->format('d/m/Y') }}
+                                &nbsp;·&nbsp;
+                                @if($days < 7)
+                                    {{ $days }} {{ $days === 1 ? 'día' : 'días' }}
+                                @else
+                                    {{ $weeks }} {{ $weeks == 1 ? 'semana' : 'semanas' }}
+                                @endif
+                            </p>
+                        @endif
+                    </div>
+                    <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Finalizado</span>
                 </div>
             @endforeach
         </div>

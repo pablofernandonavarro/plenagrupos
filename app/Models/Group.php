@@ -351,6 +351,7 @@ class Group extends Model
     {
         return $this->belongsToMany(User::class, 'group_patient')->withPivot(
             'joined_at',
+            'left_at',
             'maintenance_weight',
             'join_source',
             'utm_source',
@@ -358,7 +359,7 @@ class Group extends Model
             'utm_campaign',
             'utm_content',
             'first_device_user_agent',
-        );
+        )->wherePivotNull('left_at');
     }
 
     public function attendances()

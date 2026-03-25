@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Patient;
 
 use App\Http\Controllers\Controller;
+use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,7 +22,8 @@ class DashboardController extends Controller
         $initialWeight = $weightRecords->last()?->weight;
         $totalLoss     = ($initialWeight && $latestWeight) ? round($initialWeight - $latestWeight, 2) : null;
 
-        $groups = $user->patientGroups()->get();
+        $groups        = $user->patientGroups()->wherePivot('left_at', null)->get();
+        $pastGroups    = $user->patientGroups()->wherePivotNotNull('left_at')->get();
 
         // Chart data (chronological)
         $chartRecords = $weightRecords->sortBy('recorded_at')->values();
@@ -66,7 +68,7 @@ class DashboardController extends Controller
         ];
 
         return view('patient.dashboard', compact(
-            'weightRecords', 'latestWeight', 'totalLoss', 'groups',
+            'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'pastGroups',
             'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo'
         ));
     }
@@ -94,5 +96,24 @@ class DashboardController extends Controller
         $user->save();
 
         return back()->with('success', 'Perfil actualizado.');
+    }
+
+    public function leaveGroup(Request $request, Group $group)
+    {
+        $user = auth()->user();
+
+        $pivot = $user->patientGroups()
+            ->wherePivot('left_at', null)
+            ->find($group->id);
+
+        if (! $pivot) {
+            return back()->with('error', 'No estás activo en ese grupo.');
+        }
+
+        $user->patientGroups()->updateExistingPivot($group->id, [
+            'left_at' => now(),
+        ]);
+
+        return back()->with('success', 'Saliste del grupo "' . $group->name . '".');
     }
 }

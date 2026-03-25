@@ -115,4 +115,5 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient')->name('patient.')
     Route::post('/perfil', [Patient\DashboardController::class, 'updateProfile'])->name('profile.update');
     Route::get('/peso/registrar', [Patient\WeightController::class, 'create'])->name('weight.create');
     Route::post('/peso', [Patient\WeightController::class, 'store'])->name('weight.store');
+    Route::post('/grupos/{group}/salir', [Patient\DashboardController::class, 'leaveGroup'])->name('groups.leave');
 });

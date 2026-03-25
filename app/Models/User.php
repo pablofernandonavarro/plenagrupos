@@ -96,6 +96,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Group::class, 'group_patient')->withPivot(
             'joined_at',
+            'left_at',
             'maintenance_weight',
             'join_source',
             'utm_source',
