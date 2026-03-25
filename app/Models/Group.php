@@ -13,18 +13,20 @@ class Group extends Model
 
     protected $fillable = [
         'name', 'modality', 'group_type', 'description', 'meeting_day', 'meeting_days', 'meeting_time',
+        'session_duration_minutes',
         'recurrence_type', 'recurrence_interval', 'recurrence_end_date',
         'auto_sessions', 'admin_id', 'qr_token', 'active', 'started_at', 'ended_at',
     ];
 
     protected $casts = [
-        'active'              => 'boolean',
-        'auto_sessions'       => 'boolean',
-        'recurrence_interval' => 'integer',
-        'recurrence_end_date' => 'date',
-        'meeting_days'        => 'array',
-        'started_at'          => 'datetime',
-        'ended_at'            => 'datetime',
+        'active'                   => 'boolean',
+        'auto_sessions'            => 'boolean',
+        'recurrence_interval'      => 'integer',
+        'recurrence_end_date'      => 'date',
+        'session_duration_minutes' => 'integer',
+        'meeting_days'             => 'array',
+        'started_at'               => 'datetime',
+        'ended_at'                 => 'datetime',
     ];
 
     // Backwards-compat: derive auto_sessions from recurrence_type
@@ -36,9 +38,70 @@ class Group extends Model
     // 'pending' | 'active' | 'closed'
     public function getStatusAttribute(): string
     {
-        if ($this->active) return 'active';
-        if ($this->started_at) return 'closed';
-        return 'pending';
+        $type = $this->attributes['recurrence_type'] ?? 'none';
+
+        // Non-recurring groups: honour the manual active flag
+        if ($type === 'none') {
+            if ($this->attributes['active']) return 'active';
+            if ($this->getRawOriginal('started_at'))  return 'closed';
+            return 'pending';
+        }
+
+        // Recurring groups: compute from schedule — no cron needed
+        if ($this->recurrence_end_date &&
+            Carbon::now('America/Argentina/Buenos_Aires')->startOfDay()->gt($this->recurrence_end_date)) {
+            return 'closed';
+        }
+
+        return $this->isCurrentlyInSession() ? 'active' : 'pending';
+    }
+
+    /** True when the current wall-clock time is inside today's session window. */
+    private function isCurrentlyInSession(): bool
+    {
+        if (!$this->meeting_time) return false;
+
+        $tz  = 'America/Argentina/Buenos_Aires';
+        $now = Carbon::now($tz);
+
+        if (!$this->isTodayMeetingDay($now)) return false;
+
+        [$h, $m] = array_pad(explode(':', $this->meeting_time), 2, '0');
+        $start = $now->copy()->setTime((int) $h, (int) $m, 0);
+        $end   = $start->copy()->addMinutes($this->attributes['session_duration_minutes'] ?? 120);
+
+        return $now->between($start, $end);
+    }
+
+    /** True when $date falls on a scheduled meeting day for this group. */
+    private function isTodayMeetingDay(Carbon $date): bool
+    {
+        $type     = $this->attributes['recurrence_type'] ?? 'none';
+        $interval = max(1, (int) ($this->attributes['recurrence_interval'] ?? 1));
+        $ref      = Carbon::parse($this->getRawOriginal('created_at'))->startOfDay();
+
+        if ($type === 'daily') {
+            return (int) $ref->diffInDays($date) % $interval === 0;
+        }
+
+        if ($type === 'weekly') {
+            $days    = $this->meeting_days ?? ($this->attributes['meeting_day'] ? [$this->attributes['meeting_day']] : []);
+            $dayMap  = ['Domingo'=>0,'Lunes'=>1,'Martes'=>2,'Miércoles'=>3,'Jueves'=>4,'Viernes'=>5,'Sábado'=>6];
+            $dayNums = array_values(array_filter(
+                array_map(fn($d) => $dayMap[$d] ?? null, $days),
+                fn($d) => $d !== null
+            ));
+            if (!in_array($date->dayOfWeek, $dayNums, true)) return false;
+            if ($interval === 1) return true;
+            return (int) $ref->startOfWeek()->diffInWeeks($date->copy()->startOfWeek()) % $interval === 0;
+        }
+
+        if ($type === 'monthly') {
+            return $date->day === $ref->day &&
+                   (int) $ref->diffInMonths($date) % $interval === 0;
+        }
+
+        return false;
     }
 
     /** Days label for display: "Lun a Vie", "Lunes, Miércoles", or single day name */

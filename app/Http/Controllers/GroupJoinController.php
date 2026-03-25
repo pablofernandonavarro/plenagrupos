@@ -95,6 +95,18 @@ class GroupJoinController extends Controller
             }
         }
 
+        // Auto-record session start for recurring groups on first scan of the day
+        if (($group->attributes['recurrence_type'] ?? 'none') !== 'none') {
+            $tz = 'America/Argentina/Buenos_Aires';
+            $todayStart = \Carbon\Carbon::today($tz);
+            if (!$group->getRawOriginal('started_at') ||
+                \Carbon\Carbon::parse($group->getRawOriginal('started_at'))->lt($todayStart)) {
+                $group->started_at = now();
+                $group->ended_at   = null;
+                $group->saveQuietly();
+            }
+        }
+
         // Register attendance for this visit
         $attendance = GroupAttendance::create([
             'group_id' => $group->id,

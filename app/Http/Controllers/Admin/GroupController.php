@@ -21,11 +21,27 @@ class GroupController extends Controller
         // Default to active groups unless a status filter is explicitly set
         $status = $request->input('status', 'active');
         if ($status === 'active') {
-            $query->where('active', true);
+            // Manual active OR recurring groups that haven't expired
+            $query->where(function ($q) {
+                $q->where('active', true)
+                  ->orWhere(function ($q2) {
+                      $q2->whereNotIn('recurrence_type', ['none'])
+                         ->where(fn($q3) => $q3->whereNull('recurrence_end_date')
+                             ->orWhere('recurrence_end_date', '>=', today()));
+                  });
+            });
         } elseif ($status === 'pending') {
-            $query->where('active', false)->whereNull('started_at');
+            $query->where('active', false)->whereNull('started_at')
+                  ->where(fn($q) => $q->where('recurrence_type', 'none')->orWhereNull('recurrence_type'));
         } elseif ($status === 'closed') {
-            $query->where('active', false)->whereNotNull('started_at');
+            $query->where(function ($q) {
+                $q->where('active', false)->whereNotNull('started_at')
+                  ->where(fn($q2) => $q2->where('recurrence_type', 'none')->orWhereNull('recurrence_type'));
+            })->orWhere(function ($q) {
+                $q->whereNotIn('recurrence_type', ['none'])
+                  ->whereNotNull('recurrence_end_date')
+                  ->where('recurrence_end_date', '<', today());
+            });
         }
         // $status === '' means "Todos"
 
@@ -58,31 +74,33 @@ class GroupController extends Controller
             'description'         => 'nullable|string',
             'meeting_days'        => 'nullable|array',
             'meeting_days.*'      => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
-            'meeting_time'        => 'nullable|date_format:H:i',
-            'recurrence_type'     => 'required|in:none,daily,weekly,monthly,yearly',
-            'recurrence_interval' => 'nullable|integer|min:1|max:365',
-            'recurrence_end_date' => 'nullable|date|after:today',
-            'coordinator_ids'     => 'nullable|array',
-            'coordinator_ids.*'   => 'exists:users,id',
+            'meeting_time'              => 'nullable|date_format:H:i',
+            'session_duration_minutes'  => 'nullable|integer|min:15|max:480',
+            'recurrence_type'           => 'required|in:none,daily,weekly,monthly,yearly',
+            'recurrence_interval'       => 'nullable|integer|min:1|max:365',
+            'recurrence_end_date'       => 'nullable|date|after:today',
+            'coordinator_ids'           => 'nullable|array',
+            'coordinator_ids.*'         => 'exists:users,id',
         ]);
 
         $meetingDays = $data['recurrence_type'] === 'weekly' ? ($data['meeting_days'] ?? []) : null;
         $meetingDay  = !empty($meetingDays) ? $meetingDays[0] : null;
 
         $group = Group::create([
-            'name'                => $data['name'],
-            'modality'            => $data['modality'],
-            'group_type'          => $data['group_type'],
-            'description'         => $data['description'] ?? null,
-            'meeting_day'         => $meetingDay,
-            'meeting_days'        => $meetingDays,
-            'meeting_time'        => $data['meeting_time'] ?? null,
-            'recurrence_type'     => $data['recurrence_type'],
-            'recurrence_interval' => $data['recurrence_interval'] ?? 1,
-            'recurrence_end_date' => $data['recurrence_end_date'] ?? null,
-            'auto_sessions'       => $data['recurrence_type'] !== 'none',
-            'admin_id'            => auth()->id(),
-            'active'              => false,
+            'name'                     => $data['name'],
+            'modality'                 => $data['modality'],
+            'group_type'               => $data['group_type'],
+            'description'              => $data['description'] ?? null,
+            'meeting_day'              => $meetingDay,
+            'meeting_days'             => $meetingDays,
+            'meeting_time'             => $data['meeting_time'] ?? null,
+            'session_duration_minutes' => $data['session_duration_minutes'] ?? 120,
+            'recurrence_type'          => $data['recurrence_type'],
+            'recurrence_interval'      => $data['recurrence_interval'] ?? 1,
+            'recurrence_end_date'      => $data['recurrence_end_date'] ?? null,
+            'auto_sessions'            => $data['recurrence_type'] !== 'none',
+            'admin_id'                 => auth()->id(),
+            'active'                   => false,
         ]);
 
         if (!empty($data['coordinator_ids'])) {
@@ -108,29 +126,31 @@ class GroupController extends Controller
             'description'         => 'nullable|string',
             'meeting_days'        => 'nullable|array',
             'meeting_days.*'      => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
-            'meeting_time'        => 'nullable|date_format:H:i,H:i:s',
-            'recurrence_type'     => 'required|in:none,daily,weekly,monthly,yearly',
-            'recurrence_interval' => 'nullable|integer|min:1|max:365',
-            'recurrence_end_date' => 'nullable|date',
-            'coordinator_ids'     => 'nullable|array',
-            'coordinator_ids.*'   => 'exists:users,id',
+            'meeting_time'             => 'nullable|date_format:H:i,H:i:s',
+            'session_duration_minutes' => 'nullable|integer|min:15|max:480',
+            'recurrence_type'          => 'required|in:none,daily,weekly,monthly,yearly',
+            'recurrence_interval'      => 'nullable|integer|min:1|max:365',
+            'recurrence_end_date'      => 'nullable|date',
+            'coordinator_ids'          => 'nullable|array',
+            'coordinator_ids.*'        => 'exists:users,id',
         ]);
 
         $meetingDays = $data['recurrence_type'] === 'weekly' ? ($data['meeting_days'] ?? []) : null;
         $meetingDay  = !empty($meetingDays) ? $meetingDays[0] : null;
 
         $group->update([
-            'name'                => $data['name'],
-            'modality'            => $data['modality'],
-            'group_type'          => $data['group_type'],
-            'description'         => $data['description'] ?? null,
-            'meeting_day'         => $meetingDay,
-            'meeting_days'        => $meetingDays,
-            'meeting_time'        => $data['meeting_time'] ? substr($data['meeting_time'], 0, 5) : null,
-            'recurrence_type'     => $data['recurrence_type'],
-            'recurrence_interval' => $data['recurrence_interval'] ?? 1,
-            'recurrence_end_date' => $data['recurrence_end_date'] ?? null,
-            'auto_sessions'       => $data['recurrence_type'] !== 'none',
+            'name'                     => $data['name'],
+            'modality'                 => $data['modality'],
+            'group_type'               => $data['group_type'],
+            'description'              => $data['description'] ?? null,
+            'meeting_day'              => $meetingDay,
+            'meeting_days'             => $meetingDays,
+            'meeting_time'             => $data['meeting_time'] ? substr($data['meeting_time'], 0, 5) : null,
+            'session_duration_minutes' => $data['session_duration_minutes'] ?? 120,
+            'recurrence_type'          => $data['recurrence_type'],
+            'recurrence_interval'      => $data['recurrence_interval'] ?? 1,
+            'recurrence_end_date'      => $data['recurrence_end_date'] ?? null,
+            'auto_sessions'            => $data['recurrence_type'] !== 'none',
         ]);
 
         $group->coordinators()->sync($data['coordinator_ids'] ?? []);

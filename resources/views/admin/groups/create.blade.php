@@ -101,6 +101,13 @@
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Duración (minutos)</label>
+                        <input type="number" name="session_duration_minutes" min="15" max="480" step="15"
+                            value="{{ old('session_duration_minutes', 120) }}"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
+                        <p class="text-xs text-gray-400 mt-1">El grupo se activa solo a la hora de inicio y cierra al cumplirse este tiempo.</p>
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Repetir cada</label>
                         <div class="flex items-center gap-2">
                             <input type="number" name="recurrence_interval" min="1" max="365"
