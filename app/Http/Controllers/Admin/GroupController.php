@@ -242,11 +242,10 @@ class GroupController extends Controller
                 'join_source' => 'manual',
             ]);
         } elseif ($existing->left_at !== null) {
-            $group->patients()->updateExistingPivot($request->user_id, [
-                'joined_at' => $now,
-                'left_at'   => null,
-                'join_source' => 'manual',
-            ]);
+            \Illuminate\Support\Facades\DB::table('group_patient')
+                ->where('group_id', $group->id)
+                ->where('user_id', $request->user_id)
+                ->update(['joined_at' => $now, 'left_at' => null, 'join_source' => 'manual']);
         } else {
             return back()->with('info', 'El paciente ya está activo en este grupo.');
         }

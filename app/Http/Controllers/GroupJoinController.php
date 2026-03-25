@@ -182,8 +182,12 @@ class GroupJoinController extends Controller
                 'join_source' => 'qr',
             ]);
         } elseif ($existingPivot->left_at !== null) {
-            // Rejoining after having left
-            $group->patients()->updateExistingPivot($user->id, $pivotData);
+            // Rejoining after having left — use DB directly because the relationship
+            // has wherePivotNull('left_at') and updateExistingPivot would not find the row
+            \Illuminate\Support\Facades\DB::table('group_patient')
+                ->where('group_id', $group->id)
+                ->where('user_id', $user->id)
+                ->update($pivotData);
             GroupMembershipLog::create([
                 'group_id'   => $group->id,
                 'user_id'    => $user->id,
