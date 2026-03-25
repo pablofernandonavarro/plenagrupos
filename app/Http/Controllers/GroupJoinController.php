@@ -51,7 +51,13 @@ class GroupJoinController extends Controller
             return view('group.join', ['group' => $group, 'groupStatus' => $group->status]);
         }
 
-        $alreadyCheckedIn = GroupAttendance::where('group_id', $group->id)
+        $isActiveMember = \Illuminate\Support\Facades\DB::table('group_patient')
+            ->where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->whereNull('left_at')
+            ->exists();
+
+        $alreadyCheckedIn = $isActiveMember && GroupAttendance::where('group_id', $group->id)
             ->where('user_id', $user->id)
             ->whereDate('attended_at', today())
             ->exists();
@@ -79,14 +85,26 @@ class GroupJoinController extends Controller
                 : 'Este grupo está finalizado.');
         }
 
-        $alreadyCheckedIn = GroupAttendance::where('group_id', $group->id)
+        // Check pivot state: null = never joined, left_at null = active, left_at set = left
+        $existingPivot = \Illuminate\Support\Facades\DB::table('group_patient')
+            ->where('group_id', $group->id)
             ->where('user_id', $user->id)
-            ->whereDate('attended_at', today())
-            ->exists();
+            ->first();
 
-        if ($alreadyCheckedIn) {
-            return redirect()->route('patient.dashboard')
-                ->with('info', 'Ya registraste tu asistencia a este grupo hoy.');
+        $isActiveMember = $existingPivot && $existingPivot->left_at === null;
+
+        // Only block "already checked in today" if they are currently an active member
+        // (if they left and want to rejoin, let them through)
+        if ($isActiveMember) {
+            $alreadyCheckedIn = GroupAttendance::where('group_id', $group->id)
+                ->where('user_id', $user->id)
+                ->whereDate('attended_at', today())
+                ->exists();
+
+            if ($alreadyCheckedIn) {
+                return redirect()->route('patient.dashboard')
+                    ->with('info', 'Ya registraste tu asistencia a este grupo hoy.');
+            }
         }
 
         // Límites según plan_rules: clave = fase efectiva (fase_actual o, si no hay, plan contratado)
@@ -153,12 +171,6 @@ class GroupJoinController extends Controller
             'utm_content'             => $utm['utm_content'] ?? null,
             'first_device_user_agent' => Str::limit((string) $request->userAgent(), 2000),
         ];
-
-        // Check for any existing pivot row (active or inactive)
-        $existingPivot = \Illuminate\Support\Facades\DB::table('group_patient')
-            ->where('group_id', $group->id)
-            ->where('user_id', $user->id)
-            ->first();
 
         if (! $existingPivot) {
             // First time joining
