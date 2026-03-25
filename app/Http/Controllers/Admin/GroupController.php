@@ -13,34 +13,28 @@ class GroupController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Group::with(['coordinators', 'patients'])->latest();
+        $tz       = 'America/Argentina/Buenos_Aires';
+        $now      = Carbon::now($tz);
+        $dayNames = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+        $todayName = $dayNames[$now->dayOfWeek];
+        $timeNow   = $now->format('H:i:s');
 
-        if ($search = $request->input('search')) {
-            $query->where('name', 'like', '%' . $search . '%');
-        }
+        $status = $request->input('status', 'today');
 
-        // Default to active groups unless a status filter is explicitly set
-        $status = $request->input('status', 'active');
-        if ($status === 'active') {
-            $tz        = 'America/Argentina/Buenos_Aires';
-            $now       = Carbon::now($tz);
-            $timeNow   = $now->format('H:i:s');
-            $dayNames  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-            $todayName = $dayNames[$now->dayOfWeek];
-
-            $query->where(function ($q) use ($timeNow, $todayName) {
-                // Grupos no-recurrentes iniciados manualmente
+        if ($status === 'today') {
+            // Grupos que tienen sesión HOY (sin importar la hora exacta)
+            $query = Group::with(['coordinators', 'patients'])
+                ->orderByRaw("CASE WHEN meeting_time IS NULL THEN 1 ELSE 0 END")
+                ->orderBy('meeting_time');
+            if ($search = $request->input('search')) {
+                $query->where('name', 'like', '%' . $search . '%');
+            }
+            $query->where(function ($q) use ($todayName) {
                 $q->where('active', true)
-                // Grupos recurrentes actualmente en su ventana horaria
-                  ->orWhere(function ($q2) use ($timeNow, $todayName) {
+                  ->orWhere(function ($q2) use ($todayName) {
                       $q2->whereNotIn('recurrence_type', ['none'])
-                         ->whereNotNull('meeting_time')
                          ->where(fn($q3) => $q3->whereNull('recurrence_end_date')
                              ->orWhere('recurrence_end_date', '>=', today()))
-                         ->whereRaw(
-                             "? BETWEEN meeting_time AND ADDTIME(meeting_time, SEC_TO_TIME(COALESCE(session_duration_minutes, 120) * 60))",
-                             [$timeNow]
-                         )
                          ->where(function ($q3) use ($todayName) {
                              $q3->whereIn('recurrence_type', ['daily', 'monthly', 'yearly'])
                                 ->orWhere(fn($q4) => $q4->where('recurrence_type', 'weekly')
@@ -48,20 +42,33 @@ class GroupController extends Controller
                          });
                   });
             });
-        } elseif ($status === 'pending') {
-            $query->where('active', false)->whereNull('started_at')
-                  ->where(fn($q) => $q->where('recurrence_type', 'none')->orWhereNull('recurrence_type'));
-        } elseif ($status === 'closed') {
-            $query->where(function ($q) {
-                $q->where('active', false)->whereNotNull('started_at')
-                  ->where(fn($q2) => $q2->where('recurrence_type', 'none')->orWhereNull('recurrence_type'));
-            })->orWhere(function ($q) {
-                $q->whereNotIn('recurrence_type', ['none'])
-                  ->whereNotNull('recurrence_end_date')
-                  ->where('recurrence_end_date', '<', today());
-            });
+        } else {
+            $query = Group::with(['coordinators', 'patients'])->latest();
+            if ($search = $request->input('search')) {
+                $query->where('name', 'like', '%' . $search . '%');
+            }
+            if ($status === 'active') {
+                // Todos los programas vigentes (no vencidos)
+                $query->where(function ($q) {
+                    $q->where('active', true)
+                      ->orWhere(function ($q2) {
+                          $q2->whereNotIn('recurrence_type', ['none'])
+                             ->where(fn($q3) => $q3->whereNull('recurrence_end_date')
+                                 ->orWhere('recurrence_end_date', '>=', today()));
+                      });
+                });
+            } elseif ($status === 'closed') {
+                $query->where(function ($q) {
+                    $q->where('active', false)->whereNotNull('started_at')
+                      ->where(fn($q2) => $q2->where('recurrence_type', 'none')->orWhereNull('recurrence_type'));
+                })->orWhere(function ($q) {
+                    $q->whereNotIn('recurrence_type', ['none'])
+                      ->whereNotNull('recurrence_end_date')
+                      ->where('recurrence_end_date', '<', today());
+                });
+            }
+            // $status === '' → Todos
         }
-        // $status === '' means "Todos"
 
         if ($coordinatorId = $request->input('coordinator_id')) {
             $query->whereHas('coordinators', fn($q) => $q->where('users.id', $coordinatorId));

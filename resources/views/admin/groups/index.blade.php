@@ -51,7 +51,7 @@
             </select>
         </div>
         <div class="flex items-center gap-2">
-            @foreach([''=>'Todos', 'active'=>'En curso', 'pending'=>'Sin iniciar', 'closed'=>'Finalizados'] as $val => $label)
+            @foreach(['today'=>'Hoy', 'active'=>'Activos', 'closed'=>'Finalizados', ''=>'Todos'] as $val => $label)
                 <button type="submit" name="status" value="{{ $val }}"
                     class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium border transition
                         {{ $status === $val
@@ -72,7 +72,29 @@
     {{-- Groups list --}}
     <div class="space-y-3">
         @forelse($groups as $group)
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            @php
+                $isInSession = $group->status === 'active';
+                $borderClass = $isInSession ? 'border-green-200 shadow-green-50' : 'border-gray-100';
+            @endphp
+            <div class="bg-white rounded-2xl border {{ $borderClass }} shadow-sm overflow-hidden">
+
+                {{-- Franja horaria destacada en vista Hoy --}}
+                @if($status === 'today' && $group->meeting_time)
+                    <div class="px-5 pt-3 pb-0 flex items-center gap-3">
+                        @if($isInSession)
+                            <div class="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-1.5">
+                                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                <span class="text-sm font-bold text-green-700">En sesión ahora</span>
+                                <span class="text-xs text-green-600">{{ $group->meeting_time_formatted }} hs</span>
+                            </div>
+                        @else
+                            <div class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span class="text-sm font-semibold text-gray-600">Hoy {{ $group->meeting_time_formatted }} hs</span>
+                            </div>
+                        @endif
+                    </div>
+                @endif
 
                 {{-- Main row --}}
                 <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -81,25 +103,17 @@
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-1">
                             <h2 class="font-semibold text-gray-900 text-base">{{ $group->name }}</h2>
-                            @if($group->status === 'active')
-                                <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                    En curso
-                                </span>
-                            @elseif($group->status === 'pending')
-                                @if($group->auto_sessions)
-                                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
-                                        Fuera de horario
+                            @if($status !== 'today')
+                                @if($group->status === 'active')
+                                    <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                        En sesión
                                     </span>
-                                @else
-                                    <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">
-                                        Sin iniciar
-                                    </span>
+                                @elseif($group->status === 'pending' && !$group->auto_sessions)
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Sin iniciar</span>
+                                @elseif($group->status === 'closed')
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Finalizado</span>
                                 @endif
-                            @else
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
-                                    Finalizado
-                                </span>
                             @endif
                             @php
                                 $modalityStyles = ['presencial'=>'bg-blue-50 text-blue-700','virtual'=>'bg-violet-50 text-violet-700','hibrido'=>'bg-orange-50 text-orange-700'];
@@ -201,12 +215,20 @@
         @empty
             <div class="bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-400">
                 <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
-                <p class="font-medium text-gray-500">No hay grupos creados</p>
-                <a href="{{ route('admin.groups.create') }}" class="mt-2 inline-block text-teal-600 hover:underline text-sm">
-                    Crear el primer grupo
-                </a>
+                @if($status === 'today')
+                    <p class="font-medium text-gray-500">No hay grupos programados para hoy</p>
+                    <p class="text-sm mt-1 text-gray-400">Los grupos con sesión hoy aparecerán aquí</p>
+                @elseif($status === 'active')
+                    <p class="font-medium text-gray-500">No hay grupos activos</p>
+                    <a href="{{ route('admin.groups.create') }}" class="mt-2 inline-block text-teal-600 hover:underline text-sm">Crear grupo</a>
+                @elseif($status === 'closed')
+                    <p class="font-medium text-gray-500">No hay grupos finalizados</p>
+                @else
+                    <p class="font-medium text-gray-500">No hay grupos creados</p>
+                    <a href="{{ route('admin.groups.create') }}" class="mt-2 inline-block text-teal-600 hover:underline text-sm">Crear el primer grupo</a>
+                @endif
             </div>
         @endforelse
     </div>
