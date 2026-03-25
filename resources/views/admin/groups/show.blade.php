@@ -154,7 +154,7 @@
     {{-- Patients --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 class="font-semibold text-gray-800">Pacientes del grupo ({{ $group->patients->count() }})</h2>
+            <h2 class="font-semibold text-gray-800">Pacientes del grupo (<span id="patients-count">{{ $group->patients->count() }}</span>)</h2>
             <form action="{{ route('admin.groups.patients.add', $group) }}" method="POST" class="flex gap-2">
                 @csrf
                 <select name="user_id" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-teal-500 outline-none">
@@ -166,7 +166,7 @@
                 <button class="bg-teal-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-teal-700">Agregar</button>
             </form>
         </div>
-        <div class="divide-y divide-gray-50">
+        <div id="patients-list" class="divide-y divide-gray-50">
             @forelse($group->patients as $patient)
                 <div class="px-5 py-3 flex justify-between items-center gap-2">
                     <div class="flex items-center gap-3 min-w-0">
@@ -326,14 +326,18 @@
 </div>
 
 <script>
-const liveUrl      = '{{ route('admin.groups.live', $group) }}';
-const checkoutBase = '{{ url('admin/groups/' . $group->id . '/attendances') }}';
-const csrfToken    = '{{ csrf_token() }}';
-const groupClosed  = {{ $group->status === 'closed' ? 'true' : 'false' }};
-const tbody        = document.getElementById('attendance-body');
-const updateEl     = document.getElementById('last-update');
-const statVisits   = document.getElementById('stat-visits');
-const statAvg      = document.getElementById('stat-avg');
+const liveUrl        = '{{ route('admin.groups.live', $group) }}';
+const checkoutBase   = '{{ url('admin/groups/' . $group->id . '/attendances') }}';
+const removeUrl      = '{{ route('admin.groups.patients.remove', $group) }}';
+const csrfToken      = '{{ csrf_token() }}';
+const groupClosed    = {{ $group->status === 'closed' ? 'true' : 'false' }};
+const canRemove      = {{ $group->isProgramVigente() ? 'true' : 'false' }};
+const tbody          = document.getElementById('attendance-body');
+const updateEl       = document.getElementById('last-update');
+const statVisits     = document.getElementById('stat-visits');
+const statAvg        = document.getElementById('stat-avg');
+const patientsList   = document.getElementById('patients-list');
+const patientsCount  = document.getElementById('patients-count');
 
 function avatarHtml(a) {
     if (a.avatar_url) {
@@ -343,6 +347,39 @@ function avatarHtml(a) {
             <div class="w-8 h-8 rounded-full items-center justify-center shrink-0 font-semibold text-white text-xs" style="display:none">${a.initials}</div>`;
     }
     return `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-semibold text-white text-xs" style="background-color:${a.color}">${a.initials}</div>`;
+}
+
+function renderPatients(patients) {
+    patientsCount.textContent = patients.length;
+    if (patients.length === 0) {
+        patientsList.innerHTML = '<p class="px-5 py-4 text-sm text-gray-400 text-center">Sin pacientes. Los pacientes se agregan automáticamente al escanear el QR.</p>';
+        return;
+    }
+    patientsList.innerHTML = patients.map(p => {
+        const removeBtn = canRemove
+            ? `<form action="${removeUrl}" method="POST" style="display:inline">
+                <input type="hidden" name="_token" value="${csrfToken}">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="user_id" value="${p.id}">
+                <button type="submit" class="text-xs text-red-400 hover:text-red-600">Remover</button>
+               </form>`
+            : '';
+        const utm = p.utm_source ? ` · UTM: ${p.utm_source}${p.utm_campaign ? ' / '+p.utm_campaign : ''}` : '';
+        return `<div class="px-5 py-3 flex justify-between items-center gap-2">
+            <div class="flex items-center gap-3 min-w-0">
+                ${avatarHtml(p)}
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-gray-800">${p.name}</p>
+                    <p class="text-xs text-gray-400">${p.email ?? ''}</p>
+                    <p class="text-[10px] text-gray-400 mt-0.5">
+                        Alta: ${p.joined_at ?? '—'}
+                        · <span class="text-gray-600">${p.join_source === 'qr' ? 'QR' : 'Manual'}</span>${utm}
+                    </p>
+                </div>
+            </div>
+            ${removeBtn}
+        </div>`;
+    }).join('');
 }
 
 async function checkout(attendanceId, btn) {
@@ -400,6 +437,8 @@ async function fetchAttendances() {
                 </tr>`;
             }).join('');
         }
+
+        if (data.patients) renderPatients(data.patients);
 
         const now = new Date();
         updateEl.textContent = 'Act. ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
