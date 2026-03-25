@@ -1,19 +1,21 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Coordinator;
-use App\Http\Controllers\Patient;
-use App\Http\Controllers\GroupJoinController;
-use App\Http\Controllers\Coordinator\PatientController as CoordinatorPatientController;
 use App\Http\Controllers\Coordinator\InbodyController as CoordinatorInbodyController;
+use App\Http\Controllers\Coordinator\PatientController as CoordinatorPatientController;
+use App\Http\Controllers\GroupJoinController;
+use App\Http\Controllers\Patient;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root based on role
 Route::get('/', function () {
-    if (!auth()->check()) {
+    if (! auth()->check()) {
         return redirect()->route('login');
     }
+
     return match (auth()->user()->role) {
         'admin' => redirect()->route('admin.dashboard'),
         'coordinator' => redirect()->route('coordinator.dashboard'),
@@ -38,6 +40,13 @@ Route::post('/grupo/{token}', [GroupJoinController::class, 'join'])->name('group
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
+
+    Route::prefix('analytics')->name('analytics.')->group(function () {
+        Route::get('/', [AnalyticsController::class, 'index'])->name('index');
+        Route::get('/grupos', [AnalyticsController::class, 'groups'])->name('groups');
+        Route::get('/inbody', [AnalyticsController::class, 'inbody'])->name('inbody');
+        Route::get('/cohortes', [AnalyticsController::class, 'cohorts'])->name('cohorts');
+    });
 
     Route::resource('groups', Admin\GroupController::class);
     Route::post('/groups/{group}/toggle', [Admin\GroupController::class, 'toggle'])->name('groups.toggle');
