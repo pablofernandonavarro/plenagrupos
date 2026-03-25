@@ -397,13 +397,21 @@ async function checkout(attendanceId, btn) {
 }
 
 async function fetchAttendances() {
+    let data;
     try {
-        const res  = await fetch(liveUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        const data = await res.json();
+        const res = await fetch(liveUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        data = await res.json();
+    } catch(e) { return; }
 
-        statVisits.textContent = data.count;
-        statAvg.textContent    = data.avg_weight ? data.avg_weight + ' kg' : '—';
+    // Update patients section (independent of attendance rendering)
+    if (data.patients !== undefined) renderPatients(data.patients);
 
+    // Update stats
+    statVisits.textContent = data.count;
+    statAvg.textContent    = data.avg_weight ? data.avg_weight + ' kg' : '—';
+
+    // Update attendance table
+    try {
         if (data.attendances.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td></tr>';
         } else {
@@ -438,12 +446,10 @@ async function fetchAttendances() {
                 </tr>`;
             }).join('');
         }
-
-        if (data.patients) renderPatients(data.patients);
-
-        const now = new Date();
-        updateEl.textContent = 'Act. ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
     } catch(e) {}
+
+    const now = new Date();
+    updateEl.textContent = 'Act. ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
 }
 
 fetchAttendances();
