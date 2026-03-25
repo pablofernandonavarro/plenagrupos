@@ -59,8 +59,8 @@ class User extends Authenticatable
     }
 
     /**
-     * The phase used for group attendance rules.
-     * fase_actual overrides plan when set by a coordinator.
+     * The current clinical phase for display and AI analysis purposes.
+     * Does NOT affect group access rules — those always use the contracted plan.
      */
     public function faseEfectiva(): ?string
     {
