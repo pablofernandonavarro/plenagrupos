@@ -93,8 +93,8 @@ class GroupJoinController extends Controller
 
         $isActiveMember = $existingPivot && $existingPivot->left_at === null;
 
-        // Only block "already checked in today" if they are currently an active member
-        // (if they left and want to rejoin, let them through)
+        // One visit per patient per day — block if already checked in AND still active member
+        // (if they left and want to rejoin today, we reuse the existing attendance below)
         if ($isActiveMember) {
             $alreadyCheckedIn = GroupAttendance::where('group_id', $group->id)
                 ->where('user_id', $user->id)
@@ -106,6 +106,13 @@ class GroupJoinController extends Controller
                     ->with('info', 'Ya registraste tu asistencia a este grupo hoy.');
             }
         }
+
+        // Look for an existing attendance record today (patient may have left and is rejoining)
+        $todayAttendance = GroupAttendance::where('group_id', $group->id)
+            ->where('user_id', $user->id)
+            ->whereDate('attended_at', today())
+            ->latest('attended_at')
+            ->first();
 
         // Límites según plan_rules: clave = fase efectiva (fase_actual o, si no hay, plan contratado)
         $faseParaReglas = $user->faseEfectiva();
@@ -152,12 +159,18 @@ class GroupJoinController extends Controller
             }
         }
 
-        // Register attendance for this visit
-        $attendance = GroupAttendance::create([
-            'group_id' => $group->id,
-            'user_id' => $user->id,
-            'attended_at' => now(),
-        ]);
+        // Register attendance — reuse today's record if the patient already had one
+        // (they left and are rejoining the same session: same visit, clear the exit time)
+        if ($todayAttendance) {
+            $todayAttendance->update(['left_at' => null]);
+            $attendance = $todayAttendance;
+        } else {
+            $attendance = GroupAttendance::create([
+                'group_id'   => $group->id,
+                'user_id'    => $user->id,
+                'attended_at' => now(),
+            ]);
+        }
 
         // Membership: join new, rejoin, or already active (just record attendance)
         $utm = session()->pull('group_join_utm.'.$token, []);

@@ -22,7 +22,7 @@
                     @else
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
                     @endif
-                    @if($group->active)
+                    @if($group->status === 'active')
                         <span class="flex items-center gap-1 text-xs text-green-600">
                             <span class="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                             En vivo
@@ -101,12 +101,12 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
             <h2 class="font-semibold text-gray-800">Asistentes</h2>
-            @if($group->active)
+            @if($group->status === 'active')
                 <span id="last-update" class="text-xs text-gray-400"></span>
             @endif
         </div>
 
-        @if($group->active)
+        @if($group->status === 'active')
             <div id="live-list" class="divide-y divide-gray-50 min-h-[60px]">
                 <p class="px-5 py-6 text-center text-gray-400 text-sm">Esperando pacientes...</p>
             </div>
@@ -291,7 +291,7 @@
 
 </div>
 
-@if($group->active)
+@if($group->status === 'active')
 <script>
 const liveUrl      = '{{ route('coordinator.groups.live', $group) }}';
 const checkoutBase = '{{ url('coordinator/grupos/' . $group->id . '/asistencias') }}';
