@@ -392,6 +392,7 @@ async function checkout(attendanceId, btn) {
         });
         const data = await res.json();
         btn.closest('td').innerHTML = `<span class="text-gray-500">${data.left_at}</span>`;
+        fetchAttendances();
     } catch(e) { btn.disabled = false; btn.textContent = 'Marcar salida'; }
 }
 
