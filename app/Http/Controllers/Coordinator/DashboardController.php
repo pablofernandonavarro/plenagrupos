@@ -45,12 +45,21 @@ class DashboardController extends Controller
             $collection = $collection->filter(fn (Group $g) => $g->isProgramClosed())->values();
         }
 
-        // Más próximo a hoy/ahora arriba: sesión en curso ahora primero, luego por próxima ocurrencia, nombre
-        $collection = $collection->sortBy([
-            fn (Group $g) => $g->isLiveSessionNow() ? 0 : 1,
-            fn (Group $g) => $g->nextOccurrenceForSort()->timestamp,
-            fn (Group $g) => mb_strtolower($g->name),
-        ])->values();
+        // Más próximo a hoy/ahora arriba: sesión en curso ahora primero, luego por próxima ocurrencia, nombre.
+        // Nota: sortBy([...]) en Laravel espera comparadores (a,b); usar sort() con comparador explícito.
+        $collection = $collection->sort(function (Group $a, Group $b) {
+            $liveA = $a->isLiveSessionNow() ? 0 : 1;
+            $liveB = $b->isLiveSessionNow() ? 0 : 1;
+            if ($liveA !== $liveB) {
+                return $liveA <=> $liveB;
+            }
+            $t = $a->nextOccurrenceForSort()->timestamp <=> $b->nextOccurrenceForSort()->timestamp;
+            if ($t !== 0) {
+                return $t;
+            }
+
+            return strcmp(mb_strtolower($a->name), mb_strtolower($b->name));
+        })->values();
 
         $perPage = 10;
         $page = LengthAwarePaginator::resolveCurrentPage();
