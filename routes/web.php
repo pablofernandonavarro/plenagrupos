@@ -50,7 +50,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/cohortes', [AnalyticsController::class, 'cohorts'])->name('cohorts');
     });
 
-    Route::get('/adherencia', [PatientAdherenceController::class, 'index'])->name('adherencia.index');
+    Route::get('/adherencia', [PatientAdherenceController::class, 'index'])->name('adherence.index');
 
     Route::prefix('exports')->name('exports.')->group(function () {
         Route::get('/asistencias', [DataExportController::class, 'attendances'])->name('attendances');
