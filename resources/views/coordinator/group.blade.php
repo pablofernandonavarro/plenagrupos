@@ -13,14 +13,19 @@
             <div>
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="text-xl sm:text-2xl font-bold text-gray-800">{{ $group->name }}</h1>
-                    @if($group->status === 'active')
+                    {{-- Misma lógica que el listado del dashboard (no solo $group->status: los recurrentes fuera de horario son "pending" pero el programa sigue vigente) --}}
+                    @if($group->isProgramClosed())
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
+                    @elseif($group->status === 'active')
                         <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En curso
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En sesión
                         </span>
-                    @elseif($group->status === 'pending')
+                    @elseif($group->isProgramVigente())
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa activo</span>
+                    @elseif($group->status === 'pending' && ! $group->auto_sessions)
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @else
-                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @endif
                     @if($group->status === 'active')
                         <span class="flex items-center gap-1 text-xs text-green-600">
@@ -47,9 +52,9 @@
                                 <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                 {{ $group->recurrenceLabel }}
                             </span>
-                            @if($group->nextSessionAt)
+                            @if($group->nextSessionAt && ! $group->isProgramClosed())
                                 <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">
-                                    {{ $group->status === 'pending' ? 'Inicio programado' : 'Próxima sesión' }}: {{ $group->nextSessionAt->translatedFormat('D d/m · H:i') }}
+                                    {{ $group->isProgramVigente() ? 'Próxima sesión' : 'Inicio programado' }}: {{ $group->nextSessionAt->translatedFormat('D d/m · H:i') }}
                                 </span>
                             @endif
                         @endif
@@ -316,7 +321,7 @@
 const liveUrl      = '{{ route('coordinator.groups.live', $group) }}';
 const checkoutBase = '{{ url('coordinator/grupos/' . $group->id . '/asistencias') }}';
 const csrfToken    = '{{ csrf_token() }}';
-const groupClosed  = {{ $group->status === 'closed' ? 'true' : 'false' }};
+const groupClosed  = {{ $group->isProgramClosed() ? 'true' : 'false' }};
 const listEl       = document.getElementById('live-list');
 const countEl      = document.getElementById('stat-count');
 const updateEl     = document.getElementById('last-update');

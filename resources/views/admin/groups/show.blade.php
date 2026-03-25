@@ -13,14 +13,18 @@
             <div>
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="text-xl sm:text-2xl font-bold text-gray-800">{{ $group->name }}</h1>
-                    @if($group->status === 'active')
+                    @if($group->isProgramClosed())
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
+                    @elseif($group->status === 'active')
                         <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
-                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En curso
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En sesión
                         </span>
-                    @elseif($group->status === 'pending')
+                    @elseif($group->isProgramVigente())
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-emerald-50 text-emerald-800 border border-emerald-100">Programa activo</span>
+                    @elseif($group->status === 'pending' && ! $group->auto_sessions)
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @else
-                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
+                        <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @endif
                 </div>
                 <div class="flex items-center gap-3 mt-1 flex-wrap">
@@ -46,9 +50,9 @@
                                 <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                 {{ $group->recurrenceLabel }}
                             </span>
-                            @if($group->nextSessionAt)
+                            @if($group->nextSessionAt && ! $group->isProgramClosed())
                                 <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium">
-                                    {{ $group->status === 'pending' ? 'Inicio programado' : 'Próxima sesión' }}: {{ $group->nextSessionAt->translatedFormat('D d/m/Y · H:i') }}
+                                    {{ $group->isProgramVigente() ? 'Próxima sesión' : 'Inicio programado' }}: {{ $group->nextSessionAt->translatedFormat('D d/m/Y · H:i') }}
                                 </span>
                             @endif
                         @endif
@@ -61,13 +65,13 @@
                 class="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
                 Editar
             </a>
-            @if($group->status === 'active')
+            @if($group->isProgramVigente())
             <form action="{{ route('admin.groups.toggle', $group) }}" method="POST"
-                  onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
+                  onsubmit="return confirm('¿Finalizar {{ $group->auto_sessions ? 'el programa' : 'el grupo' }}? Esta acción no se puede deshacer.')">
                 @csrf
                 <button type="submit"
                     class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
-                    Finalizar grupo
+                    Finalizar {{ $group->auto_sessions ? 'programa' : 'grupo' }}
                 </button>
             </form>
             @endif
