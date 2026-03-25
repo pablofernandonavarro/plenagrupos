@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\GroupAttendance;
 use App\Models\GroupMembershipLog;
 use App\Models\User;
 use Carbon\Carbon;
@@ -274,26 +275,42 @@ class GroupController extends Controller
 
     public function liveAttendances(Group $group)
     {
+        $colors = ['#09cda6','#3b82f6','#8b5cf6','#6366f1','#f43f5e','#f59e0b','#06b6d4','#10b981'];
+
         $attendances = $group->attendances()
             ->with(['user', 'weightRecord'])
             ->whereDate('attended_at', today())
             ->latest('attended_at')
             ->get()
             ->map(fn ($a) => [
-                'id' => $a->user_id,
-                'name' => $a->user->name,
-                'attended_at' => $a->attended_at->format('H:i'),
-                'weight' => $a->weightRecord?->weight,
-                'ideal_weight' => $a->user->ideal_weight,
+                'attendance_id' => $a->id,
+                'id'            => $a->user_id,
+                'name'          => $a->user->name,
+                'initials'      => collect(explode(' ', $a->user->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
+                'color'         => $colors[$a->user_id % count($colors)],
+                'avatar_url'    => $a->user->avatar ? secure_asset('storage/'.$a->user->avatar) : null,
+                'attended_at'   => $a->attended_at->format('H:i'),
+                'left_at'       => $a->left_at?->format('H:i'),
+                'weight'        => $a->weightRecord?->weight,
+                'ideal_weight'  => $a->user->ideal_weight,
             ]);
 
         $avg = $group->weightRecords()->whereDate('recorded_at', today())->avg('weight');
 
         return response()->json([
-            'count' => $attendances->count(),
+            'count'      => $attendances->count(),
             'avg_weight' => $avg ? number_format($avg, 1) : null,
             'attendances' => $attendances,
         ]);
+    }
+
+    public function checkoutAttendance(Group $group, GroupAttendance $attendance)
+    {
+        abort_if($attendance->group_id !== $group->id, 404);
+
+        $attendance->update(['left_at' => now()]);
+
+        return response()->json(['left_at' => $attendance->left_at->format('H:i')]);
     }
 
     public function toggle(Group $group)

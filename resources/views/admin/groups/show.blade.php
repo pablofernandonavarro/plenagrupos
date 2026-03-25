@@ -220,9 +220,9 @@
                 <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
                     <tr>
                         <th class="px-5 py-3 text-left">Paciente</th>
-                        <th class="px-5 py-3 text-left">Hora</th>
+                        <th class="px-5 py-3 text-left">Entrada</th>
+                        <th class="px-5 py-3 text-left">Salida</th>
                         <th class="px-5 py-3 text-right">Peso</th>
-                        <th class="px-5 py-3 text-right">Peso ideal</th>
                         <th class="px-5 py-3 text-right">Dif.</th>
                     </tr>
                 </thead>
@@ -241,10 +241,19 @@
                                 </div>
                             </td>
                             <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('H:i') }}</td>
+                            <td class="px-5 py-3">
+                                @if($att->left_at)
+                                    <span class="text-gray-500">{{ $att->left_at->format('H:i') }}</span>
+                                @else
+                                    <button onclick="checkout({{ $att->id }}, this)"
+                                        class="text-xs text-teal-600 border border-teal-200 rounded px-2 py-0.5 hover:bg-teal-50 transition">
+                                        Marcar salida
+                                    </button>
+                                @endif
+                            </td>
                             <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
                                 {{ $rw ? $rw . ' kg' : '—' }}
                             </td>
-                            <td class="px-5 py-3 text-right text-gray-400">{{ $iw ? $iw . ' kg' : '—' }}</td>
                             <td class="px-5 py-3 text-right font-semibold">
                                 @if($diff !== null)
                                     @if($diff > 0)<span class="text-red-500">↑ +{{ $diff }} kg</span>
@@ -318,11 +327,36 @@
 
 @if($group->status === 'active')
 <script>
-const liveUrl  = '{{ route('admin.groups.live', $group) }}';
-const tbody    = document.getElementById('attendance-body');
-const updateEl = document.getElementById('last-update');
-const statVisits = document.getElementById('stat-visits');
-const statAvg    = document.getElementById('stat-avg');
+const liveUrl     = '{{ route('admin.groups.live', $group) }}';
+const checkoutBase = '{{ url('admin/groups/' . $group->id . '/attendances') }}';
+const csrfToken   = '{{ csrf_token() }}';
+const tbody       = document.getElementById('attendance-body');
+const updateEl    = document.getElementById('last-update');
+const statVisits  = document.getElementById('stat-visits');
+const statAvg     = document.getElementById('stat-avg');
+
+function avatarHtml(a) {
+    if (a.avatar_url) {
+        return `<img src="${a.avatar_url}" alt="${a.name}"
+            class="w-8 h-8 rounded-full object-cover shrink-0"
+            onerror="this.style.display='none';this.nextElementSibling.style.cssText='display:flex;background-color:${a.color}'">
+            <div class="w-8 h-8 rounded-full items-center justify-center shrink-0 font-semibold text-white text-xs" style="display:none">${a.initials}</div>`;
+    }
+    return `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-semibold text-white text-xs" style="background-color:${a.color}">${a.initials}</div>`;
+}
+
+async function checkout(attendanceId, btn) {
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+        const res = await fetch(`${checkoutBase}/${attendanceId}/checkout`, {
+            method: 'PATCH',
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+        btn.closest('td').innerHTML = `<span class="text-gray-500">${data.left_at}</span>`;
+    } catch(e) { btn.disabled = false; btn.textContent = 'Marcar salida'; }
+}
 
 async function fetchAttendances() {
     try {
@@ -346,11 +380,22 @@ async function fetchAttendances() {
                             ? `<span class="text-green-600">↓ ${diff} kg</span>`
                             : `<span class="text-gray-400">= ideal</span>`)
                     : '<span class="text-gray-300">—</span>';
+                const leftHtml = a.left_at
+                    ? `<span class="text-gray-500">${a.left_at}</span>`
+                    : `<button onclick="checkout(${a.attendance_id}, this)"
+                        class="text-xs text-teal-600 border border-teal-200 rounded px-2 py-0.5 hover:bg-teal-50 transition">
+                        Marcar salida
+                       </button>`;
                 return `<tr>
-                    <td class="px-5 py-3 font-medium text-gray-800">${a.name}</td>
+                    <td class="px-5 py-3">
+                        <div class="flex items-center gap-2">
+                            ${avatarHtml(a)}
+                            <span class="font-medium text-gray-800">${a.name}</span>
+                        </div>
+                    </td>
                     <td class="px-5 py-3 text-gray-500">${a.attended_at}</td>
+                    <td class="px-5 py-3">${leftHtml}</td>
                     <td class="px-5 py-3 text-right font-semibold ${rw ? 'text-teal-600' : 'text-gray-300'}">${rw ? rw + ' kg' : '—'}</td>
-                    <td class="px-5 py-3 text-right text-gray-400">${iw ? iw + ' kg' : '—'}</td>
                     <td class="px-5 py-3 text-right font-semibold">${diffHtml}</td>
                 </tr>`;
             }).join('');

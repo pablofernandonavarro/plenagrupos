@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class GroupAttendance extends Model
 {
-    protected $fillable = ['group_id', 'user_id', 'attended_at'];
+    protected $fillable = ['group_id', 'user_id', 'attended_at', 'left_at'];
 
-    protected $casts = ['attended_at' => 'datetime'];
+    protected $casts = [
+        'attended_at' => 'datetime',
+        'left_at'     => 'datetime',
+    ];
 
     public function group()
     {

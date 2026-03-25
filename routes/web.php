@@ -62,6 +62,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('groups', Admin\GroupController::class);
     Route::post('/groups/{group}/toggle', [Admin\GroupController::class, 'toggle'])->name('groups.toggle');
     Route::get('/groups/{group}/live', [Admin\GroupController::class, 'liveAttendances'])->name('groups.live');
+    Route::patch('/groups/{group}/attendances/{attendance}/checkout', [Admin\GroupController::class, 'checkoutAttendance'])->name('groups.attendance.checkout');
     Route::post('/groups/{group}/coordinators', [Admin\GroupController::class, 'addCoordinator'])->name('groups.coordinators.add');
     Route::delete('/groups/{group}/coordinators', [Admin\GroupController::class, 'removeCoordinator'])->name('groups.coordinators.remove');
     Route::post('/groups/{group}/patients', [Admin\GroupController::class, 'addPatient'])->name('groups.patients.add');
@@ -92,6 +93,7 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
     Route::get('/dashboard', [Coordinator\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/grupos/{group}', [Coordinator\DashboardController::class, 'showGroup'])->name('groups.show');
     Route::get('/grupos/{group}/asistencia', [Coordinator\DashboardController::class, 'liveAttendances'])->name('groups.live');
+    Route::patch('/grupos/{group}/asistencias/{attendance}/checkout', [Coordinator\DashboardController::class, 'checkoutAttendance'])->name('groups.attendance.checkout');
     Route::post('/grupos/{group}/mantenimiento', [Coordinator\DashboardController::class, 'updateMaintenanceWeight'])->name('groups.maintenance');
     Route::post('/grupos/{group}/toggle', [Coordinator\DashboardController::class, 'toggleGroup'])->name('groups.toggle');
 

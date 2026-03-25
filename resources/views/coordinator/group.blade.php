@@ -293,10 +293,12 @@
 
 @if($group->active)
 <script>
-const liveUrl  = '{{ route('coordinator.groups.live', $group) }}';
-const listEl   = document.getElementById('live-list');
-const countEl  = document.getElementById('stat-count');
-const updateEl = document.getElementById('last-update');
+const liveUrl      = '{{ route('coordinator.groups.live', $group) }}';
+const checkoutBase = '{{ url('coordinator/grupos/' . $group->id . '/asistencias') }}';
+const csrfToken    = '{{ csrf_token() }}';
+const listEl       = document.getElementById('live-list');
+const countEl      = document.getElementById('stat-count');
+const updateEl     = document.getElementById('last-update');
 
 const patientRanges = {
     @foreach($group->patients as $p)
@@ -320,6 +322,29 @@ function calcStatus(rw, piso, techo) {
     return { text: '—', color: 'text-gray-300', icon: '' };
 }
 
+function avatarHtml(a) {
+    if (a.avatar_url) {
+        return `<img src="${a.avatar_url}" alt="${a.name}"
+            class="w-8 h-8 rounded-full object-cover shrink-0"
+            onerror="this.style.display='none';this.nextElementSibling.style.cssText='display:flex;background-color:${a.color}'">
+            <div class="w-8 h-8 rounded-full items-center justify-center shrink-0 font-semibold text-white text-xs" style="display:none">${a.initials}</div>`;
+    }
+    return `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-semibold text-white text-xs" style="background-color:${a.color}">${a.initials}</div>`;
+}
+
+async function checkout(attendanceId, btn) {
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+        const res = await fetch(`${checkoutBase}/${attendanceId}/checkout`, {
+            method: 'PATCH',
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await res.json();
+        btn.closest('.checkout-cell').innerHTML = `<span class="text-gray-500 text-xs">${data.left_at}</span>`;
+    } catch(e) { btn.disabled = false; btn.textContent = 'Marcar salida'; }
+}
+
 function renderRow(a) {
     const range = patientRanges[a.id] ?? { piso: null, techo: null };
     const rw    = a.weight;
@@ -329,14 +354,26 @@ function renderRow(a) {
     const rangeText = (piso !== null || techo !== null)
         ? (piso ?? '?') + ' – ' + (techo ?? '?') + ' kg'
         : '—';
+    const leftHtml = a.left_at
+        ? `<span class="text-gray-500 text-xs">${a.left_at}</span>`
+        : `<button onclick="checkout(${a.attendance_id}, this)"
+            class="text-xs text-teal-600 border border-teal-200 rounded px-2 py-0.5 hover:bg-teal-50 transition">
+            Salida
+           </button>`;
 
     return `
-    <div class="px-5 py-3 border-b border-gray-50 last:border-0">
-        <p class="font-medium text-gray-800 text-sm mb-2">${a.name}</p>
-        <div class="grid grid-cols-3 gap-2 text-xs sm:hidden">
+    <div class="px-4 py-3 border-b border-gray-50 last:border-0">
+        <div class="flex items-center gap-2 mb-2">
+            ${avatarHtml(a)}
+            <div class="min-w-0">
+                <p class="font-medium text-gray-800 text-sm leading-tight">${a.name}</p>
+                <p class="text-xs text-gray-400">Entrada: ${a.attended_at} &nbsp;·&nbsp; <span class="checkout-cell inline">${leftHtml}</span></p>
+            </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-xs">
             <div class="bg-gray-50 rounded-lg p-2 text-center">
                 <p class="font-semibold ${rw ? 'text-teal-600' : 'text-gray-300'}">${rw ? rw + ' kg' : '—'}</p>
-                <p class="text-gray-400 mt-0.5">Registrado</p>
+                <p class="text-gray-400 mt-0.5">Peso</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-2 text-center">
                 <p class="font-semibold text-gray-600 text-xs leading-tight">${rangeText}</p>
@@ -347,23 +384,9 @@ function renderRow(a) {
                 <p class="text-gray-400 mt-0.5">Dif.</p>
             </div>
         </div>
-        <div class="hidden sm:grid grid-cols-4 gap-2 text-sm items-center">
-            <span></span>
-            <span class="text-right font-semibold ${rw ? 'text-teal-600' : 'text-gray-300'}">${rw ? rw + ' kg' : '—'}</span>
-            <span class="text-right text-gray-500 text-xs">${rangeText}</span>
-            <span class="text-right font-semibold ${s.color}">${s.icon} ${s.text}</span>
-        </div>
     </div>`;
 }
 
-function renderHeader() {
-    return `<div class="hidden sm:grid grid-cols-4 gap-2 px-5 py-2 text-xs text-gray-400 uppercase tracking-wide bg-gray-50">
-        <span>Paciente</span>
-        <span class="text-right">Peso registrado</span>
-        <span class="text-right">Rango</span>
-        <span class="text-right">Diferencia</span>
-    </div>`;
-}
 
 async function fetchAttendances() {
     try {
@@ -375,7 +398,7 @@ async function fetchAttendances() {
         if (data.attendances.length === 0) {
             listEl.innerHTML = '<p class="px-5 py-6 text-center text-gray-400 text-sm">Esperando pacientes...</p>';
         } else {
-            listEl.innerHTML = renderHeader() + data.attendances.map(renderRow).join('');
+            listEl.innerHTML = data.attendances.map(renderRow).join('');
         }
 
         const now = new Date();
