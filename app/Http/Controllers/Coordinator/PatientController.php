@@ -132,6 +132,21 @@ class PatientController extends Controller
         ));
     }
 
+    public function updateFase(Request $request, User $patient)
+    {
+        $validFases = ['descenso', 'mantenimiento', 'mantenimiento_pleno', ''];
+        $fase = $request->input('fase_actual', '');
+
+        if (!in_array($fase, $validFases)) {
+            return back()->with('error', 'Fase inválida.');
+        }
+
+        $patient->fase_actual = $fase ?: null;
+        $patient->save();
+
+        return back()->with('success', 'Fase clínica actualizada.');
+    }
+
     public function aiAnalysis(User $patient): JsonResponse
     {
         // Cache key includes a hash of active docs and InBody records — auto-invalidates when data changes
@@ -162,7 +177,11 @@ class PatientController extends Controller
                 'mantenimiento'       => 'Mantenimiento',
                 'mantenimiento_pleno' => 'Mantenimiento Pleno',
             ];
-            $planLabel   = $planLabels[$patient->plan] ?? 'no asignado';
+            $planLabel      = $planLabels[$patient->plan] ?? 'no asignado';
+            $faseActualLabel = $patient->fase_actual
+                ? $planLabels[$patient->fase_actual] ?? $patient->fase_actual
+                : null;
+            $hayConflictoPlan = $patient->fase_actual && $patient->fase_actual !== $patient->plan;
             $cycleInfo   = '';
             if ($patient->plan_start_date) {
                 [$cs, $ce] = $patient->currentPlanCycle();
@@ -246,7 +265,8 @@ class PatientController extends Controller
                 "para el coordinador del grupo (6-8 oraciones). Aplicá el marco conceptual de Ravenna donde corresponda.\n\n" .
 
                 "=== PERFIL DEL PACIENTE ===\n" .
-                "- Plan: {$planLabel}\n" .
+                "- Plan contratado: {$planLabel}\n" .
+                ($faseActualLabel ? "- Fase clínica actual: {$faseActualLabel}" . ($hayConflictoPlan ? " (DISTINTA al plan contratado — el paciente paga descenso pero está cursando mantenimiento o viceversa)" : "") . "\n" : "") .
                 ($cycleInfo ? "- {$cycleInfo}\n" : "") .
                 "- Peso inicial: {$firstW} kg\n" .
                 "- Peso actual: {$lastW} kg\n" .
@@ -269,7 +289,7 @@ class PatientController extends Controller
                 ($notes ? "=== COMENTARIOS DEL PACIENTE ===\n{$notes}\n\n" : "") .
 
                 "Incluí en tu análisis:\n" .
-                "1. Interpretación de la evolución del peso según el plan ({$planLabel})\n" .
+                "1. Interpretación de la evolución del peso según " . ($faseActualLabel && $hayConflictoPlan ? "la fase actual ({$faseActualLabel}), aclarando que tiene contratado {$planLabel}" : "el plan ({$planLabel})") . "\n" .
                 "2. Valoración de la adherencia y regularidad\n" .
                 "3. Relación entre el estado actual y el rango de mantenimiento\n" .
                 ($notes ? "4. Qué revelan emocionalmente las notas según el marco de Ravenna\n" : "") .

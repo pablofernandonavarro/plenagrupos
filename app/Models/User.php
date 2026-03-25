@@ -20,6 +20,7 @@ class User extends Authenticatable
         'peso_techo',
         'role',
         'plan',
+        'fase_actual',
         'plan_start_date',
         'password',
     ];
@@ -55,6 +56,15 @@ class User extends Authenticatable
         }
 
         return [$start->startOfDay(), $start->copy()->addDays(29)->endOfDay()];
+    }
+
+    /**
+     * The phase used for group attendance rules.
+     * fase_actual overrides plan when set by a coordinator.
+     */
+    public function faseEfectiva(): ?string
+    {
+        return $this->fase_actual ?? $this->plan;
     }
 
     public function isAdmin(): bool

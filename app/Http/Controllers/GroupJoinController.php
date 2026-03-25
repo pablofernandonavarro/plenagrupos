@@ -64,9 +64,10 @@ class GroupJoinController extends Controller
                 ->with('info', 'Ya registraste tu asistencia a este grupo hoy.');
         }
 
-        // Enforce plan rules
-        if ($user->plan) {
-            $rule = PlanRule::where('patient_plan', $user->plan)
+        // Enforce plan rules using faseEfectiva (fase_actual overrides plan)
+        $faseEfectiva = $user->faseEfectiva();
+        if ($faseEfectiva) {
+            $rule = PlanRule::where('patient_plan', $faseEfectiva)
                 ->where('group_type', $group->group_type)
                 ->first();
 

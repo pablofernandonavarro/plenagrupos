@@ -80,6 +80,7 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
 
     Route::get('/pacientes', [CoordinatorPatientController::class, 'index'])->name('patients.index');
     Route::get('/pacientes/{patient}', [CoordinatorPatientController::class, 'show'])->name('patients.show');
+    Route::patch('/pacientes/{patient}/fase', [CoordinatorPatientController::class, 'updateFase'])->name('patients.fase');
     Route::post('/pacientes/{patient}/ai-analysis', [CoordinatorPatientController::class, 'aiAnalysis'])->name('patients.ai-analysis');
 
     Route::get('/pacientes/{patient}/inbody/crear', [CoordinatorInbodyController::class, 'create'])->name('patients.inbody.create');

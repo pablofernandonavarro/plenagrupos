@@ -50,6 +50,86 @@
         </div>
     </div>
 
+    {{-- Plan vs fase actual --}}
+    @php
+        $planLabels = ['descenso' => 'Descenso', 'mantenimiento' => 'Mantenimiento', 'mantenimiento_pleno' => 'Mantenimiento Pleno'];
+        $planColors = ['descenso' => 'bg-blue-100 text-blue-700', 'mantenimiento' => 'bg-green-100 text-green-700', 'mantenimiento_pleno' => 'bg-purple-100 text-purple-700'];
+        $faseEfectiva = $patient->faseEfectiva();
+        $hayConflicto = $patient->fase_actual && $patient->fase_actual !== $patient->plan;
+    @endphp
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4">
+        <div class="flex flex-wrap items-center gap-3 justify-between">
+            <div class="flex flex-wrap items-center gap-3">
+                {{-- Billing plan --}}
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400">Plan contratado:</span>
+                    @if($patient->plan)
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $planColors[$patient->plan] ?? 'bg-gray-100 text-gray-500' }}">
+                            {{ $planLabels[$patient->plan] ?? $patient->plan }}
+                        </span>
+                    @else
+                        <span class="text-xs text-gray-400">Sin plan</span>
+                    @endif
+                </div>
+
+                @if($hayConflicto)
+                    <svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l4 10H7l4-10zm0 0V4"/>
+                    </svg>
+                @endif
+
+                {{-- Active clinical phase --}}
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400">Fase actual:</span>
+                    @if($patient->fase_actual)
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $planColors[$patient->fase_actual] ?? 'bg-gray-100 text-gray-500' }}">
+                            {{ $planLabels[$patient->fase_actual] ?? $patient->fase_actual }}
+                        </span>
+                    @else
+                        <span class="text-xs text-gray-400 italic">Igual al plan</span>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Quick change button --}}
+            <button onclick="document.getElementById('fase-panel').classList.toggle('hidden')"
+                class="text-xs text-indigo-600 hover:underline shrink-0">
+                Cambiar fase
+            </button>
+        </div>
+
+        {{-- Inline fase change form --}}
+        <div id="fase-panel" class="hidden mt-4 pt-4 border-t border-gray-100">
+            <form method="POST" action="{{ route('coordinator.patients.fase', $patient) }}" class="flex flex-wrap items-center gap-3">
+                @csrf @method('PATCH')
+                <p class="text-xs text-gray-500 w-full">
+                    Cambiá la fase clínica sin modificar el plan de facturación.
+                    Las reglas de asistencia a grupos usarán esta fase.
+                </p>
+                <div class="flex flex-wrap gap-2 flex-1">
+                    @foreach(['descenso' => 'Descenso', 'mantenimiento' => 'Mantenimiento', 'mantenimiento_pleno' => 'Mant. Pleno'] as $val => $lbl)
+                    <label class="flex items-center gap-2 cursor-pointer border rounded-lg px-3 py-2 text-sm transition
+                        {{ $faseEfectiva === $val ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold' : 'border-gray-200 text-gray-600 hover:border-indigo-300' }}">
+                        <input type="radio" name="fase_actual" value="{{ $val }}" class="hidden"
+                            {{ $faseEfectiva === $val ? 'checked' : '' }}>
+                        {{ $lbl }}
+                    </label>
+                    @endforeach
+                    <label class="flex items-center gap-2 cursor-pointer border rounded-lg px-3 py-2 text-sm transition
+                        {{ !$patient->fase_actual ? 'border-gray-400 bg-gray-50 text-gray-700 font-semibold' : 'border-gray-200 text-gray-500 hover:border-gray-300' }}">
+                        <input type="radio" name="fase_actual" value="" class="hidden"
+                            {{ !$patient->fase_actual ? 'checked' : '' }}>
+                        Usar plan ({{ $planLabels[$patient->plan] ?? 'sin plan' }})
+                    </label>
+                </div>
+                <button type="submit"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+                    Guardar
+                </button>
+            </form>
+        </div>
+    </div>
+
     {{-- Stats --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
