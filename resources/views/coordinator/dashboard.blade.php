@@ -2,7 +2,13 @@
 @section('title', 'Mis Grupos')
 
 @php
-    $statusLabels = ['' => 'Todos', 'active' => 'En curso', 'pending' => 'Sin iniciar', 'closed' => 'Finalizados'];
+    // Mismos criterios que admin (Activos = vigentes); el coordinador además filtra Sin iniciar.
+    $statusLabels = [
+        '' => 'Todos',
+        'active' => 'Activos',
+        'pending' => 'Sin iniciar',
+        'closed' => 'Finalizados',
+    ];
     $curStatus = request('status', '');
 @endphp
 
