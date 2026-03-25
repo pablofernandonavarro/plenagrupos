@@ -107,7 +107,7 @@
                     Las reglas de asistencia a grupos usarán esta fase.
                 </p>
                 <div class="flex flex-wrap gap-2 flex-1">
-                    @foreach(['descenso' => 'Descenso', 'mantenimiento' => 'Mantenimiento', 'mantenimiento_pleno' => 'Mant. Pleno'] as $val => $lbl)
+                    @foreach(['descenso' => 'Descenso', 'mantenimiento' => 'Mantenimiento', 'mantenimiento_pleno' => 'Mantenimiento Pleno'] as $val => $lbl)
                     <label class="flex items-center gap-2 cursor-pointer border rounded-lg px-3 py-2 text-sm transition
                         {{ $faseEfectiva === $val ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold' : 'border-gray-200 text-gray-600 hover:border-indigo-300' }}">
                         <input type="radio" name="fase_actual" value="{{ $val }}" class="hidden"
