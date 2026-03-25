@@ -30,15 +30,16 @@
                 </thead>
                 <tbody>
                     @foreach([
-                        ['email',        'Email del usuario',                                  'Sí'],
-                        ['nombre',       'Nombre completo',                                    'Sí'],
-                        ['telefono',              'Solo dígitos, con código de país (ej: 5491112345678)',   'No'],
-                        ['plan',                  'descenso / mantenimiento / mantenimiento_pleno',          'No'],
-                        ['fecha inicio del plan', 'Fecha de inicio del plan (ej: 18/03/2026)',               'No'],
-                        ['peso_ideal',   'Peso ideal en kg',                                   'No'],
-                        ['peso_piso',    'Peso mínimo de mantenimiento',                       'No'],
-                        ['peso_techo',   'Peso máximo de mantenimiento',                       'No'],
-                        ['rol',          'patient (default) o coordinator',                   'No'],
+                        ['email',                 'Email del usuario',                                            'Sí'],
+                        ['nombre',                'Nombre completo',                                               'Sí'],
+                        ['telefono',              'Solo dígitos, con código de país (ej: 5491112345678)',          'No'],
+                        ['plan',                  'Plan contratado: descenso / mantenimiento / mantenimiento_pleno','No'],
+                        ['fase_actual',           'Fase clínica: descenso / mantenimiento / mantenimiento_pleno', 'No'],
+                        ['fecha inicio del plan', 'Fecha de inicio del ciclo de facturación (ej: 18/03/2026)',    'No'],
+                        ['peso_ideal',            'Peso ideal en kg',                                             'No'],
+                        ['peso_piso',             'Peso mínimo de mantenimiento',                                 'No'],
+                        ['peso_techo',            'Peso máximo de mantenimiento',                                 'No'],
+                        ['rol',                   'patient (default) o coordinator',                              'No'],
                     ] as [$col, $desc, $req])
                     <tr class="border border-blue-200">
                         <td class="px-2 py-1 font-mono font-semibold">{{ $col }}</td>

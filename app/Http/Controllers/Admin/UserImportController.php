@@ -4,13 +4,33 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class UserImportController extends Controller
 {
+    private const HEADERS = [
+        'email',
+        'nombre',
+        'telefono',
+        'plan',
+        'fase_actual',
+        'fecha inicio del plan',
+        'peso_ideal',
+        'peso_piso',
+        'peso_techo',
+        'rol',
+    ];
+
+    private const VALID_PLANS = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
+
     public function show()
     {
         return view('admin.users.import');
@@ -18,26 +38,26 @@ class UserImportController extends Controller
 
     public function template()
     {
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet = new Spreadsheet();
         $sheet       = $spreadsheet->getActiveSheet();
 
-        $cols    = ['A','B','C','D','E','F','G','H','I'];
-        $headers = ['email','nombre','telefono','plan','fecha inicio del plan','peso_ideal','peso_piso','peso_techo','rol'];
-
         // Write headers
-        foreach ($headers as $i => $header) {
-            $sheet->getCell($cols[$i] . '1')->setValue($header);
-            $sheet->getColumnDimension($cols[$i])->setAutoSize(true);
+        foreach (self::HEADERS as $i => $header) {
+            $col = $this->col($i);
+            $sheet->getCell($col . '1')->setValue($header);
+            $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        // Force column C (telefono) as text to avoid scientific notation
-        $sheet->getStyle('C1:C1000')->getNumberFormat()
-            ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+        // Force telefono column as text (prevent scientific notation)
+        $telefonoCol = $this->col(array_search('telefono', self::HEADERS));
+        $sheet->getStyle("{$telefonoCol}1:{$telefonoCol}1000")
+            ->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
 
         // Style header row
-        $sheet->getStyle('A1:I1')->applyFromArray([
-            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '09CDA6']],
+        $lastCol = $this->col(count(self::HEADERS) - 1);
+        $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
+            'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill'      => ['fillType' => 'solid', 'startColor' => ['rgb' => '09CDA6']],
             'alignment' => ['horizontal' => 'center'],
         ]);
 
@@ -45,25 +65,31 @@ class UserImportController extends Controller
         $patients = User::where('role', 'patient')->orderBy('name')->get();
         $row = 2;
         foreach ($patients as $p) {
+            $phone = $p->phone ? preg_replace('/\D/', '', $p->phone) : '';
+
             $sheet->getCell('A' . $row)->setValue($p->email);
             $sheet->getCell('B' . $row)->setValue($p->name);
-            // Force text type so Excel doesn't convert to scientific notation
-            $phone = $p->phone ? preg_replace('/\D/', '', $p->phone) : '';
+
+            // Phone as explicit text to prevent scientific notation
             $sheet->getCell('C' . $row)
-                ->setDataType(\PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING)
+                ->setDataType(DataType::TYPE_STRING)
                 ->setValue($phone);
             $sheet->getStyle('C' . $row)->getNumberFormat()
-                ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+                ->setFormatCode(NumberFormat::FORMAT_TEXT);
+
             $sheet->getCell('D' . $row)->setValue($p->plan ?? '');
-            $sheet->getCell('E' . $row)->setValue($p->plan_start_date ? $p->plan_start_date->format('d/m/Y') : '');
-            $sheet->getCell('F' . $row)->setValue($p->ideal_weight ?? '');
-            $sheet->getCell('G' . $row)->setValue($p->peso_piso ?? '');
-            $sheet->getCell('H' . $row)->setValue($p->peso_techo ?? '');
-            $sheet->getCell('I' . $row)->setValue('patient');
+            $sheet->getCell('E' . $row)->setValue($p->fase_actual ?? '');
+            $sheet->getCell('F' . $row)->setValue(
+                $p->plan_start_date ? $p->plan_start_date->format('d/m/Y') : ''
+            );
+            $sheet->getCell('G' . $row)->setValue($p->ideal_weight ?? '');
+            $sheet->getCell('H' . $row)->setValue($p->peso_piso ?? '');
+            $sheet->getCell('I' . $row)->setValue($p->peso_techo ?? '');
+            $sheet->getCell('J' . $row)->setValue('patient');
             $row++;
         }
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer = new Xlsx($spreadsheet);
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
@@ -83,23 +109,26 @@ class UserImportController extends Controller
         $sheet       = $spreadsheet->getActiveSheet();
         $rows        = $sheet->toArray(null, true, true, true); // assoc by column letter
 
-        // First row = headers, map column letter → header name (lowercase trimmed)
+        // Map header name (lowercase trimmed) → column letter
         $headers = array_map(fn($v) => strtolower(trim((string) $v)), $rows[1] ?? []);
-        // e.g. ['A'=>'nombre', 'B'=>'email', ...]
+        $colMap  = array_flip($headers);
 
-        $colMap  = array_flip($headers); // header→column letter
         $created = 0;
         $updated = 0;
         $errors  = [];
 
-        $validPlans = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
-
         for ($i = 2; $i <= $sheet->getHighestRow(); $i++) {
             $row = $rows[$i] ?? [];
 
-            $get = function (string $key) use ($row, $colMap): ?string {
-                $col = $colMap[$key] ?? null;
-                return $col ? trim((string) ($row[$col] ?? '')) ?: null : null;
+            $get = function (string ...$keys) use ($row, $colMap): ?string {
+                foreach ($keys as $key) {
+                    $col = $colMap[$key] ?? null;
+                    if ($col) {
+                        $val = trim((string) ($row[$col] ?? ''));
+                        if ($val !== '') return $val;
+                    }
+                }
+                return null;
             };
 
             $email = $get('email');
@@ -110,27 +139,38 @@ class UserImportController extends Controller
                 continue;
             }
 
-            $name  = $get('nombre') ?? $get('name') ?? $email;
-            $phone = $get('telefono') ?? $get('phone');
-            $plan  = $get('plan');
-            $planStartRaw = $get('fecha inicio del plan') ?? $get('fecha_inicio') ?? $get('inicio_plan');
+            $name         = $get('nombre', 'name') ?? $email;
+            $phone        = $get('telefono', 'phone');
+            $plan         = $get('plan');
+            $faseActual   = $get('fase_actual', 'fase');
+            $planStartRaw = $get('fecha inicio del plan', 'fecha_inicio', 'inicio_plan');
             $idealWeight  = $get('peso_ideal');
             $pesoPiso     = $get('peso_piso');
             $pesoTecho    = $get('peso_techo');
-            $role  = $get('rol') ?? $get('role') ?? 'patient';
-            $role  = in_array($role, ['patient', 'coordinator']) ? $role : 'patient';
+            $role         = $get('rol', 'role') ?? 'patient';
+            $role         = in_array($role, ['patient', 'coordinator']) ? $role : 'patient';
 
-            if ($plan && !in_array($plan, $validPlans)) {
+            // Validate plan
+            if ($plan && !in_array($plan, self::VALID_PLANS)) {
                 $errors[] = "Fila {$i}: plan inválido ({$plan}) — debe ser descenso, mantenimiento o mantenimiento_pleno";
                 $plan = null;
             }
 
+            // Validate fase_actual
+            if ($faseActual && !in_array($faseActual, self::VALID_PLANS)) {
+                $errors[] = "Fila {$i}: fase_actual inválida ({$faseActual}) — debe ser descenso, mantenimiento o mantenimiento_pleno";
+                $faseActual = null;
+            }
+
+            // Parse date — try dd/mm/yyyy first, then fallback to Carbon::parse
             $planStart = null;
             if ($planStartRaw) {
                 try {
-                    $planStart = \Carbon\Carbon::parse($planStartRaw)->format('Y-m-d');
+                    $planStart = Carbon::createFromFormat('d/m/Y', $planStartRaw)
+                        ?->format('Y-m-d')
+                        ?? Carbon::parse($planStartRaw)->format('Y-m-d');
                 } catch (\Exception $e) {
-                    $errors[] = "Fila {$i}: fecha de inicio inválida ({$planStartRaw})";
+                    $errors[] = "Fila {$i}: fecha de inicio inválida ({$planStartRaw}) — usá el formato dd/mm/aaaa";
                 }
             }
 
@@ -140,11 +180,12 @@ class UserImportController extends Controller
                 $user->name  = $name;
                 $user->phone = $phone;
                 if ($user->isPatient()) {
-                    if ($plan)       $user->plan            = $plan;
-                    if ($planStart)  $user->plan_start_date = $planStart;
-                    if ($idealWeight !== null) $user->ideal_weight = (float) $idealWeight;
-                    if ($pesoPiso    !== null) $user->peso_piso    = (float) $pesoPiso;
-                    if ($pesoTecho   !== null) $user->peso_techo   = (float) $pesoTecho;
+                    if ($plan !== null)        $user->plan            = $plan;
+                    if ($faseActual !== null)  $user->fase_actual     = $faseActual ?: null;
+                    if ($planStart !== null)   $user->plan_start_date = $planStart;
+                    if ($idealWeight !== null) $user->ideal_weight    = (float) $idealWeight;
+                    if ($pesoPiso    !== null) $user->peso_piso       = (float) $pesoPiso;
+                    if ($pesoTecho   !== null) $user->peso_techo      = (float) $pesoTecho;
                 }
                 $user->save();
                 $updated++;
@@ -154,8 +195,9 @@ class UserImportController extends Controller
                     'email'           => $email,
                     'phone'           => $phone,
                     'role'            => $role,
-                    'plan'            => $role === 'patient' ? $plan : null,
-                    'plan_start_date' => $role === 'patient' ? $planStart : null,
+                    'plan'            => $role === 'patient' ? $plan         : null,
+                    'fase_actual'     => $role === 'patient' ? $faseActual   : null,
+                    'plan_start_date' => $role === 'patient' ? $planStart    : null,
                     'ideal_weight'    => $idealWeight ? (float) $idealWeight : null,
                     'peso_piso'       => $pesoPiso    ? (float) $pesoPiso    : null,
                     'peso_techo'      => $pesoTecho   ? (float) $pesoTecho   : null,
@@ -166,10 +208,24 @@ class UserImportController extends Controller
         }
 
         $message = "Importación completada: {$created} creado(s), {$updated} actualizado(s).";
+
         if ($errors) {
             return back()->with('import_errors', $errors)->with('success', $message);
         }
 
         return back()->with('success', $message);
+    }
+
+    /** Convert 0-based index to Excel column letter (A, B, ..., Z, AA, ...) */
+    private function col(int $index): string
+    {
+        $letter = '';
+        $index++;
+        while ($index > 0) {
+            $index--;
+            $letter = chr(65 + ($index % 26)) . $letter;
+            $index  = intdiv($index, 26);
+        }
+        return $letter;
     }
 }
