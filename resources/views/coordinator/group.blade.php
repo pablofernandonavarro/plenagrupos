@@ -27,12 +27,6 @@
                     @else
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @endif
-                    @if($group->status === 'active')
-                        <span class="flex items-center gap-1 text-xs text-green-600">
-                            <span class="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                            En vivo
-                        </span>
-                    @endif
                 </div>
                 @if($group->meetingDaysDisplay || $group->meeting_time)
                     <p class="text-sm text-teal-600 font-medium mt-0.5">
