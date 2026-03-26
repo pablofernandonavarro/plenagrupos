@@ -140,6 +140,30 @@
                     </div>
                 </div>
             </div>
+            @if($user->role === 'patient')
+            <div class="border-t pt-4">
+                <p class="text-sm font-medium text-gray-700 mb-1">Grupos activos</p>
+                <p class="text-xs text-gray-400 mb-3">Grupos en los que el paciente está inscripto actualmente.</p>
+                @if($activeGroupEnrollments->isNotEmpty())
+                    <div class="space-y-2">
+                        @foreach($activeGroupEnrollments as $g)
+                        <div class="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                            <span class="text-sm text-gray-700">{{ $g->name }}</span>
+                            <form action="{{ route('admin.groups.patients.remove', $g) }}" method="POST"
+                                  onsubmit="return confirm('¿Remover a {{ $user->name }} del grupo «{{ $g->name }}»?')">
+                                @csrf @method('DELETE')
+                                <input type="hidden" name="user_id" value="{{ $user->id }}">
+                                <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium transition">
+                                    Remover
+                                </button>
+                            </form>
+                        </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-sm text-gray-400">Sin grupos activos.</p>
+                @endif
+            </div>
             @endif
 
             <div class="border-t pt-4">

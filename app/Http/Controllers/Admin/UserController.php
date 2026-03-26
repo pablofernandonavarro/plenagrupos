@@ -75,8 +75,11 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $groups = Group::orderBy('name')->get();
+        $activeGroupEnrollments = $user->role === 'patient'
+            ? $user->patientGroups()->wherePivot('left_at', null)->get()
+            : collect();
 
-        return view('admin.users.edit', compact('user', 'groups'));
+        return view('admin.users.edit', compact('user', 'groups', 'activeGroupEnrollments'));
     }
 
     public function update(Request $request, User $user)
