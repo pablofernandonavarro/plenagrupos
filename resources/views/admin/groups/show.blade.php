@@ -474,20 +474,27 @@ async function fetchAttendances() {
                             ? `<span class="text-green-600">↓ ${diff} kg</span>`
                             : `<span class="text-gray-400">= ideal</span>`)
                     : '<span class="text-gray-300">—</span>';
-                const leftHtml = a.left_at
-                    ? `<span class="text-gray-500">${a.left_at}</span>`
-                    : `<button onclick="checkout(${a.attendance_id}, this)"
+                const isPresent = !a.left_at;
+                const leftHtml = isPresent
+                    ? `<button onclick="checkout(${a.attendance_id}, this)"
                         class="text-xs text-teal-600 border border-teal-200 rounded px-2 py-0.5 hover:bg-teal-50 transition">
                         Marcar salida
-                       </button>`;
+                       </button>`
+                    : `<span class="text-gray-500">${a.left_at}</span>`;
+                const statusBadge = isPresent
+                    ? `<span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block"></span>En sesión</span>`
+                    : `<span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Salió ${a.left_at}</span>`;
                 const sessCell = a.session_number != null
                     ? `n.º ${a.session_number}`
                     : '<span class="text-gray-300">—</span>';
-                return `<tr>
+                return `<tr class="${isPresent ? '' : 'opacity-60'}">
                     <td class="px-5 py-3">
                         <div class="flex items-center gap-2">
                             ${avatarHtml(a)}
-                            <span class="font-medium text-gray-800">${a.name}</span>
+                            <div>
+                                <span class="font-medium text-gray-800">${a.name}</span>
+                                <div class="mt-0.5">${statusBadge}</div>
+                            </div>
                         </div>
                     </td>
                     <td class="px-5 py-3 text-center text-gray-600 tabular-nums text-xs">${sessCell}</td>
