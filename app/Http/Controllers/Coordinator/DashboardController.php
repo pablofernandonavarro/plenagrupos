@@ -236,7 +236,7 @@ class DashboardController extends Controller
 
             if ($sessionEndedToday) {
                 // Reopen the session (coordinator pressed the button again today)
-                $group->update(['ended_at' => null]);
+                $group->update(['ended_at' => null, 'started_at' => now()]);
                 return back()->with('success', 'Sesión de hoy reabierta.');
             }
 

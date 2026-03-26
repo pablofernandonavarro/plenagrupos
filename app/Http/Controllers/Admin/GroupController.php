@@ -357,7 +357,7 @@ class GroupController extends Controller
         $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday();
 
         if ($sessionEndedToday) {
-            $group->update(['ended_at' => null]);
+            $group->update(['ended_at' => null, 'started_at' => now()]);
             return back()->with('success', 'Sesión de hoy reabierta.');
         }
 
