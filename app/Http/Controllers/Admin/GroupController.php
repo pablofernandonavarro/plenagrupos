@@ -277,14 +277,11 @@ class GroupController extends Controller
 
     public function removePatient(Request $request, Group $group)
     {
-        if (! $group->active) {
-            return back()->with('error', 'No se pueden remover pacientes de un grupo finalizado.');
-        }
         $request->validate(['user_id' => 'required|exists:users,id']);
 
-        $group->patients()->detach($request->user_id);
+        $group->patientsAll()->detach($request->user_id);
 
-        return back()->with('success', 'Paciente removido.');
+        return back()->with('success', 'Paciente removido del grupo.');
     }
 
     public function liveAttendances(Group $group)
