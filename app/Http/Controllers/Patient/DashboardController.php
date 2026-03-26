@@ -34,23 +34,23 @@ class DashboardController extends Controller
                 'minutes'  => $atts->sum(fn ($a) => (int) $a->attended_at->diffInMinutes($a->left_at)),
             ]);
 
-        // get groups where patient has at least one attendance
-        $attendedGroupIds = $attendanceStats->keys();
+        // get groups where patient has at least one attendance (open or closed)
+        $attendedGroupIds = GroupAttendance::where('user_id', $user->id)
+            ->distinct()->pluck('group_id');
         $groups = Group::whereIn('id', $attendedGroupIds)->get();
 
         $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('groups.id');
 
         $sessionHistory = GroupAttendance::where('user_id', $user->id)
-            ->whereNotNull('left_at')
             ->with(['group', 'groupSession'])
             ->latest('attended_at')
             ->get()
             ->map(fn ($a) => (object) [
-                'group_name'   => $a->group?->name ?? '(grupo eliminado)',
-                'date'         => $a->attended_at->format('d/m/Y'),
-                'time'         => $a->attended_at->format('H:i'),
-                'session_num'  => $a->groupSession?->sequence_number,
-                'minutes'      => (int) $a->attended_at->diffInMinutes($a->left_at),
+                'group_name'  => $a->group?->name ?? '(grupo eliminado)',
+                'date'        => $a->attended_at->format('d/m/Y'),
+                'time'        => $a->attended_at->format('H:i'),
+                'session_num' => $a->groupSession?->sequence_number,
+                'minutes'     => $a->left_at ? (int) $a->attended_at->diffInMinutes($a->left_at) : null,
             ]);
 
         // Chart data (chronological)
