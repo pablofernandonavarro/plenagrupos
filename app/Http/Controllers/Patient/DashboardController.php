@@ -32,7 +32,7 @@ class DashboardController extends Controller
 
         $availableGroups = Group::orderBy('name')->get();
 
-        $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('id');
+        $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('groups.id');
 
         $membershipLogs = GroupMembershipLog::where('user_id', $user->id)
             ->whereNotNull('left_at')
