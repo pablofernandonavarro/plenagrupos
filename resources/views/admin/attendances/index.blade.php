@@ -160,7 +160,8 @@ $typeBadge = [
                     <th class="px-5 py-3 font-semibold text-gray-600">Paciente</th>
                     <th class="px-5 py-3 font-semibold text-gray-600">Grupo</th>
                     <th class="px-5 py-3 font-semibold text-gray-600 text-center">Sesión</th>
-                    <th class="px-5 py-3 font-semibold text-gray-600">Fecha y hora</th>
+                    <th class="px-5 py-3 font-semibold text-gray-600">Entrada</th>
+                    <th class="px-5 py-3 font-semibold text-gray-600">Salida</th>
                     <th class="px-5 py-3 font-semibold text-gray-600 text-center">Peso</th>
                     <th class="px-5 py-3"></th>
                 </tr>
@@ -186,6 +187,16 @@ $typeBadge = [
                         @endif
                     </td>
                     <td class="px-5 py-3 text-gray-500">{{ $att->attended_at->format('d/m/Y H:i') }}</td>
+                    <td class="px-5 py-3">
+                        @if($att->left_at)
+                            <span class="text-gray-500">{{ $att->left_at->format('H:i') }}</span>
+                            <span class="text-xs text-gray-400 block">{{ (int) $att->attended_at->diffInMinutes($att->left_at) }} min</span>
+                        @elseif($att->attended_at->isToday())
+                            <span class="text-xs font-medium text-green-600">En curso</span>
+                        @else
+                            <span class="text-xs text-red-400">Sin cierre</span>
+                        @endif
+                    </td>
                     <td class="px-5 py-3 text-center">
                         @if($att->weightRecord)
                             <span class="font-semibold text-teal-600">{{ $att->weightRecord->weight }} kg</span>
@@ -203,7 +214,7 @@ $typeBadge = [
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="px-5 py-8 text-center text-gray-400">Sin asistencias registradas.</td>
+                    <td colspan="7" class="px-5 py-8 text-center text-gray-400">Sin asistencias registradas.</td>
                 </tr>
                 @endforelse
             </tbody>

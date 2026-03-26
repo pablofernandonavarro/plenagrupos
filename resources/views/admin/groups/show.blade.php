@@ -60,11 +60,20 @@
                 @endif
             </div>
         </div>
-        <div class="flex gap-2 shrink-0">
+        <div class="flex gap-2 shrink-0 flex-wrap">
             <a href="{{ route('admin.groups.edit', $group) }}"
                 class="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
                 Editar
             </a>
+            @if($group->auto_sessions && $group->isProgramVigente())
+            <form action="{{ route('admin.groups.close-session', $group) }}" method="POST">
+                @csrf
+                <button type="submit"
+                    class="text-sm font-medium px-4 py-2 rounded-lg transition border {{ $sessionEndedToday ? 'border-teal-300 text-teal-600 hover:bg-teal-50' : 'border-amber-300 text-amber-600 hover:bg-amber-50' }}">
+                    {{ $sessionEndedToday ? 'Reabrir sesión de hoy' : 'Finalizar sesión de hoy' }}
+                </button>
+            </form>
+            @endif
             @if($group->isProgramVigente())
             <form action="{{ route('admin.groups.toggle', $group) }}" method="POST"
                   onsubmit="return confirm('¿Finalizar {{ $group->auto_sessions ? 'el programa' : 'el grupo' }}? Esta acción no se puede deshacer.')">

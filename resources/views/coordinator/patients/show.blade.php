@@ -30,6 +30,11 @@
             <p class="text-sm text-gray-400 mt-0.5 truncate">
                 {{ $patient->email }}@if($patient->phone) · {{ $patient->phone }}@endif
             </p>
+            @if($patient->belongingGroup)
+                <p class="text-xs text-indigo-600 mt-0.5">
+                    Grupo de pertenencia: <span class="font-medium">{{ $patient->belongingGroup->name }}</span>
+                </p>
+            @endif
             @if($groups->isNotEmpty())
                 <div class="flex flex-wrap gap-1.5 mt-2">
                     @foreach($groups as $g)

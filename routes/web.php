@@ -61,6 +61,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::resource('groups', Admin\GroupController::class);
     Route::post('/groups/{group}/toggle', [Admin\GroupController::class, 'toggle'])->name('groups.toggle');
+    Route::post('/groups/{group}/close-session', [Admin\GroupController::class, 'closeSession'])->name('groups.close-session');
     Route::get('/groups/{group}/live', [Admin\GroupController::class, 'liveAttendances'])->name('groups.live');
     Route::patch('/groups/{group}/attendances/{attendance}/checkout', [Admin\GroupController::class, 'checkoutAttendance'])->name('groups.attendance.checkout');
     Route::post('/groups/{group}/coordinators', [Admin\GroupController::class, 'addCoordinator'])->name('groups.coordinators.add');

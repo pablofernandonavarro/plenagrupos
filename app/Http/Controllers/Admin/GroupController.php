@@ -212,8 +212,12 @@ class GroupController extends Controller
             ->where('session_date', Carbon::now('America/Argentina/Buenos_Aires')->toDateString())
             ->first();
 
+        $tz = 'America/Argentina/Buenos_Aires';
+        $endedAt = $group->getRawOriginal('ended_at');
+        $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday();
+
         return view('admin.groups.show', array_merge(
-            compact('group', 'allCoordinators', 'allPatients', 'qrCode', 'joinUrl', 'attendances', 'totalVisits', 'avgWeight', 'todaySessionRecord'),
+            compact('group', 'allCoordinators', 'allPatients', 'qrCode', 'joinUrl', 'attendances', 'totalVisits', 'avgWeight', 'todaySessionRecord', 'sessionEndedToday'),
             $this->buildGroupHistorialData($group, $request),
             ['historialFormAction' => route('admin.groups.show', $group)]
         ));
@@ -344,6 +348,27 @@ class GroupController extends Controller
         $attendance->update(['left_at' => now()]);
 
         return response()->json(['left_at' => $attendance->left_at->format('H:i')]);
+    }
+
+    public function closeSession(Group $group)
+    {
+        $tz = 'America/Argentina/Buenos_Aires';
+        $endedAt = $group->getRawOriginal('ended_at');
+        $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday();
+
+        if ($sessionEndedToday) {
+            $group->update(['ended_at' => null]);
+            return back()->with('success', 'Sesión de hoy reabierta.');
+        }
+
+        $now = now();
+        $group->update(['ended_at' => $now]);
+        GroupAttendance::where('group_id', $group->id)
+            ->whereDate('attended_at', today())
+            ->whereNull('left_at')
+            ->update(['left_at' => $now]);
+
+        return back()->with('success', 'Sesión de hoy finalizada. El programa continúa la próxima clase.');
     }
 
     public function toggle(Group $group)
