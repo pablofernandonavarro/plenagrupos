@@ -35,8 +35,20 @@ class DashboardController extends Controller
         $membershipLogs = GroupMembershipLog::where('user_id', $user->id)
             ->whereNotNull('left_at')
             ->with('group')
-            ->orderByDesc('joined_at')
-            ->get();
+            ->orderBy('joined_at')
+            ->get()
+            ->groupBy('group_id')
+            ->map(function ($entries) {
+                $totalDays = $entries->sum(fn ($e) => (int) $e->joined_at->diffInDays($e->left_at));
+                return (object) [
+                    'group'        => $entries->first()->group,
+                    'first_joined' => $entries->first()->joined_at,
+                    'last_left'    => $entries->last()->left_at,
+                    'total_days'   => $totalDays,
+                ];
+            })
+            ->sortByDesc('last_left')
+            ->values();
 
         // Chart data (chronological)
         $chartRecords = $weightRecords->sortBy('recorded_at')->values();

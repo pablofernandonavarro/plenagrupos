@@ -176,17 +176,16 @@
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Historial de grupos</p>
             @foreach($membershipLogs as $log)
                 @php
-                    $days  = (int) $log->joined_at->diffInDays($log->left_at);
-                    $weeks = round($days / 7, 1);
+                    $weeks = round($log->total_days / 7, 1);
                 @endphp
                 <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
                     <div>
                         <p class="text-sm font-medium text-gray-700">{{ $log->group?->name ?? '(grupo eliminado)' }}</p>
                         <p class="text-xs text-gray-400">
-                            {{ $log->joined_at->format('d/m/Y') }} → {{ $log->left_at->format('d/m/Y') }}
+                            {{ $log->first_joined->format('d/m/Y') }} → {{ $log->last_left->format('d/m/Y') }}
                             &nbsp;·&nbsp;
-                            @if($days < 7)
-                                {{ $days }} {{ $days === 1 ? 'día' : 'días' }}
+                            @if($log->total_days < 7)
+                                {{ $log->total_days }} {{ $log->total_days === 1 ? 'día' : 'días' }}
                             @else
                                 {{ $weeks }} {{ $weeks == 1 ? 'semana' : 'semanas' }}
                             @endif
