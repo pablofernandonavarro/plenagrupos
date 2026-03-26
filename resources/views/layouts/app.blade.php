@@ -152,8 +152,17 @@
                     @endif
 
                     <div class="flex items-center gap-2 border-l border-white/20 pl-4 ml-2">
-                        <x-avatar :user="auth()->user()" size="sm" />
-                        <span class="text-sm font-medium text-white">{{ auth()->user()->name }}</span>
+                        @php
+                            $profileUrl = auth()->user()->isAdmin()
+                                ? route('admin.dashboard')
+                                : (auth()->user()->isCoordinator()
+                                    ? route('coordinator.profile')
+                                    : route('patient.dashboard'));
+                        @endphp
+                        <a href="{{ $profileUrl }}" class="flex items-center gap-2 hover:opacity-80 transition">
+                            <x-avatar :user="auth()->user()" size="sm" />
+                            <span class="text-sm font-medium text-white">{{ auth()->user()->name }}</span>
+                        </a>
                         <span class="text-xs px-2 py-0.5 rounded-full font-medium
                             @if(auth()->user()->isAdmin()) bg-purple-500/30 text-purple-200
                             @elseif(auth()->user()->isCoordinator()) bg-blue-500/30 text-blue-200
