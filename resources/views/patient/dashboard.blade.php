@@ -191,7 +191,7 @@
                             @endif
                         </p>
                     </div>
-                    <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Completado</span>
+                    <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Asistió</span>
                 </div>
             @endforeach
         </div>
