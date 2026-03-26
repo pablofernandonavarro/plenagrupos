@@ -40,25 +40,18 @@ class DashboardController extends Controller
 
         $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('groups.id');
 
-        $membershipLogs = GroupMembershipLog::where('user_id', $user->id)
+        $sessionHistory = GroupAttendance::where('user_id', $user->id)
             ->whereNotNull('left_at')
-            ->with('group')
-            ->orderBy('joined_at')
+            ->with(['group', 'groupSession'])
+            ->latest('attended_at')
             ->get()
-            ->groupBy('group_id')
-            ->map(function ($entries) use ($attendanceStats) {
-                $gid   = $entries->first()->group_id;
-                $stats = $attendanceStats[$gid] ?? ['sessions' => 0, 'minutes' => 0];
-                return (object) [
-                    'group'        => $entries->first()->group,
-                    'first_joined' => $entries->first()->joined_at,
-                    'last_left'    => $entries->last()->left_at,
-                    'sessions'     => $stats['sessions'],
-                    'minutes'      => $stats['minutes'],
-                ];
-            })
-            ->sortByDesc('last_left')
-            ->values();
+            ->map(fn ($a) => (object) [
+                'group_name'   => $a->group?->name ?? '(grupo eliminado)',
+                'date'         => $a->attended_at->format('d/m/Y'),
+                'time'         => $a->attended_at->format('H:i'),
+                'session_num'  => $a->groupSession?->sequence_number,
+                'minutes'      => (int) $a->attended_at->diffInMinutes($a->left_at),
+            ]);
 
         // Chart data (chronological)
         $chartRecords = $weightRecords->sortBy('recorded_at')->values();
@@ -103,7 +96,7 @@ class DashboardController extends Controller
         ];
 
         return view('patient.dashboard', compact(
-            'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'membershipLogs',
+            'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'sessionHistory',
             'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
             'attendanceStats'
         ));

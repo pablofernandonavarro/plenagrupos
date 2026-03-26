@@ -179,30 +179,26 @@
         @endif
     @endforeach
 
-    {{-- Historial de membresías --}}
-    @if($membershipLogs->isNotEmpty())
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Historial de grupos</p>
-            @foreach($membershipLogs as $log)
-                @php
-                    $lMins = $log->minutes;
-                    $lTime = $lMins >= 60
-                        ? floor($lMins/60).'h '.($lMins%60 > 0 ? ($lMins%60).'min' : '')
-                        : $lMins.'min';
-                @endphp
-                <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
-                    <div>
-                        <p class="text-sm font-medium text-gray-700">{{ $log->group?->name ?? '(grupo eliminado)' }}</p>
-                        <p class="text-xs text-gray-400">
-                            {{ $log->first_joined->format('d/m/Y') }} → {{ $log->last_left->format('d/m/Y') }}
-                            &nbsp;·&nbsp;
-                            {{ $log->sessions }} {{ $log->sessions === 1 ? 'sesión' : 'sesiones' }}
-                            @if($lMins > 0) · {{ $lTime }} @endif
+    {{-- Historial de sesiones --}}
+    @if($sessionHistory->isNotEmpty())
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h2 class="font-semibold text-gray-800">Historial de sesiones</h2>
+            </div>
+            <div class="divide-y divide-gray-50">
+                @foreach($sessionHistory as $s)
+                <div class="px-4 py-3 flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-gray-800 truncate">{{ $s->group_name }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            {{ $s->date }} · {{ $s->time }} hs
+                            @if($s->session_num) · Sesión {{ $s->session_num }} @endif
                         </p>
                     </div>
-                    <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Asistió</span>
+                    <span class="shrink-0 text-sm font-semibold text-teal-600">{{ $s->minutes }} min</span>
                 </div>
-            @endforeach
+                @endforeach
+            </div>
         </div>
     @endif
 
