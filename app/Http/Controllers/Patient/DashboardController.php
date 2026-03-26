@@ -138,8 +138,12 @@ class DashboardController extends Controller
 
         $user = auth()->user();
 
-        $user->peso_piso  = $data['peso_piso'] ?? null;
-        $user->peso_techo = $data['peso_techo'] ?? null;
+        if ($request->has('peso_piso')) {
+            $user->peso_piso = $data['peso_piso'] ?? null;
+        }
+        if ($request->has('peso_techo')) {
+            $user->peso_techo = $data['peso_techo'] ?? null;
+        }
 
         if ($request->has('belonging_group_id')) {
             $user->belonging_group_id = $data['belonging_group_id'] ?? null;
