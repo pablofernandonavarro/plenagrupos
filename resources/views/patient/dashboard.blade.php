@@ -4,11 +4,49 @@
 @section('content')
 <div class="space-y-6">
 
-    <div class="flex items-center gap-3">
-        <x-avatar :user="auth()->user()" size="lg" />
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800">Hola, {{ auth()->user()->name }}</h1>
-            <p class="text-gray-500 text-sm mt-0.5">Tu progreso en el grupo terapéutico</p>
+    {{-- Perfil del paciente --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Mi perfil</h2>
+        </div>
+        <div class="px-5 py-4">
+            @if(session('success'))
+                <p class="text-green-600 text-sm mb-3">{{ session('success') }}</p>
+            @endif
+            <form action="{{ route('patient.profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                @csrf
+                {{-- Avatar --}}
+                <div class="flex items-center gap-4">
+                    <x-avatar :user="auth()->user()" size="lg" />
+                    <div class="flex-1">
+                        <p class="text-base font-semibold text-gray-800">{{ auth()->user()->name }}</p>
+                        <label class="block text-xs text-gray-500 mt-1 mb-1">Cambiar foto</label>
+                        <input type="file" name="avatar" accept="image/*"
+                            class="block w-full text-sm text-gray-500
+                                   file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0
+                                   file:text-xs file:font-medium file:bg-teal-50 file:text-teal-700
+                                   hover:file:bg-teal-100">
+                        @error('avatar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+                {{-- Grupo de pertenencia --}}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Grupo de pertenencia</label>
+                    <select name="belonging_group_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                        <option value="">— Sin grupo —</option>
+                        @foreach($availableGroups as $ag)
+                            <option value="{{ $ag->id }}" {{ old('belonging_group_id', auth()->user()->belonging_group_id) == $ag->id ? 'selected' : '' }}>
+                                {{ $ag->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('belonging_group_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                <button type="submit"
+                    class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+                    Guardar perfil
+                </button>
+            </form>
         </div>
     </div>
 
@@ -210,23 +248,8 @@
             <p class="text-xs text-gray-400 mt-0.5">Peso mínimo (piso) y máximo (techo) que querés mantener.</p>
         </div>
         <div class="px-5 py-4">
-            @if(session('success'))
-                <p class="text-green-600 text-sm mb-3">{{ session('success') }}</p>
-            @endif
             <form action="{{ route('patient.profile.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                <div class="mb-4">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Mi grupo de pertenencia</label>
-                    <select name="belonging_group_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
-                        <option value="">— Sin grupo —</option>
-                        @foreach($availableGroups as $ag)
-                            <option value="{{ $ag->id }}" {{ old('belonging_group_id', auth()->user()->belonging_group_id) == $ag->id ? 'selected' : '' }}>
-                                {{ $ag->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('belonging_group_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Piso (kg)</label>
@@ -244,20 +267,6 @@
                             placeholder="Ej: 72.00">
                         @error('peso_techo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-xs font-medium text-gray-600 mb-2">Foto de perfil</label>
-                    <div class="flex items-center gap-3">
-                        <x-avatar :user="auth()->user()" size="md" />
-                        <div class="flex-1">
-                            <input type="file" name="avatar" accept="image/*"
-                                class="block w-full text-sm text-gray-500
-                                       file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                                       file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700
-                                       hover:file:bg-teal-100 active:file:bg-teal-200">
-                        </div>
-                    </div>
-                    @error('avatar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <button type="submit"
                     class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">

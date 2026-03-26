@@ -102,7 +102,10 @@ class DashboardController extends Controller
 
         $user->peso_piso  = $data['peso_piso'] ?? null;
         $user->peso_techo = $data['peso_techo'] ?? null;
-        $user->belonging_group_id = $data['belonging_group_id'] ?? null;
+
+        if ($request->has('belonging_group_id')) {
+            $user->belonging_group_id = $data['belonging_group_id'] ?? null;
+        }
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {
