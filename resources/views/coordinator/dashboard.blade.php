@@ -236,14 +236,29 @@
 
             @if($group->isProgramVigente())
                 <div class="px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/40">
-                    <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST"
-                          onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
-                        @csrf
-                        <button type="submit"
-                            class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-red-300 text-red-600 hover:bg-red-50 bg-white">
-                            Finalizar grupo
-                        </button>
-                    </form>
+                    @php
+                        $tz = 'America/Argentina/Buenos_Aires';
+                        $endedAt = $group->getRawOriginal('ended_at');
+                        $sessionEndedToday = $endedAt && \Carbon\Carbon::parse($endedAt)->timezone($tz)->isToday();
+                    @endphp
+                    @if($group->auto_sessions)
+                        <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition bg-white {{ $sessionEndedToday ? 'border border-teal-400 text-teal-600 hover:bg-teal-50' : 'border border-orange-300 text-orange-600 hover:bg-orange-50' }}">
+                                {{ $sessionEndedToday ? 'Reabrir sesión de hoy' : 'Finalizar sesión de hoy' }}
+                            </button>
+                        </form>
+                    @else
+                        <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST"
+                              onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
+                            @csrf
+                            <button type="submit"
+                                class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-red-300 text-red-600 hover:bg-red-50 bg-white">
+                                Finalizar grupo
+                            </button>
+                        </form>
+                    @endif
                 </div>
             @elseif($group->isProgramPending() && ! $group->auto_sessions)
                 <div class="px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/40">
