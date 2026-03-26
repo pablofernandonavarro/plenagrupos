@@ -228,36 +228,35 @@ class DashboardController extends Controller
         $isRecurring = $type !== 'none';
         $tz = 'America/Argentina/Buenos_Aires';
 
-        if ($group->active) {
-            $updates = ['active' => false, 'ended_at' => now()];
-            if ($isRecurring) {
-                $updates['recurrence_end_date'] = Carbon::now($tz)->subDay()->startOfDay()->toDateString();
+        // Recurring programs: coordinators only close/reopen TODAY's session.
+        // They cannot permanently end the program — that's an admin action.
+        if ($isRecurring) {
+            $endedAt = $group->getRawOriginal('ended_at');
+            $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday();
+
+            if ($sessionEndedToday) {
+                // Reopen the session (coordinator pressed the button again today)
+                $group->update(['ended_at' => null]);
+                return back()->with('success', 'Sesión de hoy reabierta.');
             }
-            $group->update($updates);
 
-            return back()->with('success', $isRecurring ? 'Programa finalizado.' : 'Grupo finalizado.');
+            // Close today's session
+            $group->update(['ended_at' => now()]);
+            return back()->with('success', 'Sesión de hoy finalizada. El programa continúa la próxima clase.');
         }
 
-        if ($isRecurring && $group->isProgramVigente()) {
-            $group->update([
-                'recurrence_end_date' => Carbon::now($tz)->subDay()->startOfDay()->toDateString(),
-                'ended_at' => $group->ended_at ?? now(),
-            ]);
-
-            return back()->with('success', 'Programa finalizado.');
+        // Non-recurring: same as before
+        if ($group->active) {
+            $group->update(['active' => false, 'ended_at' => now()]);
+            return back()->with('success', 'Grupo finalizado.');
         }
 
-        if (! $isRecurring && $group->started_at) {
+        if ($group->started_at) {
             return back()->with('error', 'Un grupo finalizado no puede volver a iniciarse.');
         }
 
-        if (! $isRecurring && ! $group->started_at) {
-            $group->update(['active' => true, 'started_at' => now()]);
-
-            return back()->with('success', 'Grupo iniciado.');
-        }
-
-        return back()->with('error', 'No se pudo actualizar el grupo.');
+        $group->update(['active' => true, 'started_at' => now()]);
+        return back()->with('success', 'Grupo iniciado.');
     }
 
     private function ensureCoordinator(Group $group): void

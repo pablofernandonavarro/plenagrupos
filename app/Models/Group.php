@@ -59,6 +59,13 @@ class Group extends Model
             return 'closed';
         }
 
+        // If the coordinator manually closed today's session, treat as pending until tomorrow
+        $tz = 'America/Argentina/Buenos_Aires';
+        $endedAt = $this->getRawOriginal('ended_at');
+        if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+            return 'pending';
+        }
+
         return $this->isCurrentlyInSession() ? 'active' : 'pending';
     }
 
@@ -113,9 +120,22 @@ class Group extends Model
         if (! $this->meeting_time) {
             return false;
         }
+
+        if ($this->isProgramClosed()) {
+            return false;
+        }
+
         $tz = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz);
         $type = $this->attributes['recurrence_type'] ?? 'none';
+
+        // If coordinator manually ended today's session, it's not live
+        if ($type !== 'none') {
+            $endedAt = $this->getRawOriginal('ended_at');
+            if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+                return false;
+            }
+        }
 
         if ($type === 'none') {
             if (! $this->isManualMeetingDay($now)) {
