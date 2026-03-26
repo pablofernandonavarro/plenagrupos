@@ -24,7 +24,14 @@ class DashboardController extends Controller
         $initialWeight = $weightRecords->last()?->weight;
         $totalLoss     = ($initialWeight && $latestWeight) ? round($initialWeight - $latestWeight, 2) : null;
 
-        $groups        = $user->patientGroups()->wherePivot('left_at', null)->get();
+        // get groups where patient has at least one attendance
+        $attendedGroupIds = \App\Models\GroupAttendance::where('user_id', $user->id)
+            ->distinct()
+            ->pluck('group_id');
+        $groups = \App\Models\Group::whereIn('id', $attendedGroupIds)->get();
+
+        $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('id');
+
         $membershipLogs = GroupMembershipLog::where('user_id', $user->id)
             ->whereNotNull('left_at')
             ->with('group')
@@ -75,7 +82,7 @@ class DashboardController extends Controller
 
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'membershipLogs',
-            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo'
+            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds'
         ));
     }
 

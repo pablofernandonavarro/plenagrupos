@@ -107,7 +107,7 @@
                     <p class="text-xs text-gray-500 mt-1">Visitas hoy</p>
                 </div>
                 <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-                    <p class="text-3xl font-bold text-blue-600">{{ $group->patients->count() }}</p>
+                    <p class="text-3xl font-bold text-blue-600">{{ $group->attendances()->distinct('user_id')->count('user_id') }}</p>
                     <p class="text-xs text-gray-500 mt-1">Pacientes</p>
                 </div>
                 <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center col-span-2">

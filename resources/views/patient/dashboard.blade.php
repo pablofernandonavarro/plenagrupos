@@ -142,8 +142,6 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
                         EN SESIÓN
                     </span>
-                @else
-                    <span class="shrink-0 text-xs px-2.5 py-1 rounded-full bg-teal-100 text-teal-700 font-medium">Mi grupo</span>
                 @endif
             </div>
 
@@ -164,7 +162,8 @@
 
         </div>
 
-        {{-- Botón salir — fuera del card --}}
+        {{-- Botón salir — fuera del card, solo si el paciente está inscripto actualmente --}}
+        @if($enrolledGroupIds->contains($vg->id))
         <form action="{{ route('patient.groups.leave', $vg) }}" method="POST"
               onsubmit="return confirm('¿Confirmás que querés salir del grupo «{{ $vg->name }}»?')">
             @csrf
@@ -173,6 +172,7 @@
                 Salir del grupo «{{ $vg->name }}»
             </button>
         </form>
+        @endif
     @endforeach
 
     {{-- Historial de membresías --}}

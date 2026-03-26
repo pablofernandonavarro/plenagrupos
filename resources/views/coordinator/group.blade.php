@@ -72,8 +72,8 @@
             <p class="text-xs text-gray-500 mt-1">Presentes hoy</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <p class="text-2xl sm:text-3xl font-bold text-blue-600">{{ $group->patients->count() }}</p>
-            <p class="text-xs text-gray-500 mt-1">Inscriptos</p>
+            <p class="text-2xl sm:text-3xl font-bold text-blue-600">{{ $group->attendances()->distinct('user_id')->count('user_id') }}</p>
+            <p class="text-xs text-gray-500 mt-1">Pacientes</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <p class="text-2xl sm:text-3xl font-bold text-green-600">{{ $avgWeight ? number_format($avgWeight, 1) : '—' }}</p>
@@ -241,7 +241,7 @@
                     </div>
                 </div>
             @empty
-                <p class="px-5 py-4 text-sm text-gray-400 text-center">Sin pacientes inscriptos.</p>
+                <p class="px-5 py-4 text-sm text-gray-400 text-center">Sin asistencias registradas.</p>
             @endforelse
         </div>
     </div>
@@ -282,7 +282,7 @@
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Histórico</p>
                 <div class="grid grid-cols-3 gap-3">
                     <div class="rounded-xl border border-gray-100 p-4 text-center">
-                        <p class="text-2xl font-bold text-gray-700">{{ $group->patients->count() }}</p>
+                        <p class="text-2xl font-bold text-gray-700">{{ $group->attendances()->distinct('user_id')->count('user_id') }}</p>
                         <p class="text-xs text-gray-500 mt-1">Pacientes</p>
                     </div>
                     <div class="rounded-xl border border-gray-100 p-4 text-center">
@@ -452,7 +452,7 @@ function renderRow(a) {
 function renderPatients(patients) {
     patientsCount.textContent = patients.length;
     if (patients.length === 0) {
-        patientsList.innerHTML = '<p class="px-5 py-4 text-sm text-gray-400 text-center">Sin pacientes inscriptos.</p>';
+        patientsList.innerHTML = '<p class="px-5 py-4 text-sm text-gray-400 text-center">Sin asistencias registradas.</p>';
         return;
     }
     patientsList.innerHTML = patients.map(p => `
