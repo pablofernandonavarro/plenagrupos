@@ -59,11 +59,19 @@ class Group extends Model
             return 'closed';
         }
 
-        // If the coordinator manually closed today's session, treat as pending until tomorrow
         $tz = 'America/Argentina/Buenos_Aires';
-        $endedAt = $this->getRawOriginal('ended_at');
+        $endedAt   = $this->getRawOriginal('ended_at');
+        $startedAt = $this->getRawOriginal('started_at');
+
+        // If the coordinator manually closed today's session, treat as pending until tomorrow
         if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
             return 'pending';
+        }
+
+        // If the coordinator manually (re)opened today's session (started today, not ended),
+        // keep it active regardless of the scheduled time window
+        if ($startedAt && Carbon::parse($startedAt)->timezone($tz)->isToday()) {
+            return 'active';
         }
 
         return $this->isCurrentlyInSession() ? 'active' : 'pending';
