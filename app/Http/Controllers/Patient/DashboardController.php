@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\GroupAttendance;
 use App\Models\GroupMembershipLog;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -154,6 +155,22 @@ class DashboardController extends Controller
         $user->save();
 
         return back()->with('success', 'Perfil actualizado.');
+    }
+
+    public function attendanceStatus()
+    {
+        $user = auth()->user();
+        $tz   = 'America/Argentina/Buenos_Aires';
+        $today = Carbon::now($tz)->toDateString();
+
+        $statuses = GroupAttendance::where('user_id', $user->id)
+            ->whereDate('attended_at', $today)
+            ->latest('attended_at')
+            ->get()
+            ->keyBy('group_id')
+            ->map(fn ($a) => $a->left_at?->format('H:i'));
+
+        return response()->json($statuses);
     }
 
     public function leaveGroup(Request $request, Group $group)

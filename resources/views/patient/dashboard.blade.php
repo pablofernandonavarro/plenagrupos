@@ -258,6 +258,35 @@
 </script>
 @endif
 
+@php
+    $openAttendanceToday = $todayAttendances->first(fn($a) => !$a->left_at);
+@endphp
+@if($openAttendanceToday)
+<script>
+(function () {
+    const statusUrl = '{{ route('patient.attendances.status') }}';
+    // Initial snapshot: group_id -> left_at (null if still open)
+    const initial = @json($todayAttendances->map(fn($a) => $a->left_at?->format('H:i')));
+
+    async function poll() {
+        try {
+            const res = await fetch(statusUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const current = await res.json();
+            // If any previously-open attendance now has a left_at, reload
+            for (const [groupId, leftAt] of Object.entries(current)) {
+                if (!initial[groupId] && leftAt) {
+                    window.location.reload();
+                    return;
+                }
+            }
+        } catch(e) {}
+    }
+
+    setInterval(poll, 8000);
+})();
+</script>
+@endif
+
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 const modal    = document.getElementById('scanner-modal');
