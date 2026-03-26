@@ -353,20 +353,30 @@ class GroupController extends Controller
         $tz = 'America/Argentina/Buenos_Aires';
 
         if ($group->active) {
-            $updates = ['active' => false, 'ended_at' => now()];
+            $now = now();
+            $updates = ['active' => false, 'ended_at' => $now];
             if ($isRecurring) {
                 $updates['recurrence_end_date'] = Carbon::now($tz)->subDay()->startOfDay()->toDateString();
             }
             $group->update($updates);
+            GroupAttendance::where('group_id', $group->id)
+                ->whereDate('attended_at', today())
+                ->whereNull('left_at')
+                ->update(['left_at' => $now]);
 
             return back()->with('success', $isRecurring ? 'Programa finalizado.' : 'Grupo finalizado.');
         }
 
         if ($isRecurring && $group->isProgramVigente()) {
+            $now = now();
             $group->update([
                 'recurrence_end_date' => Carbon::now($tz)->subDay()->startOfDay()->toDateString(),
-                'ended_at' => $group->ended_at ?? now(),
+                'ended_at' => $group->ended_at ?? $now,
             ]);
+            GroupAttendance::where('group_id', $group->id)
+                ->whereDate('attended_at', today())
+                ->whereNull('left_at')
+                ->update(['left_at' => $now]);
 
             return back()->with('success', 'Programa finalizado.');
         }

@@ -240,14 +240,24 @@ class DashboardController extends Controller
                 return back()->with('success', 'Sesión de hoy reabierta.');
             }
 
-            // Close today's session
-            $group->update(['ended_at' => now()]);
+            // Close today's session and mark exit for all patients still in
+            $now = now();
+            $group->update(['ended_at' => $now]);
+            GroupAttendance::where('group_id', $group->id)
+                ->whereDate('attended_at', today())
+                ->whereNull('left_at')
+                ->update(['left_at' => $now]);
             return back()->with('success', 'Sesión de hoy finalizada. El programa continúa la próxima clase.');
         }
 
         // Non-recurring: same as before
         if ($group->active) {
-            $group->update(['active' => false, 'ended_at' => now()]);
+            $now = now();
+            $group->update(['active' => false, 'ended_at' => $now]);
+            GroupAttendance::where('group_id', $group->id)
+                ->whereDate('attended_at', today())
+                ->whereNull('left_at')
+                ->update(['left_at' => $now]);
             return back()->with('success', 'Grupo finalizado.');
         }
 
