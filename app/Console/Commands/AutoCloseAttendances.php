@@ -25,12 +25,18 @@ class AutoCloseAttendances extends Command
 
         $closed = 0;
 
-        // First: close any stale open attendances from PREVIOUS days (orphaned records)
-        // These should have been closed by the scheduler but weren't (e.g. server down)
-        $staleClosed = GroupAttendance::whereNull('left_at')
+        // First: close any stale open attendances from PREVIOUS days (orphaned records).
+        // Use each group's configured session_duration_minutes as the session length.
+        $stale = GroupAttendance::whereNull('left_at')
             ->whereDate('attended_at', '<', $now->toDateString())
-            ->update(['left_at' => \DB::raw('attended_at + INTERVAL 90 MINUTE')]);
-        $closed += $staleClosed;
+            ->with('group')
+            ->get();
+
+        foreach ($stale as $attendance) {
+            $duration = (int) ($attendance->group?->session_duration_minutes ?? 90);
+            $attendance->update(['left_at' => $attendance->attended_at->copy()->addMinutes($duration)]);
+            $closed++;
+        }
 
         foreach ($groups as $group) {
             if (! $group->meeting_time || ! $group->session_duration_minutes) {
