@@ -316,15 +316,19 @@
                             {{ $sessionEndedToday ? 'Reabrir sesión de hoy' : 'Finalizar sesión de hoy' }}
                         </button>
                     </form>
+                    <p class="text-[11px] text-gray-400 text-center mt-2">
+                        {{ $sessionEndedToday ? 'La sesión de hoy está cerrada. El programa continúa la próxima clase.' : 'Solo cierra la sesión de hoy. El programa recurrente no se ve afectado.' }}
+                    </p>
                 @else
                     <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST"
-                          onsubmit="return confirm('¿Finalizar el grupo? Esta acción no se puede deshacer.')">
+                          onsubmit="return confirm('¿Finalizar el grupo permanentemente? Esta acción no se puede deshacer.')">
                         @csrf
                         <button type="submit"
                             class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-red-300 text-red-600 hover:bg-red-50">
                             Finalizar grupo
                         </button>
                     </form>
+                    <p class="text-[11px] text-gray-400 text-center mt-2">Cierra el grupo de forma permanente.</p>
                 @endif
             </div>
         </div>
