@@ -25,6 +25,7 @@ class User extends Authenticatable
         'patient_status',
         'patient_status_at',
         'patient_status_note',
+        'belonging_group_id',
         'password',
     ];
 
@@ -85,6 +86,11 @@ class User extends Authenticatable
     public function isPatient(): bool
     {
         return $this->role === 'patient';
+    }
+
+    public function belongingGroup()
+    {
+        return $this->belongsTo(Group::class, 'belonging_group_id');
     }
 
     public function coordinatorGroups()

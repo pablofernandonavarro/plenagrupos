@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Group;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -73,7 +74,9 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $groups = Group::orderBy('name')->get();
+
+        return view('admin.users.edit', compact('user', 'groups'));
     }
 
     public function update(Request $request, User $user)
@@ -94,6 +97,7 @@ class UserController extends Controller
         if ($user->role === 'patient') {
             $rules['patient_status'] = 'required|in:active,pause,exited';
             $rules['patient_status_note'] = 'nullable|string|max:2000';
+            $rules['belonging_group_id'] = 'nullable|exists:groups,id';
         }
 
         $data = $request->validate($rules);
@@ -114,6 +118,7 @@ class UserController extends Controller
             }
             $user->patient_status = $newStatus;
             $user->patient_status_note = $data['patient_status_note'] ?? null;
+            $user->belonging_group_id = $data['belonging_group_id'] ?? null;
         }
 
         if (! empty($data['password'])) {

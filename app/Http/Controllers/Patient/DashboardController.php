@@ -30,6 +30,8 @@ class DashboardController extends Controller
             ->pluck('group_id');
         $groups = \App\Models\Group::whereIn('id', $attendedGroupIds)->get();
 
+        $availableGroups = Group::orderBy('name')->get();
+
         $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('id');
 
         $membershipLogs = GroupMembershipLog::where('user_id', $user->id)
@@ -82,22 +84,25 @@ class DashboardController extends Controller
 
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'membershipLogs',
-            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds'
+            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
+            'availableGroups'
         ));
     }
 
     public function updateProfile(Request $request)
     {
         $data = $request->validate([
-            'peso_piso'  => 'nullable|numeric|min:0|max:300',
-            'peso_techo' => 'nullable|numeric|min:0|max:300',
-            'avatar'     => 'nullable|image|max:2048',
+            'peso_piso'          => 'nullable|numeric|min:0|max:300',
+            'peso_techo'         => 'nullable|numeric|min:0|max:300',
+            'avatar'             => 'nullable|image|max:2048',
+            'belonging_group_id' => 'nullable|exists:groups,id',
         ]);
 
         $user = auth()->user();
 
         $user->peso_piso  = $data['peso_piso'] ?? null;
         $user->peso_techo = $data['peso_techo'] ?? null;
+        $user->belonging_group_id = $data['belonging_group_id'] ?? null;
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {

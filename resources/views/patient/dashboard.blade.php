@@ -215,6 +215,18 @@
             @endif
             <form action="{{ route('patient.profile.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Mi grupo de pertenencia</label>
+                    <select name="belonging_group_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                        <option value="">— Sin grupo —</option>
+                        @foreach($availableGroups as $ag)
+                            <option value="{{ $ag->id }}" {{ old('belonging_group_id', auth()->user()->belonging_group_id) == $ag->id ? 'selected' : '' }}>
+                                {{ $ag->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('belonging_group_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Piso (kg)</label>
