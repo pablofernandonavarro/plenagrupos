@@ -199,8 +199,10 @@
                     </div>
                     @if($s->minutes !== null)
                         <span class="shrink-0 text-sm font-semibold text-teal-600">{{ $s->minutes }} min</span>
-                    @else
+                    @elseif($s->is_today)
                         <span class="shrink-0 text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700">En curso</span>
+                    @else
+                        <span class="shrink-0 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-400">Sin cierre</span>
                     @endif
                 </div>
                 @endforeach

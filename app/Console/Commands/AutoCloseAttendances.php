@@ -25,24 +25,27 @@ class AutoCloseAttendances extends Command
 
         $closed = 0;
 
+        // First: close any stale open attendances from PREVIOUS days (orphaned records)
+        // These should have been closed by the scheduler but weren't (e.g. server down)
+        $staleClosed = GroupAttendance::whereNull('left_at')
+            ->whereDate('attended_at', '<', $now->toDateString())
+            ->update(['left_at' => \DB::raw('attended_at + INTERVAL 90 MINUTE')]);
+        $closed += $staleClosed;
+
         foreach ($groups as $group) {
             if (! $group->meeting_time || ! $group->session_duration_minutes) {
                 continue;
             }
 
-            // Was today a meeting day for this group?
-            // We use the same private helper via status: if it was active earlier
-            // and the window has now passed, attendances need closing.
             [$h, $m] = array_pad(explode(':', $group->meeting_time), 2, '0');
             $sessionStart = $now->copy()->setTime((int) $h, (int) $m, 0);
             $sessionEnd   = $sessionStart->copy()->addMinutes((int) $group->session_duration_minutes);
 
             // Only act after the session window has closed and it was a meeting day
             if ($now->lte($sessionEnd)) {
-                continue; // window still open
+                continue;
             }
 
-            // Check if today was a scheduled meeting day (use meetsOnDate with sessionStart)
             if (! $group->meetsOnDate($sessionStart)) {
                 continue;
             }
