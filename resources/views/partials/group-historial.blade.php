@@ -1,4 +1,4 @@
-{{-- Requiere: $group, $historyDates, $historialDate, $historialStats, $historialAttendances, $historialMembershipEvents, $historialFormAction --}}
+{{-- Requiere: $group, $groupSessions, $historyDates, $historialDate, $historialStats, $historialAttendances, $historialMembershipEvents, $historialFormAction --}}
 <details class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" @if($historialDate) open @endif>
     <summary class="px-5 py-4 cursor-pointer list-none flex items-center justify-between gap-3 text-left font-semibold text-gray-800 hover:bg-gray-50/80 transition [&::-webkit-details-marker]:hidden">
         <span class="flex items-center gap-2 min-w-0">
@@ -8,18 +8,72 @@
         <svg class="w-5 h-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
     </summary>
     <div class="px-5 pb-5 border-t border-gray-100 space-y-4">
+
+        {{-- Índice de sesiones --}}
+        @if($groupSessions->isNotEmpty())
+            @php $today = \Carbon\Carbon::today()->toDateString(); @endphp
+            <div class="pt-3">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Sesiones del programa</p>
+                <div class="overflow-x-auto rounded-lg border border-gray-100">
+                    <table class="w-full text-sm min-w-[22rem]">
+                        <thead class="bg-gray-50 text-xs text-gray-400 uppercase tracking-wide">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-medium">N.º</th>
+                                <th class="px-3 py-2 text-left font-medium">Fecha</th>
+                                <th class="px-3 py-2 text-center font-medium">Asistentes</th>
+                                <th class="px-3 py-2 text-left font-medium">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            @foreach($groupSessions as $sess)
+                                @php
+                                    $sessDate = $sess->session_date->toDateString();
+                                    $isToday  = $sessDate === $today;
+                                    $isPast   = $sessDate < $today;
+                                    $url = $historialFormAction . '?' . http_build_query(['historial' => $sessDate]);
+                                @endphp
+                                <tr class="hover:bg-gray-50/80 transition cursor-pointer" onclick="window.location='{{ $url }}'">
+                                    <td class="px-3 py-2.5 font-semibold text-gray-700 tabular-nums">{{ $sess->sequence_number }}</td>
+                                    <td class="px-3 py-2.5 text-gray-600">
+                                        {{ $sess->session_date->locale('es')->translatedFormat('D d/m/Y') }}
+                                    </td>
+                                    <td class="px-3 py-2.5 text-center font-semibold {{ $sess->attendances_count > 0 ? 'text-teal-600' : 'text-gray-300' }}">
+                                        {{ $sess->attendances_count }}
+                                    </td>
+                                    <td class="px-3 py-2.5">
+                                        @if($isToday)
+                                            <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En curso
+                                            </span>
+                                        @elseif($isPast)
+                                            <span class="text-xs text-gray-400 font-medium">Realizada</span>
+                                        @else
+                                            <span class="text-xs text-purple-500 font-medium">Programada</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         @if($historyDates->isEmpty())
-            <p class="text-sm text-gray-500 pt-3">Todavía no hay asistencias registradas para armar un historial.</p>
+            <p class="text-sm text-gray-500 pt-1">Todavía no hay asistencias registradas para armar un historial.</p>
         @else
-            <form method="get" action="{{ $historialFormAction }}" class="pt-3 space-y-2">
+            <form method="get" action="{{ $historialFormAction }}" class="pt-1 space-y-2">
                 <label for="historial-fecha" class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ver día</label>
                 <select id="historial-fecha" name="historial"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-400 outline-none bg-white"
                     onchange="this.form.submit()">
                     <option value="">Elegí una fecha…</option>
                     @foreach($historyDates as $d)
+                        @php
+                            $sessNum = $groupSessions->first(fn($s) => $s->session_date->toDateString() === $d)?->sequence_number;
+                        @endphp
                         <option value="{{ $d }}" @selected($historialDate === $d)>
-                            {{ \Carbon\Carbon::parse($d)->locale('es')->translatedFormat('l j \d\e F Y') }}
+                            {{ $sessNum ? 'Sesión n.º '.$sessNum.' · ' : '' }}{{ \Carbon\Carbon::parse($d)->locale('es')->translatedFormat('l j \d\e F Y') }}
                         </option>
                     @endforeach
                 </select>

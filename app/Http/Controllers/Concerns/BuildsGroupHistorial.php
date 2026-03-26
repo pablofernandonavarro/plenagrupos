@@ -96,6 +96,11 @@ trait BuildsGroupHistorial
                 ->get();
         }
 
-        return compact('historyDates', 'historialDate', 'historialStats', 'historialAttendances', 'historialMembershipEvents');
+        $groupSessions = $group->groupSessions()
+            ->withCount('attendances')
+            ->orderBy('sequence_number')
+            ->get();
+
+        return compact('historyDates', 'historialDate', 'historialStats', 'historialAttendances', 'historialMembershipEvents', 'groupSessions');
     }
 }
