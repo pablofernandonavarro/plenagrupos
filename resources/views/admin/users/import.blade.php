@@ -68,7 +68,7 @@
     @endif
 
     {{-- Upload form --}}
-    <form method="POST" action="{{ route('admin.users.import') }}" enctype="multipart/form-data"
+    <form method="POST" action="{{ route('admin.users.import.store') }}" enctype="multipart/form-data"
           class="bg-white rounded-xl border border-gray-100 shadow-sm px-6 py-5 space-y-4">
         @csrf
 
