@@ -422,20 +422,25 @@ function renderRow(a) {
     const rangeText = (piso !== null || techo !== null)
         ? (piso ?? '?') + ' – ' + (techo ?? '?') + ' kg'
         : '—';
-    const leftHtml = a.left_at
-        ? `<span class="text-gray-500 text-xs">${a.left_at}</span>`
-        : `<button onclick="checkout(${a.attendance_id}, this)"
-            class="text-xs text-teal-600 border border-teal-200 rounded px-2 py-0.5 hover:bg-teal-50 transition">
-            Salida
-           </button>`;
+    const isPresent = !a.left_at;
+    const checkoutBtn = `<button onclick="checkout(${a.attendance_id}, this)"
+        class="text-xs text-teal-600 border border-teal-200 rounded px-2 py-0.5 hover:bg-teal-50 transition">
+        Marcar salida
+       </button>`;
+    const statusBadge = isPresent
+        ? `<span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block"></span>En sesión</span>`
+        : `<span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Salió ${a.left_at}</span>`;
 
     return `
-    <div class="px-4 py-3 border-b border-gray-50 last:border-0">
+    <div class="px-4 py-3 border-b border-gray-50 last:border-0 ${isPresent ? '' : 'opacity-60'}">
         <div class="flex items-center gap-2 mb-2">
             ${avatarHtml(a)}
-            <div class="min-w-0">
-                <p class="font-medium text-gray-800 text-sm leading-tight">${a.name}</p>
-                <p class="text-xs text-gray-400">Entrada: ${a.attended_at}${a.session_number != null ? ` &nbsp;·&nbsp; Sesión n.º ${a.session_number}` : ''} &nbsp;·&nbsp; <span class="checkout-cell inline">${leftHtml}</span></p>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <p class="font-medium text-gray-800 text-sm leading-tight">${a.name}</p>
+                    ${statusBadge}
+                </div>
+                <p class="text-xs text-gray-400 mt-0.5">Entrada: ${a.attended_at}${a.session_number != null ? ` · Sesión n.º ${a.session_number}` : ''}${isPresent ? ' &nbsp;·&nbsp; <span class="checkout-cell inline">' + checkoutBtn + '</span>' : ''}</p>
             </div>
         </div>
         <div class="grid grid-cols-3 gap-2 text-xs">
