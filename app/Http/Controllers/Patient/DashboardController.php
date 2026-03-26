@@ -39,6 +39,15 @@ class DashboardController extends Controller
             ->distinct()->pluck('group_id');
         $groups = Group::whereIn('id', $attendedGroupIds)->get();
 
+        // Today's attendance per group (to show personal check-in/out status)
+        $tz = 'America/Argentina/Buenos_Aires';
+        $todayDate = \Carbon\Carbon::now($tz)->toDateString();
+        $todayAttendances = GroupAttendance::where('user_id', $user->id)
+            ->whereDate('attended_at', $todayDate)
+            ->latest('attended_at')
+            ->get()
+            ->keyBy('group_id');
+
         $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('groups.id');
 
         $sessionHistory = GroupAttendance::where('user_id', $user->id)
@@ -98,7 +107,7 @@ class DashboardController extends Controller
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'sessionHistory',
             'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
-            'attendanceStats'
+            'attendanceStats', 'todayAttendances'
         ));
     }
 

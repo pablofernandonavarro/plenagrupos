@@ -123,16 +123,13 @@
     {{-- Groups info --}}
     @foreach($groups as $vg)
         @php
-            $joinUrl   = $vg->modality === 'virtual' ? route('group.join', $vg->qr_token) : null;
-            $enSesion  = $vg->isLiveSessionNow();
-            $gStats    = $attendanceStats[$vg->id] ?? ['sessions' => 0, 'minutes' => 0];
-            $gMins     = $gStats['minutes'];
-            $gSessions = $gStats['sessions'];
-            $gTime     = $gMins >= 60
-                ? floor($gMins/60).'h '.($gMins%60 > 0 ? ($gMins%60).'min' : '')
-                : $gMins.'min';
+            $joinUrl     = $vg->modality === 'virtual' ? route('group.join', $vg->qr_token) : null;
+            $enSesion    = $vg->isLiveSessionNow();
+            $myToday     = $todayAttendances[$vg->id] ?? null;
+            $myCheckedIn = $myToday && !$myToday->left_at;
+            $myLeft      = $myToday && $myToday->left_at;
         @endphp
-        <div class="rounded-xl border overflow-hidden {{ $enSesion ? 'border-green-300 shadow-green-100 shadow-md' : 'border-gray-200' }}">
+        <div class="rounded-xl border overflow-hidden {{ $enSesion && $myCheckedIn ? 'border-green-400 shadow-green-100 shadow-md' : ($enSesion ? 'border-green-200' : 'border-gray-200') }}">
             <div class="px-4 py-3 flex items-start justify-between gap-2 {{ $enSesion ? 'bg-green-50' : 'bg-teal-50' }}">
                 <div>
                     <p class="font-semibold text-gray-800 leading-snug">{{ $vg->name }}</p>
@@ -141,8 +138,11 @@
                             {{ $vg->meetingDaysDisplay }}{{ $vg->meetingDaysDisplay && $vg->meeting_time ? ' · ' : '' }}{{ $vg->meeting_time ? $vg->meeting_time_formatted . ' hs' : '' }}
                         </p>
                     @endif
-                    @if($gSessions)
-                        <p class="text-xs text-gray-400 mt-0.5">{{ $gSessions }} {{ $gSessions === 1 ? 'sesión' : 'sesiones' }} · {{ $gTime }}</p>
+                    {{-- Estado personal de hoy --}}
+                    @if($myLeft)
+                        <p class="text-xs text-gray-400 mt-1">✓ Asististe hoy · saliste {{ $myToday->left_at->format('H:i') }} hs</p>
+                    @elseif($myCheckedIn)
+                        <p class="text-xs text-green-600 font-medium mt-1">● Estás en sesión ahora</p>
                     @endif
                 </div>
                 @if($enSesion)
