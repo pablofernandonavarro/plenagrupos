@@ -124,7 +124,13 @@
     @foreach($groups as $vg)
         @php
             $joinUrl   = $vg->modality === 'virtual' ? route('group.join', $vg->qr_token) : null;
-            $enSesion  = $vg->status === 'active';
+            $enSesion  = $vg->isLiveSessionNow();
+            $gStats    = $attendanceStats[$vg->id] ?? ['sessions' => 0, 'minutes' => 0];
+            $gMins     = $gStats['minutes'];
+            $gSessions = $gStats['sessions'];
+            $gTime     = $gMins >= 60
+                ? floor($gMins/60).'h '.($gMins%60 > 0 ? ($gMins%60).'min' : '')
+                : $gMins.'min';
         @endphp
         <div class="rounded-xl border overflow-hidden {{ $enSesion ? 'border-green-300 shadow-green-100 shadow-md' : 'border-gray-200' }}">
             <div class="px-4 py-3 flex items-start justify-between gap-2 {{ $enSesion ? 'bg-green-50' : 'bg-teal-50' }}">
@@ -135,11 +141,14 @@
                             {{ $vg->meetingDaysDisplay }}{{ $vg->meetingDaysDisplay && $vg->meeting_time ? ' · ' : '' }}{{ $vg->meeting_time ? $vg->meeting_time_formatted . ' hs' : '' }}
                         </p>
                     @endif
+                    @if($gSessions)
+                        <p class="text-xs text-gray-400 mt-0.5">{{ $gSessions }} {{ $gSessions === 1 ? 'sesión' : 'sesiones' }} · {{ $gTime }}</p>
+                    @endif
                 </div>
                 @if($enSesion)
                     <span class="shrink-0 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-green-500 text-white">
                         <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
-                        EN SESIÓN
+                        EN VIVO
                     </span>
                 @endif
             </div>
@@ -176,7 +185,10 @@
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Historial de grupos</p>
             @foreach($membershipLogs as $log)
                 @php
-                    $weeks = round($log->total_days / 7, 1);
+                    $lMins = $log->minutes;
+                    $lTime = $lMins >= 60
+                        ? floor($lMins/60).'h '.($lMins%60 > 0 ? ($lMins%60).'min' : '')
+                        : $lMins.'min';
                 @endphp
                 <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
                     <div>
@@ -184,11 +196,8 @@
                         <p class="text-xs text-gray-400">
                             {{ $log->first_joined->format('d/m/Y') }} → {{ $log->last_left->format('d/m/Y') }}
                             &nbsp;·&nbsp;
-                            @if($log->total_days < 7)
-                                {{ $log->total_days }} {{ $log->total_days === 1 ? 'día' : 'días' }}
-                            @else
-                                {{ $weeks }} {{ $weeks == 1 ? 'semana' : 'semanas' }}
-                            @endif
+                            {{ $log->sessions }} {{ $log->sessions === 1 ? 'sesión' : 'sesiones' }}
+                            @if($lMins > 0) · {{ $lTime }} @endif
                         </p>
                     </div>
                     <span class="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Asistió</span>

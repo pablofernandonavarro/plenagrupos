@@ -24,11 +24,19 @@ class DashboardController extends Controller
         $initialWeight = $weightRecords->last()?->weight;
         $totalLoss     = ($initialWeight && $latestWeight) ? round($initialWeight - $latestWeight, 2) : null;
 
+        // Attendance stats per group: session count + total minutes (only closed attendances)
+        $attendanceStats = GroupAttendance::where('user_id', $user->id)
+            ->whereNotNull('left_at')
+            ->get()
+            ->groupBy('group_id')
+            ->map(fn ($atts) => [
+                'sessions' => $atts->count(),
+                'minutes'  => $atts->sum(fn ($a) => (int) $a->attended_at->diffInMinutes($a->left_at)),
+            ]);
+
         // get groups where patient has at least one attendance
-        $attendedGroupIds = \App\Models\GroupAttendance::where('user_id', $user->id)
-            ->distinct()
-            ->pluck('group_id');
-        $groups = \App\Models\Group::whereIn('id', $attendedGroupIds)->get();
+        $attendedGroupIds = $attendanceStats->keys();
+        $groups = Group::whereIn('id', $attendedGroupIds)->get();
 
         $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('groups.id');
 
@@ -38,13 +46,15 @@ class DashboardController extends Controller
             ->orderBy('joined_at')
             ->get()
             ->groupBy('group_id')
-            ->map(function ($entries) {
-                $totalDays = $entries->sum(fn ($e) => (int) $e->joined_at->diffInDays($e->left_at));
+            ->map(function ($entries) use ($attendanceStats) {
+                $gid   = $entries->first()->group_id;
+                $stats = $attendanceStats[$gid] ?? ['sessions' => 0, 'minutes' => 0];
                 return (object) [
                     'group'        => $entries->first()->group,
                     'first_joined' => $entries->first()->joined_at,
                     'last_left'    => $entries->last()->left_at,
-                    'total_days'   => $totalDays,
+                    'sessions'     => $stats['sessions'],
+                    'minutes'      => $stats['minutes'],
                 ];
             })
             ->sortByDesc('last_left')
@@ -94,7 +104,8 @@ class DashboardController extends Controller
 
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'membershipLogs',
-            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds'
+            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
+            'attendanceStats'
         ));
     }
 
