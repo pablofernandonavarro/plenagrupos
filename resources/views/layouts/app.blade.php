@@ -148,6 +148,8 @@
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Mi perfil</a>
                     @else
                         <a href="{{ route('patient.dashboard') }}" class="text-sm text-gray-300 transition"
+                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Inicio</a>
+                        <a href="{{ route('patient.profile') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Mi perfil</a>
                     @endif
 
@@ -157,7 +159,7 @@
                                 ? route('admin.dashboard')
                                 : (auth()->user()->isCoordinator()
                                     ? route('coordinator.profile')
-                                    : route('patient.dashboard'));
+                                    : route('patient.profile'));
                         @endphp
                         <a href="{{ $profileUrl }}" class="flex items-center gap-2 hover:opacity-80 transition">
                             <x-avatar :user="auth()->user()" size="sm" />
@@ -212,7 +214,8 @@
                     <a href="{{ route('coordinator.patients.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Pacientes</a>
                     <a href="{{ route('coordinator.profile') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
                 @else
-                    <a href="{{ route('patient.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
+                    <a href="{{ route('patient.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Inicio</a>
+                    <a href="{{ route('patient.profile') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
                 @endif
 
                 <div class="border-t border-white/10 pt-3 mt-2 flex items-center justify-between">

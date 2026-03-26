@@ -30,8 +30,6 @@ class DashboardController extends Controller
             ->pluck('group_id');
         $groups = \App\Models\Group::whereIn('id', $attendedGroupIds)->get();
 
-        $availableGroups = Group::orderBy('name')->get();
-
         $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('groups.id');
 
         $membershipLogs = GroupMembershipLog::where('user_id', $user->id)
@@ -84,9 +82,22 @@ class DashboardController extends Controller
 
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'membershipLogs',
-            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
-            'availableGroups'
+            'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds'
         ));
+    }
+
+    public function profile()
+    {
+        $user = auth()->user();
+
+        $weightRecords = $user->weightRecords()
+            ->with('group')
+            ->latest('recorded_at')
+            ->get();
+
+        $availableGroups = Group::orderBy('name')->get();
+
+        return view('patient.profile', compact('weightRecords', 'availableGroups'));
     }
 
     public function updateProfile(Request $request)
