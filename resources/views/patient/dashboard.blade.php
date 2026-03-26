@@ -139,10 +139,12 @@
                         </p>
                     @endif
                     {{-- Estado personal de hoy --}}
-                    @if($myLeft)
-                        <p class="text-xs text-gray-400 mt-1">✓ Asististe hoy · saliste {{ $myToday->left_at->format('H:i') }} hs</p>
-                    @elseif($myCheckedIn)
-                        <p class="text-xs text-green-600 font-medium mt-1">● Estás en sesión ahora</p>
+                    @if($myCheckedIn)
+                        <p class="text-xs text-green-600 font-semibold mt-1">● Estás en sesión</p>
+                    @elseif($myLeft)
+                        <p class="text-xs text-gray-500 mt-1">✓ Asististe hoy · saliste {{ $myToday->left_at->format('H:i') }} hs</p>
+                    @elseif($enSesion)
+                        <p class="text-xs text-gray-400 mt-1">— No registraste entrada hoy</p>
                     @endif
                 </div>
                 @if($enSesion)
