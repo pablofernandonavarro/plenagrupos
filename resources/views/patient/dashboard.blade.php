@@ -177,7 +177,7 @@
               onsubmit="return confirm('¿Confirmás que querés salir del grupo «{{ $vg->name }}»?')">
             @csrf
             <button type="submit"
-                class="w-full text-sm font-medium text-red-600 border border-red-200 bg-white rounded-xl px-4 py-3 hover:bg-red-50 transition">
+                class="w-full text-sm font-bold text-white bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-2xl shadow-md px-4 py-4 transition">
                 Salir del grupo «{{ $vg->name }}»
             </button>
         </form>
