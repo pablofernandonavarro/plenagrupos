@@ -65,7 +65,7 @@
                 class="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
                 Editar
             </a>
-            @if($group->auto_sessions && $group->isProgramVigente())
+            @if($group->auto_sessions && $group->isProgramVigente() && ($sessionEndedToday || $group->status === 'active'))
             <form action="{{ route('admin.groups.close-session', $group) }}" method="POST">
                 @csrf
                 <button type="submit"

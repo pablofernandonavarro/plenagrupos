@@ -314,7 +314,7 @@
                     $endedAt = $group->getRawOriginal('ended_at');
                     $sessionEndedToday = $endedAt && \Carbon\Carbon::parse($endedAt)->timezone($tz)->isToday();
                 @endphp
-                @if($group->auto_sessions)
+                @if($group->auto_sessions && ($sessionEndedToday || $group->status === 'active'))
                     {{-- Recurring: only close/reopen today's session --}}
                     <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
                         @csrf
