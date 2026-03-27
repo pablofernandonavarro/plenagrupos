@@ -46,15 +46,22 @@ return new class extends Migration
         }
 
         // Add unique index to prevent future duplicates
-        // MySQL doesn't support functional indexes on DATE() in older versions,
-        // so we use a generated column approach via raw SQL
-        DB::statement('ALTER TABLE group_attendances ADD COLUMN attended_date DATE GENERATED ALWAYS AS (DATE(attended_at)) STORED');
-        DB::statement('ALTER TABLE group_attendances ADD UNIQUE KEY uq_attendance_per_day (user_id, group_id, attended_date)');
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS uq_attendance_per_day ON group_attendances (user_id, group_id, DATE(attended_at))');
+        } else {
+            // MySQL: use generated column for functional unique index support
+            DB::statement('ALTER TABLE group_attendances ADD COLUMN attended_date DATE GENERATED ALWAYS AS (DATE(attended_at)) STORED');
+            DB::statement('ALTER TABLE group_attendances ADD UNIQUE KEY uq_attendance_per_day (user_id, group_id, attended_date)');
+        }
     }
 
     public function down(): void
     {
-        DB::statement('ALTER TABLE group_attendances DROP KEY uq_attendance_per_day');
-        DB::statement('ALTER TABLE group_attendances DROP COLUMN attended_date');
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement('DROP INDEX IF EXISTS uq_attendance_per_day');
+        } else {
+            DB::statement('ALTER TABLE group_attendances DROP KEY uq_attendance_per_day');
+            DB::statement('ALTER TABLE group_attendances DROP COLUMN attended_date');
+        }
     }
 };
