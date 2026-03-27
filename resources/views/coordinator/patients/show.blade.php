@@ -353,23 +353,44 @@
 
     {{-- AI Clinical Analysis --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <div>
-                <h2 class="font-semibold text-gray-800">Análisis clínico IA</h2>
-                <p class="text-xs text-gray-400 mt-0.5">Generado por LLaMA 3.3 · Se actualiza una vez por día</p>
+        <div class="px-5 py-4 border-b border-gray-100">
+            <div class="flex justify-between items-start gap-3">
+                <div>
+                    <h2 class="font-semibold text-gray-800">Análisis clínico IA</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">Generado por LLaMA 3.3 · Se actualiza una vez por día</p>
+                </div>
+                <button id="btn-ai"
+                    onclick="loadAiAnalysis(true)"
+                    class="shrink-0 flex items-center gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg transition font-medium">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    Generar
+                </button>
             </div>
-            <button id="btn-ai"
-                onclick="loadAiAnalysis(true)"
-                class="flex items-center gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg transition font-medium">
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                Generar
-            </button>
+
+            {{-- Checkboxes de datos a incluir --}}
+            <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+                <label class="inline-flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
+                    <input type="checkbox" id="inc_general" checked
+                        class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5">
+                    <span>Perfil, asistencia y pesos</span>
+                </label>
+                <label class="inline-flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
+                    <input type="checkbox" id="inc_inbody" checked
+                        class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5">
+                    <span>Estudios InBody</span>
+                </label>
+                <label class="inline-flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
+                    <input type="checkbox" id="inc_patient" checked
+                        class="rounded border-gray-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5">
+                    <span>Notas del paciente</span>
+                </label>
+            </div>
         </div>
         <div class="px-5 py-4">
             <p id="ai-text" class="text-sm text-gray-400 italic">
-                Presioná "Generar" para obtener un análisis clínico basado en los datos del paciente.
+                Seleccioná los datos a incluir y presioná "Generar".
             </p>
         </div>
     </div>
@@ -524,12 +545,23 @@
 async function loadAiAnalysis(force = false) {
     const btn  = document.getElementById('btn-ai');
     const text = document.getElementById('ai-text');
+
+    const incGeneral = document.getElementById('inc_general')?.checked ? 1 : 0;
+    const incInbody  = document.getElementById('inc_inbody')?.checked  ? 1 : 0;
+    const incPatient = document.getElementById('inc_patient')?.checked ? 1 : 0;
+
     btn.disabled = true;
     btn.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> Analizando...';
     text.textContent = 'Generando análisis clínico...';
     text.className = 'text-sm text-gray-400 italic';
     try {
-        const url = '{{ route("coordinator.patients.ai-analysis", $patient) }}' + (force ? '?force=1' : '');
+        const params = new URLSearchParams({
+            force:       force ? 1 : 0,
+            inc_general: incGeneral,
+            inc_inbody:  incInbody,
+            inc_patient: incPatient,
+        });
+        const url = '{{ route("coordinator.patients.ai-analysis", $patient) }}?' + params.toString();
         const res = await fetch(url, {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }

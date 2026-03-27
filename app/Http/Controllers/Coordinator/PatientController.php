@@ -160,17 +160,21 @@ class PatientController extends Controller
 
     public function aiAnalysis(User $patient): JsonResponse
     {
-        // Cache key includes a hash of active docs and InBody records — auto-invalidates when data changes
-        $docsHash = md5(AiDocument::active()->pluck('updated_at', 'id')->toJson());
-        $inbodyHash = md5($patient->inbodyRecords()->pluck('updated_at', 'id')->toJson());
-        $cacheKey = "ai_analysis_{$patient->id}_{$docsHash}_{$inbodyHash}_".now()->format('Y-m-d');
+        $incGeneral = request()->boolean('inc_general', true);
+        $incInbody  = request()->boolean('inc_inbody',  true);
+        $incPatient = request()->boolean('inc_patient', true);
 
-        // ?force=1 bypasses cache (used by the "Regenerar" button)
+        // Cache key includes data hashes + selected sections
+        $docsHash   = md5(AiDocument::active()->pluck('updated_at', 'id')->toJson());
+        $inbodyHash = md5($patient->inbodyRecords()->pluck('updated_at', 'id')->toJson());
+        $sections   = ($incGeneral ? 'g' : '') . ($incInbody ? 'i' : '') . ($incPatient ? 'p' : '');
+        $cacheKey   = "ai_analysis_{$patient->id}_{$docsHash}_{$inbodyHash}_{$sections}_" . now()->format('Y-m-d');
+
         if (request()->boolean('force')) {
             Cache::forget($cacheKey);
         }
 
-        $analysis = Cache::remember($cacheKey, 3600 * 6, function () use ($patient) {
+        $analysis = Cache::remember($cacheKey, 3600 * 6, function () use ($patient, $incGeneral, $incInbody, $incPatient) {
             $records = $patient->weightRecords()->with('group')->orderBy('recorded_at')->get();
             $attendances = $patient->attendances()->with('group')->orderBy('attended_at')->get();
             $groups = $patient->patientGroups()->get();
@@ -293,40 +297,66 @@ class PatientController extends Controller
                 'Trabajás con el método del Dr. Máximo Ravenna. '.
                 "Respondés siempre en español con lenguaje profesional y empático, usando el marco conceptual de Ravenna cuando es pertinente.{$bibliography}";
 
-            $prompt = 'Analizá los siguientes datos clínicos completos de un paciente y generá una devolución profesional '.
+            // Build prompt sections according to selected flags
+            $dataSections = '';
+
+            if ($incGeneral) {
+                $dataSections .=
+                    "=== PERFIL DEL PACIENTE ===\n".
+                    "- Plan contratado: {$planLabel}\n".
+                    ($faseActualLabel ? "- Fase clínica actual: {$faseActualLabel}".($hayConflictoPlan ? ' (DISTINTA al plan contratado)' : '')."\n" : '').
+                    ($cycleInfo ? "- {$cycleInfo}\n" : '').
+                    "- Peso inicial: {$firstW} kg\n".
+                    "- Peso actual: {$lastW} kg\n".
+                    '- Tendencia: '.round($trend, 3)." kg/sesión (negativo = pérdida)\n".
+                    "- Peso ideal: {$ideal} kg\n".
+                    "- Rango de mantenimiento: {$piso} – {$techo} kg\n".
+                    "- Estado actual respecto al rango: {$inRange}\n\n".
+                    "=== ASISTENCIA ===\n".
+                    "- Total de asistencias: {$totalAttendances}\n".
+                    "- Primera asistencia: {$firstAttendance}\n".
+                    "- Última asistencia: {$lastAttendance}\n".
+                    ($groupsSummary ? "- Grupos:\n{$groupsSummary}\n" : '').
+                    ($attendanceByType ? "- Por tipo de grupo:\n{$attendanceByType}\n" : '')."\n".
+                    "=== HISTORIAL DE PESO (últimas 20 sesiones) ===\n".
+                    ($weightHistory ?: '  Sin registros de peso.')."\n\n";
+            }
+
+            if ($incInbody && $inbodySection) {
+                $dataSections .= $inbodySection."\n";
+            }
+
+            if ($incPatient && $notes) {
+                $dataSections .= "=== COMENTARIOS DEL PACIENTE ===\n{$notes}\n\n";
+            }
+
+            // Build analysis instructions based on what's included
+            $instrNum = 1;
+            $instructions = '';
+            if ($incGeneral) {
+                $instructions .= "{$instrNum}. Interpretación de la evolución del peso según ".
+                    ($faseActualLabel && $hayConflictoPlan ? "la fase actual ({$faseActualLabel}), aclarando que tiene contratado {$planLabel}" : "el plan ({$planLabel})")."\n";
+                $instrNum++;
+                $instructions .= "{$instrNum}. Valoración de la adherencia y regularidad\n";
+                $instrNum++;
+                $instructions .= "{$instrNum}. Relación entre el estado actual y el rango de mantenimiento\n";
+                $instrNum++;
+            }
+            if ($incPatient && $notes) {
+                $instructions .= "{$instrNum}. Qué revelan emocionalmente las notas según el marco de Ravenna\n";
+                $instrNum++;
+            }
+            if ($incInbody && $inbodySection) {
+                $instructions .= "{$instrNum}. Interpretación de la composición corporal InBody (masa muscular, grasa visceral, tendencia)\n";
+                $instrNum++;
+            }
+            $instructions .= "{$instrNum}. Una sugerencia clínica concreta para el coordinador";
+
+            $prompt = 'Analizá los siguientes datos clínicos de un paciente y generá una devolución profesional '.
                 "para el coordinador del grupo (6-8 oraciones). Aplicá el marco conceptual de Ravenna donde corresponda.\n\n".
-
-                "=== PERFIL DEL PACIENTE ===\n".
-                "- Plan contratado: {$planLabel}\n".
-                ($faseActualLabel ? "- Fase clínica actual: {$faseActualLabel}".($hayConflictoPlan ? ' (DISTINTA al plan contratado — el paciente paga descenso pero está cursando mantenimiento o viceversa)' : '')."\n" : '').
-                ($cycleInfo ? "- {$cycleInfo}\n" : '').
-                "- Peso inicial: {$firstW} kg\n".
-                "- Peso actual: {$lastW} kg\n".
-                '- Tendencia: '.round($trend, 3)." kg/sesión (negativo = pérdida)\n".
-                "- Peso ideal: {$ideal} kg\n".
-                "- Rango de mantenimiento: {$piso} – {$techo} kg\n".
-                "- Estado actual respecto al rango: {$inRange}\n\n".
-
-                "=== ASISTENCIA ===\n".
-                "- Total de asistencias: {$totalAttendances}\n".
-                "- Primera asistencia: {$firstAttendance}\n".
-                "- Última asistencia: {$lastAttendance}\n".
-                ($groupsSummary ? "- Grupos:\n{$groupsSummary}\n" : '').
-                ($attendanceByType ? "- Por tipo de grupo:\n{$attendanceByType}\n" : '')."\n".
-
-                "=== HISTORIAL DE PESO (últimas 20 sesiones) ===\n".
-                ($weightHistory ?: '  Sin registros de peso.')."\n\n".
-
-                ($inbodySection ? $inbodySection."\n" : '').
-                ($notes ? "=== COMENTARIOS DEL PACIENTE ===\n{$notes}\n\n" : '').
-
+                $dataSections.
                 "Incluí en tu análisis:\n".
-                '1. Interpretación de la evolución del peso según '.($faseActualLabel && $hayConflictoPlan ? "la fase actual ({$faseActualLabel}), aclarando que tiene contratado {$planLabel}" : "el plan ({$planLabel})")."\n".
-                "2. Valoración de la adherencia y regularidad\n".
-                "3. Relación entre el estado actual y el rango de mantenimiento\n".
-                ($notes ? "4. Qué revelan emocionalmente las notas según el marco de Ravenna\n" : '').
-                ($inbodySection ? "5. Interpretación de la composición corporal InBody (masa muscular, grasa visceral, tendencia)\n" : '').
-                ($inbodySection ? '6.' : '5.').' Una sugerencia clínica concreta para el coordinador';
+                $instructions;
 
             $response = Http::withToken(config('services.groq.key'))
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
