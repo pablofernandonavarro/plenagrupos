@@ -16,51 +16,65 @@ class AutoCloseAttendances extends Command
     {
         $tz  = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz);
-
-        // Only recurring groups that are still vigente (not permanently closed)
-        $groups = Group::whereNotIn('recurrence_type', ['none'])
-            ->whereNull('recurrence_end_date')
-            ->orWhere('recurrence_end_date', '>=', $now->toDateString())
-            ->get();
-
         $closed = 0;
 
-        // First: close any stale open attendances from PREVIOUS days (orphaned records).
-        // Use each group's configured session_duration_minutes as the session length.
+        // 1. Orphaned records from previous days — close at attended_at + duration
         $stale = GroupAttendance::whereNull('left_at')
             ->whereDate('attended_at', '<', $now->toDateString())
             ->with('group')
             ->get();
 
-        foreach ($stale as $attendance) {
-            $duration = (int) ($attendance->group?->session_duration_minutes ?? 90);
-            $attendance->update(['left_at' => $attendance->attended_at->copy()->addMinutes($duration)]);
+        foreach ($stale as $att) {
+            $duration = (int) ($att->group?->session_duration_minutes ?? 120);
+            $att->update(['left_at' => $att->attended_at->copy()->addMinutes($duration)]);
             $closed++;
         }
 
-        foreach ($groups as $group) {
-            if (! $group->meeting_time || ! $group->session_duration_minutes) {
-                continue;
-            }
+        // 2. Today's open attendances for recurring groups whose window has passed
+        $groups = Group::whereNotIn('recurrence_type', ['none'])
+            ->where(function ($q) use ($now) {
+                $q->whereNull('recurrence_end_date')
+                  ->orWhere('recurrence_end_date', '>=', $now->toDateString());
+            })
+            ->whereNotNull('meeting_time')
+            ->get();
 
+        foreach ($groups as $group) {
             [$h, $m] = array_pad(explode(':', $group->meeting_time), 2, '0');
             $sessionStart = $now->copy()->setTime((int) $h, (int) $m, 0);
-            $sessionEnd   = $sessionStart->copy()->addMinutes((int) $group->session_duration_minutes);
+            $duration     = (int) ($group->session_duration_minutes ?? 120);
+            $sessionEnd   = $sessionStart->copy()->addMinutes($duration);
 
-            // Only act after the session window has closed and it was a meeting day
+            // Session window hasn't closed yet — nothing to do
             if ($now->lte($sessionEnd)) {
                 continue;
             }
 
+            // Not a meeting day today
             if (! $group->meetsOnDate($sessionStart)) {
                 continue;
             }
 
-            // Close all open attendances for today
             $count = GroupAttendance::where('group_id', $group->id)
                 ->whereDate('attended_at', $now->toDateString())
                 ->whereNull('left_at')
                 ->update(['left_at' => $sessionEnd]);
+
+            $closed += $count;
+        }
+
+        // 3. Groups manually closed today by coordinator/admin — close remaining open attendances
+        $manuallyClosed = Group::whereNotNull('ended_at')
+            ->whereDate('ended_at', $now->toDateString())
+            ->get();
+
+        foreach ($manuallyClosed as $group) {
+            $endedAt = Carbon::parse($group->getRawOriginal('ended_at'))->timezone($tz);
+
+            $count = GroupAttendance::where('group_id', $group->id)
+                ->whereDate('attended_at', $now->toDateString())
+                ->whereNull('left_at')
+                ->update(['left_at' => $endedAt]);
 
             $closed += $count;
         }

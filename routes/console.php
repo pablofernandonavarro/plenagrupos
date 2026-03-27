@@ -16,7 +16,7 @@ Schedule::command('sessions:generate-recurring')
 
 // Auto-close open attendances once the session time window has ended
 Schedule::command('attendances:auto-close')
-    ->everyFifteenMinutes()
+    ->everyFiveMinutes()
     ->timezone('America/Argentina/Buenos_Aires')
     ->withoutOverlapping();
 
