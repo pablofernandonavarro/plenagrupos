@@ -55,7 +55,8 @@ trait BuildsGroupHistorial
         $attendanceDates = $group->attendances()
             ->orderByDesc('attended_at')
             ->get(['attended_at'])
-            ->map(fn ($a) => $a->attended_at->format('Y-m-d'));
+            ->map(fn ($a) => $a->attended_at->format('Y-m-d'))
+            ->toBase();
 
         $sessionDates = $group->groupSessions()
             ->pluck('session_date')
