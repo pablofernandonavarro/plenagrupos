@@ -114,11 +114,17 @@
                     <th class="px-4 py-3 font-medium">Paciente</th>
                     <th class="px-4 py-3 font-medium">Estado</th>
                     <th class="px-4 py-3 font-medium">Última visita</th>
-                    <th class="px-4 py-3 font-medium text-right">Días</th>
+                    <th class="px-4 py-3 font-medium text-right">
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>Días sin visitar</span>
+                    </th>
                     <th class="px-4 py-3 font-medium">Último peso</th>
-                    <th class="px-4 py-3 font-medium text-right">Días</th>
+                    <th class="px-4 py-3 font-medium text-right">
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>Días sin pesar</span>
+                    </th>
                     <th class="px-4 py-3 font-medium">Último InBody</th>
-                    <th class="px-4 py-3 font-medium text-right">Días</th>
+                    <th class="px-4 py-3 font-medium text-right">
+                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-400 inline-block"></span>Días sin InBody</span>
+                    </th>
                     <th class="px-4 py-3 font-medium">Alertas</th>
                 </tr>
             </thead>
