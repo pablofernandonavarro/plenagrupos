@@ -43,6 +43,35 @@
                     placeholder="Opcional">
             </div>
             @if($role === 'patient')
+            {{-- Perfil clínico --}}
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Fecha de nacimiento</label>
+                    <input type="date" name="birth_date" value="{{ old('birth_date') }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Género</label>
+                    <select name="gender" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                        <option value="">— Sin definir —</option>
+                        <option value="female" {{ old('gender') === 'female' ? 'selected' : '' }}>Femenino</option>
+                        <option value="male"   {{ old('gender') === 'male'   ? 'selected' : '' }}>Masculino</option>
+                        <option value="other"  {{ old('gender') === 'other'  ? 'selected' : '' }}>Otro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Altura (cm)</label>
+                    <input type="number" name="height_cm" min="50" max="250" value="{{ old('height_cm') }}"
+                        placeholder="Ej: 165"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Objetivo personal</label>
+                <textarea name="personal_goal" rows="2" maxlength="1000"
+                    placeholder="¿Qué quiere lograr con el programa?"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm resize-none">{{ old('personal_goal') }}</textarea>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
                 <div class="flex gap-2">

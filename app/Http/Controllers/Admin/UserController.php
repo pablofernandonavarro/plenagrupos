@@ -43,25 +43,33 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'phone' => 'nullable|string|max:20',
-            'role' => 'required|in:coordinator,patient',
-            'plan' => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
-            'plan_start_date' => 'nullable|date',
-            'password' => 'required|min:8|confirmed',
-            'avatar' => 'nullable|image|max:2048',
+            'name'           => 'required|string|max:255',
+            'email'          => 'required|email|unique:users',
+            'phone'          => 'nullable|string|max:20',
+            'role'           => 'required|in:coordinator,patient',
+            'plan'           => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
+            'plan_start_date'=> 'nullable|date',
+            'birth_date'     => 'nullable|date|before:today',
+            'gender'         => 'nullable|in:male,female,other',
+            'height_cm'      => 'nullable|integer|min:50|max:250',
+            'personal_goal'  => 'nullable|string|max:1000',
+            'password'       => 'required|min:8|confirmed',
+            'avatar'         => 'nullable|image|max:2048',
         ]);
 
         $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'role' => $data['role'],
-            'plan' => ($data['role'] === 'patient') ? ($data['plan'] ?? null) : null,
-            'plan_start_date' => ($data['role'] === 'patient') ? ($data['plan_start_date'] ?? null) : null,
+            'name'           => $data['name'],
+            'email'          => $data['email'],
+            'phone'          => $data['phone'] ?? null,
+            'role'           => $data['role'],
+            'plan'           => ($data['role'] === 'patient') ? ($data['plan'] ?? null) : null,
+            'plan_start_date'=> ($data['role'] === 'patient') ? ($data['plan_start_date'] ?? null) : null,
             'patient_status' => $data['role'] === 'patient' ? 'active' : null,
-            'password' => Hash::make($data['password']),
+            'birth_date'     => $data['birth_date'] ?? null,
+            'gender'         => $data['gender'] ?? null,
+            'height_cm'      => $data['height_cm'] ?? null,
+            'personal_goal'  => ($data['role'] === 'patient') ? ($data['personal_goal'] ?? null) : null,
+            'password'       => Hash::make($data['password']),
         ]);
 
         if ($request->hasFile('avatar')) {
@@ -85,16 +93,20 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $rules = [
-            'name' => 'required|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'phone' => 'nullable|string|max:20',
-            'plan' => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
-            'plan_start_date' => 'nullable|date',
-            'ideal_weight' => 'nullable|numeric|min:0|max:300',
-            'peso_piso' => 'nullable|numeric|min:0|max:300',
-            'peso_techo' => 'nullable|numeric|min:0|max:300',
-            'password' => 'nullable|min:8|confirmed',
-            'avatar' => 'nullable|image|max:2048',
+            'name'           => 'required|string|max:255',
+            'email'          => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'phone'          => 'nullable|string|max:20',
+            'plan'           => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
+            'plan_start_date'=> 'nullable|date',
+            'ideal_weight'   => 'nullable|numeric|min:0|max:300',
+            'peso_piso'      => 'nullable|numeric|min:0|max:300',
+            'peso_techo'     => 'nullable|numeric|min:0|max:300',
+            'birth_date'     => 'nullable|date|before:today',
+            'gender'         => 'nullable|in:male,female,other',
+            'height_cm'      => 'nullable|integer|min:50|max:250',
+            'personal_goal'  => 'nullable|string|max:1000',
+            'password'       => 'nullable|min:8|confirmed',
+            'avatar'         => 'nullable|image|max:2048',
         ];
 
         if ($user->role === 'patient') {
@@ -105,14 +117,20 @@ class UserController extends Controller
 
         $data = $request->validate($rules);
 
-        $user->name = $data['name'];
-        $user->email = $data['email'];
-        $user->phone = $data['phone'] ?? null;
-        $user->plan = $user->role === 'patient' ? ($data['plan'] ?? null) : null;
-        $user->plan_start_date = $user->role === 'patient' ? ($data['plan_start_date'] ?? null) : null;
-        $user->ideal_weight = $data['ideal_weight'] ?? null;
-        $user->peso_piso = $data['peso_piso'] ?? null;
-        $user->peso_techo = $data['peso_techo'] ?? null;
+        $user->name           = $data['name'];
+        $user->email          = $data['email'];
+        $user->phone          = $data['phone'] ?? null;
+        $user->plan           = $user->role === 'patient' ? ($data['plan'] ?? null) : null;
+        $user->plan_start_date= $user->role === 'patient' ? ($data['plan_start_date'] ?? null) : null;
+        $user->ideal_weight   = $data['ideal_weight'] ?? null;
+        $user->peso_piso      = $data['peso_piso'] ?? null;
+        $user->peso_techo     = $data['peso_techo'] ?? null;
+        $user->birth_date     = $data['birth_date'] ?? null;
+        $user->gender         = $data['gender'] ?? null;
+        $user->height_cm      = $data['height_cm'] ?? null;
+        if ($user->role === 'patient') {
+            $user->personal_goal = $data['personal_goal'] ?? null;
+        }
 
         if ($user->role === 'patient') {
             $newStatus = $data['patient_status'];

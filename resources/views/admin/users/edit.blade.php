@@ -140,6 +140,41 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Perfil clínico --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Perfil clínico</label>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Fecha de nacimiento</label>
+                        <input type="date" name="birth_date" value="{{ old('birth_date', $user->birth_date?->format('Y-m-d')) }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Género</label>
+                        <select name="gender" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                            <option value="">— Sin definir —</option>
+                            <option value="female" {{ old('gender', $user->gender) === 'female' ? 'selected' : '' }}>Femenino</option>
+                            <option value="male"   {{ old('gender', $user->gender) === 'male'   ? 'selected' : '' }}>Masculino</option>
+                            <option value="other"  {{ old('gender', $user->gender) === 'other'  ? 'selected' : '' }}>Otro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Altura (cm)</label>
+                        <input type="number" name="height_cm" min="50" max="250" value="{{ old('height_cm', $user->height_cm) }}"
+                            placeholder="Ej: 165"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
+                    </div>
+                </div>
+                @if($user->role === 'patient')
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Objetivo personal</label>
+                    <textarea name="personal_goal" rows="2" maxlength="1000"
+                        placeholder="¿Qué quiere lograr con el programa?"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm resize-none">{{ old('personal_goal', $user->personal_goal) }}</textarea>
+                </div>
+                @endif
+            </div>
             @endif
 
             <div class="border-t pt-4">

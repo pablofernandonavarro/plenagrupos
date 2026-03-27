@@ -26,6 +26,10 @@ class UserImportController extends Controller
         'peso_ideal',
         'peso_piso',
         'peso_techo',
+        'fecha_nacimiento',
+        'genero',
+        'altura_cm',
+        'objetivo_personal',
         'rol',
     ];
 
@@ -85,7 +89,11 @@ class UserImportController extends Controller
             $sheet->getCell('G'.$row)->setValue($p->ideal_weight ?? '');
             $sheet->getCell('H'.$row)->setValue($p->peso_piso ?? '');
             $sheet->getCell('I'.$row)->setValue($p->peso_techo ?? '');
-            $sheet->getCell('J'.$row)->setValue('patient');
+            $sheet->getCell('J'.$row)->setValue($p->birth_date ? $p->birth_date->format('d/m/Y') : '');
+            $sheet->getCell('K'.$row)->setValue($p->gender ?? '');
+            $sheet->getCell('L'.$row)->setValue($p->height_cm ?? '');
+            $sheet->getCell('M'.$row)->setValue($p->personal_goal ?? '');
+            $sheet->getCell('N'.$row)->setValue('patient');
             $row++;
         }
 
@@ -150,10 +158,31 @@ class UserImportController extends Controller
             $plan = $get('plan');
             $faseActual = $get('fase_actual', 'fase');
             $planStartRaw = $get('fecha inicio del plan', 'fecha_inicio', 'inicio_plan');
-            $idealWeight = $get('peso_ideal');
-            $pesoPiso = $get('peso_piso');
-            $pesoTecho = $get('peso_techo');
-            $role = $get('rol', 'role') ?? 'patient';
+            $idealWeight    = $get('peso_ideal');
+            $pesoPiso       = $get('peso_piso');
+            $pesoTecho      = $get('peso_techo');
+            $birthDateRaw   = $get('fecha_nacimiento', 'birth_date');
+            $gender         = $get('genero', 'gender');
+            $heightCm       = $get('altura_cm', 'height_cm');
+            $personalGoal   = $get('objetivo_personal', 'personal_goal');
+            $role           = $get('rol', 'role') ?? 'patient';
+
+            // Validate gender
+            if ($gender && ! in_array($gender, ['male', 'female', 'other'])) {
+                $gender = null;
+            }
+
+            // Parse birth_date
+            $birthDate = null;
+            if ($birthDateRaw) {
+                try {
+                    $birthDate = Carbon::createFromFormat('d/m/Y', $birthDateRaw)
+                        ?->format('Y-m-d')
+                        ?? Carbon::parse($birthDateRaw)->format('Y-m-d');
+                } catch (\Exception) {
+                    $errors[] = "Fila {$i}: fecha_nacimiento inválida ({$birthDateRaw}) — usá el formato dd/mm/aaaa";
+                }
+            }
             $role = in_array($role, ['patient', 'coordinator']) ? $role : 'patient';
 
             // Validate plan
@@ -204,23 +233,33 @@ class UserImportController extends Controller
                     if ($pesoTecho !== null) {
                         $user->peso_techo = (float) $pesoTecho;
                     }
+                    if ($personalGoal !== null) {
+                        $user->personal_goal = $personalGoal;
+                    }
                 }
+                if ($birthDate  !== null) $user->birth_date = $birthDate;
+                if ($gender     !== null) $user->gender     = $gender;
+                if ($heightCm   !== null) $user->height_cm  = (int) $heightCm;
                 $user->save();
                 $updated++;
             } else {
                 User::create([
-                    'name' => $name,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'role' => $role,
-                    'plan' => $role === 'patient' ? $plan : null,
-                    'fase_actual' => $role === 'patient' ? $faseActual : null,
-                    'plan_start_date' => $role === 'patient' ? $planStart : null,
-                    'ideal_weight' => $idealWeight ? (float) $idealWeight : null,
-                    'peso_piso' => $pesoPiso ? (float) $pesoPiso : null,
-                    'peso_techo' => $pesoTecho ? (float) $pesoTecho : null,
+                    'name'           => $name,
+                    'email'          => $email,
+                    'phone'          => $phone,
+                    'role'           => $role,
+                    'plan'           => $role === 'patient' ? $plan : null,
+                    'fase_actual'    => $role === 'patient' ? $faseActual : null,
+                    'plan_start_date'=> $role === 'patient' ? $planStart : null,
+                    'ideal_weight'   => $idealWeight ? (float) $idealWeight : null,
+                    'peso_piso'      => $pesoPiso    ? (float) $pesoPiso   : null,
+                    'peso_techo'     => $pesoTecho   ? (float) $pesoTecho  : null,
+                    'birth_date'     => $birthDate,
+                    'gender'         => $gender,
+                    'height_cm'      => $heightCm ? (int) $heightCm : null,
+                    'personal_goal'  => $role === 'patient' ? $personalGoal : null,
                     'patient_status' => $role === 'patient' ? 'active' : null,
-                    'password' => Hash::make(Str::random(16)),
+                    'password'       => Hash::make(Str::random(16)),
                 ]);
                 $created++;
             }
