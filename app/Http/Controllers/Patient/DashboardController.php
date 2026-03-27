@@ -35,10 +35,9 @@ class DashboardController extends Controller
                 'minutes'  => $atts->sum(fn ($a) => (int) $a->attended_at->diffInMinutes($a->left_at)),
             ]);
 
-        // get groups where patient has at least one attendance (open or closed)
-        $attendedGroupIds = GroupAttendance::where('user_id', $user->id)
-            ->distinct()->pluck('group_id');
-        $groups = Group::whereIn('id', $attendedGroupIds)->get();
+        // Only groups where patient is currently enrolled (active pivot)
+        $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('groups.id');
+        $groups = Group::whereIn('id', $enrolledGroupIds)->get();
 
         // Today's attendance per group (to show personal check-in/out status)
         $tz = 'America/Argentina/Buenos_Aires';
@@ -48,8 +47,6 @@ class DashboardController extends Controller
             ->latest('attended_at')
             ->get()
             ->keyBy('group_id');
-
-        $enrolledGroupIds = $user->patientGroups()->wherePivot('left_at', null)->pluck('groups.id');
 
         $sessionHistory = GroupAttendance::where('user_id', $user->id)
             ->with(['group', 'groupSession'])
