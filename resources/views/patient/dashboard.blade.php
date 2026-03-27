@@ -172,7 +172,7 @@
             @endif
         </div>
 
-        @if($enrolledGroupIds->contains($vg->id))
+        @if($myCheckedIn)
         <form action="{{ route('patient.groups.leave', $vg) }}" method="POST"
               onsubmit="return confirm('¿Confirmás que querés salir del grupo «{{ $vg->name }}»?')">
             @csrf
