@@ -79,6 +79,53 @@ class AutoCloseAttendances extends Command
             $closed += $count;
         }
 
+        // 4. Auto-close the group session state for groups whose window has ended
+        //    but were never manually closed (active flag / started_at still set).
+
+        // 4a. Non-recurring groups: active=true and started_at + duration has passed
+        $openManual = Group::where('recurrence_type', 'none')
+            ->where('active', true)
+            ->whereNotNull('started_at')
+            ->get();
+
+        foreach ($openManual as $group) {
+            $duration   = (int) ($group->session_duration_minutes ?? 120);
+            $autoCloseAt = Carbon::parse($group->getRawOriginal('started_at'))
+                ->timezone($tz)
+                ->addMinutes($duration);
+
+            if ($now->gt($autoCloseAt)) {
+                $group->update(['active' => false, 'ended_at' => $autoCloseAt]);
+            }
+        }
+
+        // 4b. Recurring groups manually opened today (started_at = today, ended_at null)
+        //     but whose scheduled window has ended
+        $openRecurring = Group::whereNotIn('recurrence_type', ['none'])
+            ->whereNotNull('started_at')
+            ->whereDate('started_at', $now->toDateString())
+            ->whereNull('ended_at')
+            ->whereNotNull('meeting_time')
+            ->get();
+
+        foreach ($openRecurring as $group) {
+            [$h, $m]  = array_pad(explode(':', $group->meeting_time), 2, '0');
+            $duration = (int) ($group->session_duration_minutes ?? 120);
+            $sessionEnd = $now->copy()->setTime((int) $h, (int) $m, 0)->addMinutes($duration);
+
+            if ($now->gt($sessionEnd)) {
+                $group->update(['ended_at' => $sessionEnd, 'started_at' => null]);
+            }
+        }
+
+        // 4c. Recurring groups with a stale started_at from a previous day (coordinator
+        //     never closed and never came back) — clear the flag so they reset cleanly
+        Group::whereNotIn('recurrence_type', ['none'])
+            ->whereNotNull('started_at')
+            ->whereDate('started_at', '<', $now->toDateString())
+            ->whereNull('ended_at')
+            ->update(['started_at' => null]);
+
         $this->info("Auto-closed {$closed} open attendance(s).");
     }
 }

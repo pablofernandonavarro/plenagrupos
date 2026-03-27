@@ -20,3 +20,6 @@ Schedule::command('attendances:auto-close')
     ->timezone('America/Argentina/Buenos_Aires')
     ->withoutOverlapping();
 
+// Aggregate Pulse monitoring data every minute
+Schedule::command('pulse:check')->everyMinute();
+
