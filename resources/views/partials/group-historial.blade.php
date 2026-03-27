@@ -11,9 +11,22 @@
 
         {{-- Índice de sesiones --}}
         @if($groupSessions->isNotEmpty())
-            @php $today = \Carbon\Carbon::today()->toDateString(); @endphp
+            @php
+                $today = \Carbon\Carbon::today()->toDateString();
+                $totalSessions = $groupSessions->count();
+                $showToggle = $totalSessions > 5;
+            @endphp
             <div class="pt-3">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Sesiones del programa</p>
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sesiones del programa</p>
+                    @if($showToggle)
+                        <button type="button" id="sessions-toggle"
+                            onclick="toggleSessions()"
+                            class="text-xs text-teal-600 hover:text-teal-700 font-medium transition">
+                            Ver todas ({{ $totalSessions }})
+                        </button>
+                    @endif
+                </div>
                 <div class="overflow-x-auto rounded-lg border border-gray-100">
                     <table class="w-full text-sm min-w-[22rem]">
                         <thead class="bg-gray-50 text-xs text-gray-400 uppercase tracking-wide">
@@ -25,14 +38,16 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
-                            @foreach($groupSessions as $sess)
+                            @foreach($groupSessions as $i => $sess)
                                 @php
                                     $sessDate = $sess->session_date->toDateString();
                                     $isToday  = $sessDate === $today;
                                     $isPast   = $sessDate < $today;
                                     $url = $historialFormAction . '?' . http_build_query(['historial' => $sessDate]);
+                                    $hidden = $showToggle && $i >= 5;
                                 @endphp
-                                <tr class="hover:bg-gray-50/80 transition cursor-pointer" onclick="window.location='{{ $url }}'">
+                                <tr class="hover:bg-gray-50/80 transition cursor-pointer session-row{{ $hidden ? ' hidden' : '' }}"
+                                    onclick="window.location='{{ $url }}'">
                                     <td class="px-3 py-2.5 font-semibold text-gray-700 tabular-nums">{{ $sess->sequence_number }}</td>
                                     <td class="px-3 py-2.5 text-gray-600">
                                         {{ $sess->session_date->locale('es')->translatedFormat('D d/m/Y') }}
@@ -57,6 +72,20 @@
                     </table>
                 </div>
             </div>
+            @if($showToggle)
+            <script>
+            let sessionsExpanded = false;
+            function toggleSessions() {
+                sessionsExpanded = !sessionsExpanded;
+                document.querySelectorAll('.session-row.hidden, .session-row[data-hidden]').forEach(r => r.classList.toggle('hidden'));
+                document.querySelectorAll('.session-row').forEach((r, i) => {
+                    if (i >= 5) r.classList.toggle('hidden', !sessionsExpanded);
+                });
+                const btn = document.getElementById('sessions-toggle');
+                btn.textContent = sessionsExpanded ? 'Ver menos' : 'Ver todas ({{ $totalSessions }})';
+            }
+            </script>
+            @endif
         @endif
 
         @if($historyDates->isEmpty())

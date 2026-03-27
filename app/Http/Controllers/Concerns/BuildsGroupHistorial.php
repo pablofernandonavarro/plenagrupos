@@ -106,7 +106,7 @@ trait BuildsGroupHistorial
 
         $groupSessions = $group->groupSessions()
             ->withCount('attendances')
-            ->orderBy('sequence_number')
+            ->orderByDesc('sequence_number')
             ->get();
 
         return compact('historyDates', 'historialDate', 'historialStats', 'historialAttendances', 'historialMembershipEvents', 'groupSessions');
