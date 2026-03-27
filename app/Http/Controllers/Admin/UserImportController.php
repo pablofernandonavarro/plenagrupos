@@ -226,13 +226,11 @@ class UserImportController extends Controller
             }
         }
 
-        $message = "Importación completada: {$created} creado(s), {$updated} actualizado(s).";
-
-        if ($errors) {
-            return back()->with('import_errors', $errors)->with('success', $message);
-        }
-
-        return back()->with('success', $message);
+        return back()
+            ->with('import_done', true)
+            ->with('import_created', $created)
+            ->with('import_updated', $updated)
+            ->with('import_errors', $errors ?: []);
     }
 
     /** Convert 0-based index to Excel column letter (A, B, ..., Z, AA, ...) */
