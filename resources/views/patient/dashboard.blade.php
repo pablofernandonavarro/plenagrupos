@@ -123,13 +123,14 @@
     {{-- Groups info --}}
     @foreach($groups as $vg)
         @php
-            $joinUrl     = $vg->modality === 'virtual' ? route('group.join', $vg->qr_token) : null;
-            $enSesion    = $vg->isLiveSessionNow();
-            $myToday     = $todayAttendances[$vg->id] ?? null;
-            $myCheckedIn = $myToday && !$myToday->left_at;
-            $myLeft      = $myToday && $myToday->left_at;
+            $joinUrl        = $vg->modality === 'virtual' ? route('group.join', $vg->qr_token) : null;
+            $enSesion       = $vg->isLiveSessionNow();
+            $myToday        = $todayAttendances[$vg->id] ?? null;
+            $myCheckedIn    = $myToday && !$myToday->left_at && $enSesion;
+            $myNoCheckout   = $myToday && !$myToday->left_at && !$enSesion;
+            $myLeft         = $myToday && $myToday->left_at;
         @endphp
-        <div class="rounded-xl border overflow-hidden {{ $enSesion && $myCheckedIn ? 'border-green-400 shadow-green-100 shadow-md' : ($enSesion ? 'border-green-200' : 'border-gray-200') }}">
+        <div class="rounded-xl border overflow-hidden {{ $myCheckedIn ? 'border-green-400 shadow-green-100 shadow-md' : ($enSesion ? 'border-green-200' : 'border-gray-200') }}">
             <div class="px-4 py-3 flex items-start justify-between gap-2 {{ $enSesion ? 'bg-green-50' : 'bg-teal-50' }}">
                 <div>
                     <p class="font-semibold text-gray-800 leading-snug">{{ $vg->name }}</p>
@@ -143,6 +144,8 @@
                         <p class="text-xs text-green-600 font-semibold mt-1">● Estás en sesión</p>
                     @elseif($myLeft)
                         <p class="text-xs text-gray-500 mt-1">✓ Asististe hoy · saliste {{ $myToday->left_at->format('H:i') }} hs</p>
+                    @elseif($myNoCheckout)
+                        <p class="text-xs text-gray-500 mt-1">✓ Asististe hoy · {{ $myToday->attended_at->format('H:i') }} hs</p>
                     @elseif($enSesion)
                         <p class="text-xs text-gray-400 mt-1">— No registraste entrada hoy</p>
                     @endif
