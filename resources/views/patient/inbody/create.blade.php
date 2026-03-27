@@ -203,16 +203,17 @@ function addImageSlot() {
     wrapper.id = `slot-${idx}`;
     wrapper.className = 'flex items-center gap-2';
 
-    const label = document.createElement('label');
-    label.className = 'flex-1 flex items-center gap-3 border border-gray-200 rounded-xl px-3 py-2.5 cursor-pointer hover:border-teal-400 transition bg-gray-50';
-    label.innerHTML = `
-        <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    // Visual row: position:relative so the input can overlay it fully
+    const row = document.createElement('div');
+    row.className = 'flex-1 relative flex items-center gap-3 border border-gray-200 rounded-xl px-3 py-3 bg-gray-50 cursor-pointer hover:border-teal-400 transition overflow-hidden';
+    row.innerHTML = `
+        <svg class="w-5 h-5 text-gray-400 shrink-0 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
         </svg>
-        <span id="slot-label-${idx}" class="text-sm text-gray-400">Hoja ${idx}</span>
+        <span id="slot-label-${idx}" class="text-sm text-gray-400 pointer-events-none">Hoja ${idx}</span>
         <input type="file" accept="image/*"
-            style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden"
+            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"
             id="slot-file-${idx}" onchange="onSlotChange(${idx}, this)">
     `;
 
@@ -222,7 +223,7 @@ function addImageSlot() {
     removeBtn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
     removeBtn.onclick = () => { wrapper.remove(); slotCount = Math.max(0, slotCount - 1); };
 
-    wrapper.appendChild(label);
+    wrapper.appendChild(row);
     wrapper.appendChild(removeBtn);
     document.getElementById('image-inputs').appendChild(wrapper);
 }
