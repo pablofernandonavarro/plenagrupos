@@ -149,6 +149,8 @@
                     @else
                         <a href="{{ route('patient.dashboard') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Inicio</a>
+                        <a href="{{ route('patient.inbody.create') }}" class="text-sm text-gray-300 transition"
+                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">InBody</a>
                         <a href="{{ route('patient.profile') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Mi perfil</a>
                     @endif
@@ -215,6 +217,7 @@
                     <a href="{{ route('coordinator.profile') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
                 @else
                     <a href="{{ route('patient.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Inicio</a>
+                    <a href="{{ route('patient.inbody.create') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">InBody</a>
                     <a href="{{ route('patient.profile') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
                 @endif
 

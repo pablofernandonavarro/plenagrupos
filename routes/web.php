@@ -121,4 +121,7 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient')->name('patient.')
     Route::post('/peso', [Patient\WeightController::class, 'store'])->name('weight.store');
     Route::post('/grupos/{group}/salir', [Patient\DashboardController::class, 'leaveGroup'])->name('groups.leave');
     Route::get('/asistencias/estado', [Patient\DashboardController::class, 'attendanceStatus'])->name('attendances.status');
+    Route::get('/inbody', [Patient\InbodyController::class, 'create'])->name('inbody.create');
+    Route::post('/inbody/extraer', [Patient\InbodyController::class, 'extract'])->name('inbody.extract');
+    Route::post('/inbody', [Patient\InbodyController::class, 'store'])->name('inbody.store');
 });
