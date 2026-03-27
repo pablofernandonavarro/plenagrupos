@@ -5,7 +5,7 @@
 <div class="space-y-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Adherencia y completitud</h1>
-        <p class="text-gray-500 text-sm mt-1">Última visita grupal, último peso e InBody por paciente. Las alertas marcan si hace más de N días sin visita o sin registro de peso.</p>
+        <p class="text-gray-500 text-sm mt-1">Última visita grupal, último peso e InBody por paciente.</p>
     </div>
 
     {{-- Export CSV --}}
@@ -41,23 +41,72 @@
         </details>
     </div>
 
-    <form method="get" action="{{ route('admin.adherence.index') }}" class="flex flex-wrap items-end gap-4 bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-        <div>
-            <label for="alert_days" class="block text-xs text-gray-500 mb-1">Alerta si sin visita o sin peso hace más de (días)</label>
-            <input type="number" name="alert_days" id="alert_days" value="{{ $alertDays }}" min="1" max="365"
-                   class="rounded-lg border border-gray-200 text-sm py-2 px-3 w-28">
+    {{-- Filtros --}}
+    <form method="get" action="{{ route('admin.adherence.index') }}" class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <h2 class="font-semibold text-gray-800 mb-1">Umbrales de alerta</h2>
+        <p class="text-xs text-gray-400 mb-4">Se marca en rojo cuando el paciente supera los días configurados sin registro.</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            {{-- Visita --}}
+            <div class="flex flex-col gap-1">
+                <label for="alert_days_att" class="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+                    Sin visita grupal (días)
+                </label>
+                <input type="number" name="alert_days_att" id="alert_days_att"
+                       value="{{ $alertDaysAtt }}" min="1" max="365"
+                       class="rounded-lg border border-gray-200 text-sm py-2 px-3 w-full focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none">
+                <span class="text-[11px] text-gray-400">Por defecto: 14 días</span>
+            </div>
+
+            {{-- Peso --}}
+            <div class="flex flex-col gap-1">
+                <label for="alert_days_weight" class="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-400"></span>
+                    Sin registro de peso (días)
+                </label>
+                <input type="number" name="alert_days_weight" id="alert_days_weight"
+                       value="{{ $alertDaysWeight }}" min="1" max="365"
+                       class="rounded-lg border border-gray-200 text-sm py-2 px-3 w-full focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none">
+                <span class="text-[11px] text-gray-400">Por defecto: 14 días</span>
+            </div>
+
+            {{-- InBody --}}
+            <div class="flex flex-col gap-1">
+                <label for="alert_days_inbody" class="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-purple-400"></span>
+                    Sin InBody (días)
+                </label>
+                <input type="number" name="alert_days_inbody" id="alert_days_inbody"
+                       value="{{ $alertDaysInbody }}" min="1" max="365"
+                       class="rounded-lg border border-gray-200 text-sm py-2 px-3 w-full focus:ring-2 focus:ring-purple-300 focus:border-purple-400 outline-none">
+                <span class="text-[11px] text-gray-400">Por defecto: 30 días</span>
+            </div>
         </div>
-        <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-            <input type="checkbox" name="solo_alertas" value="1" {{ $onlyAlerts ? 'checked' : '' }}
-                   class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-            Solo filas con alerta
-        </label>
-        <button type="submit" class="px-4 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition">Aplicar</button>
-        @if(request()->hasAny(['alert_days', 'solo_alertas']))
-            <a href="{{ route('admin.adherence.index') }}" class="text-sm text-gray-500 hover:text-gray-800">Restablecer</a>
-        @endif
+
+        <div class="flex flex-wrap items-center gap-4 border-t border-gray-100 pt-4">
+            <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" name="solo_alertas" value="1" {{ $onlyAlerts ? 'checked' : '' }}
+                       class="rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                Mostrar solo pacientes con alertas
+            </label>
+            <div class="flex items-center gap-2 ml-auto">
+                @if(request()->hasAny(['alert_days_att', 'alert_days_weight', 'alert_days_inbody', 'solo_alertas']))
+                    <a href="{{ route('admin.adherence.index') }}" class="text-sm text-gray-400 hover:text-gray-700 transition">Restablecer</a>
+                @endif
+                <button type="submit" class="px-5 py-2 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition">Aplicar filtros</button>
+            </div>
+        </div>
     </form>
 
+    {{-- Leyenda --}}
+    <div class="flex flex-wrap gap-3 text-xs text-gray-500">
+        <span class="inline-flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-400"></span> Visita &gt; {{ $alertDaysAtt }}d</span>
+        <span class="inline-flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-400"></span> Peso &gt; {{ $alertDaysWeight }}d</span>
+        <span class="inline-flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-purple-400"></span> InBody &gt; {{ $alertDaysInbody }}d</span>
+    </div>
+
+    {{-- Tabla --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
         <table class="min-w-full text-sm">
             <thead>
@@ -65,26 +114,24 @@
                     <th class="px-4 py-3 font-medium">Paciente</th>
                     <th class="px-4 py-3 font-medium">Estado</th>
                     <th class="px-4 py-3 font-medium">Última visita</th>
-                    <th class="px-4 py-3 font-medium text-right">Días sin visitar</th>
+                    <th class="px-4 py-3 font-medium text-right">Días</th>
                     <th class="px-4 py-3 font-medium">Último peso</th>
-                    <th class="px-4 py-3 font-medium text-right">Días sin pesar</th>
+                    <th class="px-4 py-3 font-medium text-right">Días</th>
                     <th class="px-4 py-3 font-medium">Último InBody</th>
                     <th class="px-4 py-3 font-medium text-right">Días</th>
-                    <th class="px-4 py-3 font-medium">Estado</th>
+                    <th class="px-4 py-3 font-medium">Alertas</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
                 @forelse($rows as $row)
-                    @php
-                        $att = $row['lastAtt'];
-                        $w = $row['lastWeight'];
-                        $in = $row['lastInbody'];
-                    @endphp
-                    <tr class="{{ $row['needsAttention'] ? 'bg-amber-50/80' : 'hover:bg-gray-50/80' }}">
+                    <tr class="{{ $row['needsAttention'] ? 'bg-amber-50/60' : 'hover:bg-gray-50/60' }}">
+                        {{-- Paciente --}}
                         <td class="px-4 py-3">
                             <p class="font-medium text-gray-800">{{ $row['patient']->name }}</p>
                             <p class="text-xs text-gray-400">{{ $row['patient']->email }}</p>
                         </td>
+
+                        {{-- Estado paciente --}}
                         <td class="px-4 py-3 whitespace-nowrap">
                             @php $st = $row['patient']->patient_status ?? 'active'; @endphp
                             <span class="text-xs font-medium px-2 py-0.5 rounded
@@ -94,29 +141,77 @@
                                 {{ $st === 'active' ? 'Activo' : ($st === 'pause' ? 'Pausa' : 'Egreso') }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ $att ? $att->format('d/m/Y H:i') : '—' }}</td>
+
+                        {{-- Última visita --}}
+                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                            {{ $row['lastAtt'] ? $row['lastAtt']->format('d/m/Y H:i') : '—' }}
+                        </td>
                         <td class="px-4 py-3 text-right">
                             @if($row['daysAtt'] !== null)
-                                <span class="{{ $row['daysAtt'] > $alertDays ? 'text-red-600 font-semibold' : 'text-gray-700' }}">{{ $row['daysAtt'] }}</span>
+                                <span class="font-medium {{ $row['attStale'] ? 'text-blue-600' : 'text-gray-600' }}">
+                                    {{ $row['daysAtt'] }}
+                                </span>
                             @else
-                                <span class="text-red-600 font-medium">Nunca</span>
+                                <span class="font-medium text-blue-600">Nunca</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ $w ? $w->format('d/m/Y H:i') : '—' }}</td>
+
+                        {{-- Último peso --}}
+                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                            {{ $row['lastWeight'] ? $row['lastWeight']->format('d/m/Y H:i') : '—' }}
+                        </td>
                         <td class="px-4 py-3 text-right">
                             @if($row['daysW'] !== null)
-                                <span class="{{ $row['daysW'] > $alertDays ? 'text-red-600 font-semibold' : 'text-gray-700' }}">{{ $row['daysW'] }}</span>
+                                <span class="font-medium {{ $row['weightStale'] ? 'text-orange-600' : 'text-gray-600' }}">
+                                    {{ $row['daysW'] }}
+                                </span>
                             @else
-                                <span class="text-red-600 font-medium">Nunca</span>
+                                <span class="font-medium text-orange-600">Nunca</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ $in ? $in->format('d/m/Y') : '—' }}</td>
-                        <td class="px-4 py-3 text-right text-gray-700">{{ $row['daysIn'] !== null ? $row['daysIn'] : '—' }}</td>
-                        <td class="px-4 py-3">
-                            @if($row['needsAttention'])
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-900">Revisar</span>
+
+                        {{-- Último InBody --}}
+                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
+                            {{ $row['lastInbody'] ? $row['lastInbody']->format('d/m/Y') : '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            @if($row['daysIn'] !== null)
+                                <span class="font-medium {{ $row['inbodyStale'] ? 'text-purple-600' : 'text-gray-600' }}">
+                                    {{ $row['daysIn'] }}
+                                </span>
                             @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-800">Al día</span>
+                                <span class="font-medium text-purple-600">Nunca</span>
+                            @endif
+                        </td>
+
+                        {{-- Alertas --}}
+                        <td class="px-4 py-3">
+                            @if(! $row['needsAttention'])
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                    Al día
+                                </span>
+                            @else
+                                <div class="flex flex-col gap-1">
+                                    @if($row['attStale'])
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 whitespace-nowrap">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block"></span>
+                                            Sin visita
+                                        </span>
+                                    @endif
+                                    @if($row['weightStale'])
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 whitespace-nowrap">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block"></span>
+                                            Sin peso
+                                        </span>
+                                    @endif
+                                    @if($row['inbodyStale'])
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-50 text-purple-700 whitespace-nowrap">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block"></span>
+                                            Sin InBody
+                                        </span>
+                                    @endif
+                                </div>
                             @endif
                         </td>
                     </tr>
@@ -129,6 +224,9 @@
         </table>
     </div>
 
-    <p class="text-xs text-gray-400">Mostrando {{ $rows->count() }} paciente(s). «Revisar» = sin visita en más de {{ $alertDays }} días o sin peso registrado en más de {{ $alertDays }} días (o nunca).</p>
+    <p class="text-xs text-gray-400">
+        Mostrando {{ $rows->count() }} paciente(s).
+        Umbrales activos: visita {{ $alertDaysAtt }}d · peso {{ $alertDaysWeight }}d · InBody {{ $alertDaysInbody }}d.
+    </p>
 </div>
 @endsection

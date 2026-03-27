@@ -15,8 +15,10 @@ class PatientAdherenceController extends Controller
 {
     public function index(Request $request): View
     {
-        $alertDays = max(1, min(365, (int) $request->input('alert_days', 14)));
-        $onlyAlerts = $request->boolean('solo_alertas');
+        $alertDaysAtt    = max(1, min(365, (int) $request->input('alert_days_att',    14)));
+        $alertDaysWeight = max(1, min(365, (int) $request->input('alert_days_weight', 14)));
+        $alertDaysInbody = max(1, min(365, (int) $request->input('alert_days_inbody', 30)));
+        $onlyAlerts      = $request->boolean('solo_alertas');
 
         $lastAtt = GroupAttendance::query()
             ->selectRaw('user_id, MAX(attended_at) as last_at')
@@ -40,7 +42,7 @@ class PatientAdherenceController extends Controller
             ->where('role', 'patient')
             ->orderBy('name')
             ->get()
-            ->map(function (User $patient) use ($lastAtt, $lastWeight, $lastInbody, $now, $alertDays, $tz) {
+            ->map(function (User $patient) use ($lastAtt, $lastWeight, $lastInbody, $now, $alertDaysAtt, $alertDaysWeight, $alertDaysInbody, $tz) {
                 $attAt = $lastAtt[$patient->id] ?? null;
                 $wAt   = $lastWeight[$patient->id] ?? null;
                 $inAt  = $lastInbody[$patient->id] ?? null;
@@ -53,18 +55,22 @@ class PatientAdherenceController extends Controller
                 $daysW   = $wCarbon   ? max(0, (int) $wCarbon->copy()->startOfDay()->diffInDays($now))   : null;
                 $daysIn  = $inCarbon  ? max(0, (int) $inCarbon->copy()->startOfDay()->diffInDays($now))  : null;
 
-                $attStale = $attCarbon === null || $daysAtt > $alertDays;
-                $weightStale = $wCarbon === null || $daysW > $alertDays;
+                $attStale    = $attCarbon === null || $daysAtt > $alertDaysAtt;
+                $weightStale = $wCarbon   === null || $daysW   > $alertDaysWeight;
+                $inbodyStale = $inCarbon  === null || $daysIn  > $alertDaysInbody;
 
                 return [
-                    'patient' => $patient,
-                    'lastAtt' => $attCarbon,
-                    'lastWeight' => $wCarbon,
-                    'lastInbody' => $inCarbon,
-                    'daysAtt' => $daysAtt,
-                    'daysW' => $daysW,
-                    'daysIn' => $daysIn,
-                    'needsAttention' => $attStale || $weightStale,
+                    'patient'        => $patient,
+                    'lastAtt'        => $attCarbon,
+                    'lastWeight'     => $wCarbon,
+                    'lastInbody'     => $inCarbon,
+                    'daysAtt'        => $daysAtt,
+                    'daysW'          => $daysW,
+                    'daysIn'         => $daysIn,
+                    'attStale'       => $attStale,
+                    'weightStale'    => $weightStale,
+                    'inbodyStale'    => $inbodyStale,
+                    'needsAttention' => $attStale || $weightStale || $inbodyStale,
                 ];
             });
 
@@ -73,9 +79,11 @@ class PatientAdherenceController extends Controller
         }
 
         return view('admin.adherence.index', [
-            'rows' => $rows,
-            'alertDays' => $alertDays,
-            'onlyAlerts' => $onlyAlerts,
+            'rows'            => $rows,
+            'alertDaysAtt'    => $alertDaysAtt,
+            'alertDaysWeight' => $alertDaysWeight,
+            'alertDaysInbody' => $alertDaysInbody,
+            'onlyAlerts'      => $onlyAlerts,
         ]);
     }
 }
