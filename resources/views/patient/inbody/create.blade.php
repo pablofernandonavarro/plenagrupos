@@ -203,37 +203,36 @@ function addImageSlot() {
     wrapper.id = `slot-${idx}`;
     wrapper.className = 'flex items-center gap-2';
 
-    // Visual row: position:relative so the input can overlay it fully
-    const row = document.createElement('div');
-    row.className = 'flex-1 relative flex items-center gap-3 border border-gray-200 rounded-xl px-3 py-3 bg-gray-50 cursor-pointer hover:border-teal-400 transition';
-    row.innerHTML = `
-        <svg class="w-5 h-5 text-gray-400 shrink-0 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <span id="slot-label-${idx}" class="text-sm text-gray-400 pointer-events-none">Hoja ${idx}</span>
-        <input type="file" accept="image/*"
-            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1"
-            id="slot-file-${idx}" onchange="onSlotChange(${idx}, this)">
+    const inputWrap = document.createElement('div');
+    inputWrap.className = 'flex-1';
+    inputWrap.innerHTML = `
+        <label class="block text-xs text-gray-400 mb-1 pl-1">Hoja ${idx}</label>
+        <input type="file" accept="image/*" id="slot-file-${idx}"
+            onchange="onSlotChange(${idx}, this)"
+            class="block w-full text-sm text-gray-500 border border-gray-200 rounded-xl
+                   file:mr-3 file:py-2.5 file:px-4 file:rounded-l-xl file:border-0 file:border-r file:border-gray-200
+                   file:text-sm file:font-medium file:bg-teal-50 file:text-teal-700
+                   active:file:bg-teal-100 cursor-pointer bg-gray-50">
+        <p id="slot-label-${idx}" class="text-xs text-gray-400 mt-1 pl-1 truncate"></p>
     `;
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
-    removeBtn.className = 'text-gray-300 hover:text-red-400 transition p-1 shrink-0';
+    removeBtn.className = 'text-gray-300 hover:text-red-400 transition p-1 shrink-0 mt-5';
     removeBtn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
     removeBtn.onclick = () => { wrapper.remove(); slotCount = Math.max(0, slotCount - 1); };
 
-    wrapper.appendChild(row);
+    wrapper.appendChild(inputWrap);
     wrapper.appendChild(removeBtn);
     document.getElementById('image-inputs').appendChild(wrapper);
 }
 
 function onSlotChange(idx, input) {
     const lbl = document.getElementById(`slot-label-${idx}`);
-    if (input.files.length) {
-        lbl.textContent = input.files[0].name;
+    if (input.files.length && lbl) {
+        lbl.textContent = '✓ ' + input.files[0].name;
         lbl.classList.remove('text-gray-400');
-        lbl.classList.add('text-gray-700', 'font-medium');
+        lbl.classList.add('text-teal-600', 'font-medium');
     }
 }
 
