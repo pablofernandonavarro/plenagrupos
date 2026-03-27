@@ -33,24 +33,25 @@ class PatientAdherenceController extends Controller
             ->groupBy('user_id')
             ->pluck('last_at', 'user_id');
 
-        $now = Carbon::now();
+        $tz  = 'America/Argentina/Buenos_Aires';
+        $now = Carbon::now($tz)->startOfDay();
 
         $rows = User::query()
             ->where('role', 'patient')
             ->orderBy('name')
             ->get()
-            ->map(function (User $patient) use ($lastAtt, $lastWeight, $lastInbody, $now, $alertDays) {
+            ->map(function (User $patient) use ($lastAtt, $lastWeight, $lastInbody, $now, $alertDays, $tz) {
                 $attAt = $lastAtt[$patient->id] ?? null;
-                $wAt = $lastWeight[$patient->id] ?? null;
-                $inAt = $lastInbody[$patient->id] ?? null;
+                $wAt   = $lastWeight[$patient->id] ?? null;
+                $inAt  = $lastInbody[$patient->id] ?? null;
 
-                $attCarbon = $attAt ? Carbon::parse($attAt) : null;
-                $wCarbon = $wAt ? Carbon::parse($wAt) : null;
-                $inCarbon = $inAt ? Carbon::parse($inAt) : null;
+                $attCarbon = $attAt ? Carbon::parse($attAt)->timezone($tz) : null;
+                $wCarbon   = $wAt   ? Carbon::parse($wAt)->timezone($tz)   : null;
+                $inCarbon  = $inAt  ? Carbon::parse($inAt)->timezone($tz)  : null;
 
-                $daysAtt = $attCarbon ? $attCarbon->diffInDays($now) : null;
-                $daysW = $wCarbon ? $wCarbon->diffInDays($now) : null;
-                $daysIn = $inCarbon ? $inCarbon->startOfDay()->diffInDays($now->copy()->startOfDay()) : null;
+                $daysAtt = $attCarbon ? max(0, (int) $attCarbon->startOfDay()->diffInDays($now)) : null;
+                $daysW   = $wCarbon   ? max(0, (int) $wCarbon->startOfDay()->diffInDays($now))   : null;
+                $daysIn  = $inCarbon  ? max(0, (int) $inCarbon->startOfDay()->diffInDays($now))  : null;
 
                 $attStale = $attCarbon === null || $daysAtt > $alertDays;
                 $weightStale = $wCarbon === null || $daysW > $alertDays;
