@@ -62,6 +62,7 @@ class DashboardController extends Controller
                 'session_num' => $a->groupSession?->sequence_number,
                 'minutes'     => $a->left_at ? (int) $a->attended_at->diffInMinutes($a->left_at) : null,
                 'is_today'    => $a->attended_at->toDateString() === $todayDate,
+                'is_live'     => !$a->left_at && $a->attended_at->toDateString() === $todayDate && ($a->group?->isLiveSessionNow() ?? false),
             ]);
 
         // Chart data (chronological)
