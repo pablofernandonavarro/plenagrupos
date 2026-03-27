@@ -142,6 +142,54 @@
         </div>
     </div>
 
+    {{-- Perfil clínico --}}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Perfil clínico</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Datos biométricos y objetivo personal del paciente</p>
+        </div>
+        <div class="px-5 py-4">
+            @if(session('success'))
+                <div class="mb-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm text-green-700">{{ session('success') }}</div>
+            @endif
+            <form method="POST" action="{{ route('coordinator.patients.clinical-profile', $patient) }}" class="space-y-4">
+                @csrf @method('PATCH')
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Fecha de nacimiento</label>
+                        <input type="date" name="birth_date" value="{{ $patient->birth_date?->format('Y-m-d') }}"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Género</label>
+                        <select name="gender" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
+                            <option value="">— Sin definir —</option>
+                            <option value="female" {{ $patient->gender === 'female' ? 'selected' : '' }}>Femenino</option>
+                            <option value="male"   {{ $patient->gender === 'male'   ? 'selected' : '' }}>Masculino</option>
+                            <option value="other"  {{ $patient->gender === 'other'  ? 'selected' : '' }}>Otro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Altura (cm)</label>
+                        <input type="number" name="height_cm" min="50" max="250" value="{{ $patient->height_cm }}"
+                            placeholder="Ej: 165"
+                            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Objetivo personal</label>
+                    <textarea name="personal_goal" rows="2" maxlength="1000"
+                        placeholder="¿Qué lo motivó a unirse al programa? ¿Qué quiere lograr?"
+                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none">{{ $patient->personal_goal }}</textarea>
+                </div>
+                <button type="submit"
+                    class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                    Guardar
+                </button>
+            </form>
+        </div>
+    </div>
+
     {{-- Stats --}}
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
@@ -406,6 +454,7 @@
             @php
                 $w = $entry['weight'];
                 $ch = $entry['change'];
+                $attId = $entry['attendance_id'];
             @endphp
             <div class="flex gap-4 px-5 py-4 border-b border-gray-50 last:border-0">
                 {{-- Timeline dot --}}
@@ -462,6 +511,36 @@
                             </div>
                         </div>
                     @endif
+
+                    {{-- Coordinator notes --}}
+                    <div class="mt-2">
+                        <button type="button" onclick="toggleNote({{ $attId }})"
+                            id="cnotes-btn-{{ $attId }}"
+                            class="text-xs text-gray-400 hover:text-teal-600 transition flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            @if($entry['coordinator_notes'])
+                                <span>Nota: {{ Str::limit($entry['coordinator_notes'], 40) }}</span>
+                            @else
+                                <span>Agregar nota</span>
+                            @endif
+                        </button>
+                        <div id="cnotes-box-{{ $attId }}" class="{{ $entry['coordinator_notes'] ? '' : 'hidden' }} mt-1.5">
+                            <textarea
+                                id="cnotes-{{ $attId }}"
+                                rows="2"
+                                maxlength="1000"
+                                placeholder="Observación clínica de esta sesión..."
+                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none text-gray-700"
+                            >{{ $entry['coordinator_notes'] }}</textarea>
+                            <button type="button"
+                                onclick="saveNote({{ $attId }})"
+                                class="mt-1 text-xs bg-teal-600 hover:bg-teal-700 text-white px-3 py-1 rounded-lg transition">
+                                Guardar nota
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         @empty
@@ -542,6 +621,33 @@
 @endif
 
 <script>
+function toggleNote(attId) {
+    const box = document.getElementById('cnotes-box-' + attId);
+    box.classList.toggle('hidden');
+}
+
+async function saveNote(attId) {
+    const textarea = document.getElementById('cnotes-' + attId);
+    const notes = textarea?.value ?? '';
+    try {
+        const res = await fetch('{{ url("coordinator/asistencias") }}/' + attId + '/notes', {
+            method: 'PATCH',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ notes }),
+        });
+        if (res.ok) {
+            textarea.style.borderColor = '#10b981';
+            setTimeout(() => textarea.style.borderColor = '', 1500);
+        }
+    } catch {
+        alert('Error al guardar la nota. Intentá nuevamente.');
+    }
+}
+
 async function loadAiAnalysis(force = false) {
     const btn  = document.getElementById('btn-ai');
     const text = document.getElementById('ai-text');

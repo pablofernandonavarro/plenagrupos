@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class GroupAttendance extends Model
 {
-    protected $fillable = ['group_id', 'group_session_id', 'user_id', 'attended_at', 'left_at'];
+    protected $fillable = ['group_id', 'group_session_id', 'user_id', 'attended_at', 'left_at', 'coordinator_notes'];
 
     protected $casts = [
         'attended_at' => 'datetime',

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AiDocument;
 use App\Models\GroupAttendance;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -121,9 +122,11 @@ class PatientController extends Controller
             $key = $att->group_id.'_'.$att->attended_at->format('Y-m-d');
 
             return [
-                'date' => $att->attended_at,
-                'group_name' => $att->group?->name ?? '(Grupo eliminado)',
-                'weight' => $weightByAttendance->get($key)?->weight,
+                'attendance_id'     => $att->id,
+                'date'              => $att->attended_at,
+                'group_name'        => $att->group?->name ?? '(Grupo eliminado)',
+                'weight'            => $weightByAttendance->get($key)?->weight,
+                'coordinator_notes' => $att->coordinator_notes,
             ];
         });
         $timelineWithChange = $timeline->values()->map(function ($entry, $index) use ($timeline) {
@@ -141,6 +144,27 @@ class PatientController extends Controller
             'timelineWithChange', 'trend', 'attendanceRate', 'attendedSessions',
             'totalSessions', 'progressPct', 'inRange', 'chartData'
         ));
+    }
+
+    public function updateClinicalProfile(Request $request, User $patient): RedirectResponse
+    {
+        $data = $request->validate([
+            'birth_date'    => 'nullable|date|before:today',
+            'gender'        => 'nullable|in:male,female,other',
+            'height_cm'     => 'nullable|integer|min:50|max:250',
+            'personal_goal' => 'nullable|string|max:1000',
+        ]);
+
+        $patient->fill($data)->save();
+
+        return back()->with('success', 'Perfil clínico actualizado.');
+    }
+
+    public function updateAttendanceNotes(Request $request, GroupAttendance $attendance): \Illuminate\Http\JsonResponse
+    {
+        $request->validate(['notes' => 'nullable|string|max:1000']);
+        $attendance->update(['coordinator_notes' => $request->input('notes')]);
+        return response()->json(['ok' => true]);
     }
 
     public function updateFase(Request $request, User $patient)
@@ -180,11 +204,17 @@ class PatientController extends Controller
             $groups = $patient->patientGroups()->get();
 
             $firstW = $records->first()?->weight ?? 'desconocido';
-            $lastW = $records->last()?->weight ?? 'desconocido';
-            $trend = $this->weightTrend($records->values());
-            $piso = $patient->peso_piso ?? 'no definido';
-            $techo = $patient->peso_techo ?? 'no definido';
-            $ideal = $patient->ideal_weight ?? 'no definido';
+            $lastW  = $records->last()?->weight  ?? 'desconocido';
+            $trend  = $this->weightTrend($records->values());
+            $piso   = $patient->peso_piso    ?? 'no definido';
+            $techo  = $patient->peso_techo   ?? 'no definido';
+            $ideal  = $patient->ideal_weight ?? 'no definido';
+
+            // Clinical profile
+            $age      = $patient->birth_date ? $patient->birth_date->diffInYears(now()).' años' : null;
+            $genderLbl = match($patient->gender) { 'male' => 'Masculino', 'female' => 'Femenino', 'other' => 'Otro', default => null };
+            $height   = $patient->height_cm ? $patient->height_cm.' cm' : null;
+            $goal     = $patient->personal_goal ?? null;
 
             // Plan info
             $planLabels = [
@@ -300,9 +330,20 @@ class PatientController extends Controller
             // Build prompt sections according to selected flags
             $dataSections = '';
 
+            // Coordinator notes from attendances (last 10 with notes)
+            $coordNotes = $attendances
+                ->filter(fn ($a) => ! empty(trim($a->coordinator_notes ?? '')))
+                ->sortByDesc('attended_at')->take(10)
+                ->map(fn ($a) => "  [{$a->attended_at->format('d/m/Y')}] \"{$a->coordinator_notes}\"")
+                ->join("\n");
+
             if ($incGeneral) {
                 $dataSections .=
                     "=== PERFIL DEL PACIENTE ===\n".
+                    ($age       ? "- Edad: {$age}\n"       : '').
+                    ($genderLbl ? "- Género: {$genderLbl}\n" : '').
+                    ($height    ? "- Altura: {$height}\n"  : '').
+                    ($goal      ? "- Objetivo personal: \"{$goal}\"\n" : '').
                     "- Plan contratado: {$planLabel}\n".
                     ($faseActualLabel ? "- Fase clínica actual: {$faseActualLabel}".($hayConflictoPlan ? ' (DISTINTA al plan contratado)' : '')."\n" : '').
                     ($cycleInfo ? "- {$cycleInfo}\n" : '').
@@ -328,6 +369,10 @@ class PatientController extends Controller
 
             if ($incPatient && $notes) {
                 $dataSections .= "=== COMENTARIOS DEL PACIENTE ===\n{$notes}\n\n";
+            }
+
+            if ($incGeneral && $coordNotes) {
+                $dataSections .= "=== OBSERVACIONES DEL COORDINADOR (por sesión) ===\n{$coordNotes}\n\n";
             }
 
             // Build analysis instructions based on what's included

@@ -26,6 +26,10 @@ class User extends Authenticatable
         'patient_status_at',
         'patient_status_note',
         'belonging_group_id',
+        'birth_date',
+        'gender',
+        'height_cm',
+        'personal_goal',
         'password',
     ];
 
@@ -37,10 +41,11 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'plan_start_date' => 'date',
-            'patient_status_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verified_at'  => 'datetime',
+            'plan_start_date'    => 'date',
+            'birth_date'         => 'date',
+            'patient_status_at'  => 'datetime',
+            'password'           => 'hashed',
         ];
     }
 
