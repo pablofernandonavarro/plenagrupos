@@ -205,7 +205,7 @@ function addImageSlot() {
 
     // Visual row: position:relative so the input can overlay it fully
     const row = document.createElement('div');
-    row.className = 'flex-1 relative flex items-center gap-3 border border-gray-200 rounded-xl px-3 py-3 bg-gray-50 cursor-pointer hover:border-teal-400 transition overflow-hidden';
+    row.className = 'flex-1 relative flex items-center gap-3 border border-gray-200 rounded-xl px-3 py-3 bg-gray-50 cursor-pointer hover:border-teal-400 transition';
     row.innerHTML = `
         <svg class="w-5 h-5 text-gray-400 shrink-0 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -213,7 +213,7 @@ function addImageSlot() {
         </svg>
         <span id="slot-label-${idx}" class="text-sm text-gray-400 pointer-events-none">Hoja ${idx}</span>
         <input type="file" accept="image/*"
-            style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:1"
             id="slot-file-${idx}" onchange="onSlotChange(${idx}, this)">
     `;
 
