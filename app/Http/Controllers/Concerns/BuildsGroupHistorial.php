@@ -52,10 +52,18 @@ trait BuildsGroupHistorial
      */
     protected function buildGroupHistorialData(Group $group, Request $request): array
     {
-        $historyDates = $group->attendances()
+        $attendanceDates = $group->attendances()
             ->orderByDesc('attended_at')
             ->get(['attended_at'])
-            ->map(fn ($a) => $a->attended_at->format('Y-m-d'))
+            ->map(fn ($a) => $a->attended_at->format('Y-m-d'));
+
+        $sessionDates = $group->groupSessions()
+            ->pluck('session_date')
+            ->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))
+            ->filter(fn ($d) => $d <= now()->format('Y-m-d'));
+
+        $historyDates = $attendanceDates
+            ->merge($sessionDates)
             ->unique()
             ->sort()
             ->reverse()
