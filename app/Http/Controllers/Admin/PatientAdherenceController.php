@@ -49,9 +49,9 @@ class PatientAdherenceController extends Controller
                 $wCarbon   = $wAt   ? Carbon::parse($wAt)->timezone($tz)   : null;
                 $inCarbon  = $inAt  ? Carbon::parse($inAt)->timezone($tz)  : null;
 
-                $daysAtt = $attCarbon ? max(0, (int) $attCarbon->startOfDay()->diffInDays($now)) : null;
-                $daysW   = $wCarbon   ? max(0, (int) $wCarbon->startOfDay()->diffInDays($now))   : null;
-                $daysIn  = $inCarbon  ? max(0, (int) $inCarbon->startOfDay()->diffInDays($now))  : null;
+                $daysAtt = $attCarbon ? max(0, (int) $attCarbon->copy()->startOfDay()->diffInDays($now)) : null;
+                $daysW   = $wCarbon   ? max(0, (int) $wCarbon->copy()->startOfDay()->diffInDays($now))   : null;
+                $daysIn  = $inCarbon  ? max(0, (int) $inCarbon->copy()->startOfDay()->diffInDays($now))  : null;
 
                 $attStale = $attCarbon === null || $daysAtt > $alertDays;
                 $weightStale = $wCarbon === null || $daysW > $alertDays;
