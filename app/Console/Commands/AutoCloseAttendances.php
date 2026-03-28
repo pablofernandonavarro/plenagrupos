@@ -6,6 +6,7 @@ use App\Models\Group;
 use App\Models\GroupAttendance;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class AutoCloseAttendances extends Command
 {
@@ -127,5 +128,6 @@ class AutoCloseAttendances extends Command
             ->update(['started_at' => null]);
 
         $this->info("Auto-closed {$closed} open attendance(s).");
+        Log::info("attendances:auto-close ran — closed {$closed} attendance(s).");
     }
 }
