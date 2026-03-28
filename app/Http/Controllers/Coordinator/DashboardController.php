@@ -240,6 +240,12 @@ class DashboardController extends Controller
                 return back()->with('success', 'Sesión de hoy reabierta.');
             }
 
+            if ($group->status !== 'active') {
+                // Start session manually (before the scheduled window)
+                $group->update(['started_at' => now(), 'ended_at' => null]);
+                return back()->with('success', 'Sesión iniciada.');
+            }
+
             // Close today's session and mark exit for all patients still in
             $now = now();
             $group->update(['ended_at' => $now]);

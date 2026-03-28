@@ -314,18 +314,38 @@
                     $endedAt = $group->getRawOriginal('ended_at');
                     $sessionEndedToday = $endedAt && \Carbon\Carbon::parse($endedAt)->timezone($tz)->isToday();
                 @endphp
-                @if($group->auto_sessions && ($sessionEndedToday || $group->status === 'active'))
-                    {{-- Recurring: only close/reopen today's session --}}
-                    <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
-                        @csrf
-                        <button type="submit"
-                            class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition {{ $sessionEndedToday ? 'border border-teal-400 text-teal-600 hover:bg-teal-50' : 'border border-orange-300 text-orange-600 hover:bg-orange-50' }}">
-                            {{ $sessionEndedToday ? 'Reabrir sesión de hoy' : 'Finalizar sesión de hoy' }}
-                        </button>
-                    </form>
-                    <p class="text-[11px] text-gray-400 text-center mt-2">
-                        {{ $sessionEndedToday ? 'La sesión de hoy está cerrada. El programa continúa la próxima clase.' : 'Solo cierra la sesión de hoy. El programa recurrente no se ve afectado.' }}
-                    </p>
+                @if($group->auto_sessions)
+                    @if($sessionEndedToday)
+                        {{-- Session was manually closed today — offer to reopen --}}
+                        <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-teal-400 text-teal-600 hover:bg-teal-50">
+                                Reabrir sesión de hoy
+                            </button>
+                        </form>
+                        <p class="text-[11px] text-gray-400 text-center mt-2">La sesión de hoy está cerrada. El programa continúa la próxima clase.</p>
+                    @elseif($group->status === 'active')
+                        {{-- Session in progress — offer to close --}}
+                        <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-orange-300 text-orange-600 hover:bg-orange-50">
+                                Finalizar sesión de hoy
+                            </button>
+                        </form>
+                        <p class="text-[11px] text-gray-400 text-center mt-2">Solo cierra la sesión de hoy. El programa recurrente no se ve afectado.</p>
+                    @else
+                        {{-- Session not started yet — offer to start early --}}
+                        <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="w-full min-h-[44px] text-sm font-semibold px-4 py-2.5 rounded-xl transition border border-teal-400 text-teal-600 hover:bg-teal-50">
+                                Iniciar sesión de hoy
+                            </button>
+                        </form>
+                        <p class="text-[11px] text-gray-400 text-center mt-2">Abre la sesión manualmente. El cron la cerrará al finalizar el horario programado.</p>
+                    @endif
                 @else
                     <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST"
                           onsubmit="return confirm('¿Finalizar el grupo permanentemente? Esta acción no se puede deshacer.')">
