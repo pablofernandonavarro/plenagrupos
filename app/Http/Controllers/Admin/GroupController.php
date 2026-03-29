@@ -235,7 +235,7 @@ class GroupController extends Controller
 
         $tz = 'America/Argentina/Buenos_Aires';
         $endedAt = $group->getRawOriginal('ended_at');
-        $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday();
+        $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday() && !$group->isLiveSessionNow();
 
         return view('admin.groups.show', array_merge(
             compact('group', 'allCoordinators', 'allPatients', 'qrCode', 'joinUrl', 'attendances', 'totalVisits', 'avgWeight', 'todaySessionRecord', 'sessionEndedToday'),
@@ -372,7 +372,7 @@ class GroupController extends Controller
     {
         $tz = 'America/Argentina/Buenos_Aires';
         $endedAt = $group->getRawOriginal('ended_at');
-        $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday();
+        $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday() && !$group->isLiveSessionNow();
 
         if ($sessionEndedToday) {
             $group->update(['ended_at' => null, 'started_at' => now()]);

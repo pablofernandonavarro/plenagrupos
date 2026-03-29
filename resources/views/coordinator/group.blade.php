@@ -89,7 +89,7 @@
             <div class="flex items-center gap-2 flex-wrap min-w-0">
                 <h2 class="font-semibold text-gray-800">Asistentes</h2>
                 <span id="live-session-badge" class="text-xs font-semibold text-teal-700 tabular-nums shrink-0">@if($todaySessionRecord)Sesión n.º {{ $todaySessionRecord->sequence_number }}@else<span class="text-gray-400 font-normal">—</span>@endif</span>
-                @php $endedAtCheck = $group->getRawOriginal('ended_at'); $sesEndedNow = $endedAtCheck && \Carbon\Carbon::parse($endedAtCheck)->timezone('America/Argentina/Buenos_Aires')->isToday(); @endphp
+                @php $endedAtCheck = $group->getRawOriginal('ended_at'); $sesEndedNow = $endedAtCheck && \Carbon\Carbon::parse($endedAtCheck)->timezone('America/Argentina/Buenos_Aires')->isToday() && !$group->isLiveSessionNow(); @endphp
                 @if($sesEndedNow)
                     <span class="inline-flex items-center gap-1 text-xs text-gray-400 font-normal">
                         <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
@@ -312,7 +312,7 @@
                 @php
                     $tz = 'America/Argentina/Buenos_Aires';
                     $endedAt = $group->getRawOriginal('ended_at');
-                    $sessionEndedToday = $endedAt && \Carbon\Carbon::parse($endedAt)->timezone($tz)->isToday();
+                    $sessionEndedToday = $endedAt && \Carbon\Carbon::parse($endedAt)->timezone($tz)->isToday() && !$group->isLiveSessionNow();
                 @endphp
                 @if($group->auto_sessions)
                     @if($sessionEndedToday)
@@ -529,7 +529,7 @@ async function fetchAttendances() {
 @php
     $tz2 = 'America/Argentina/Buenos_Aires';
     $endedAt2 = $group->getRawOriginal('ended_at');
-    $sessionEndedTodayJs = $endedAt2 && \Carbon\Carbon::parse($endedAt2)->timezone($tz2)->isToday();
+    $sessionEndedTodayJs = $endedAt2 && \Carbon\Carbon::parse($endedAt2)->timezone($tz2)->isToday() && !$group->isLiveSessionNow();
 @endphp
 const sessionEndedToday = {{ $sessionEndedTodayJs ? 'true' : 'false' }};
 

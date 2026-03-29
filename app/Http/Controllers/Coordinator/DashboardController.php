@@ -232,7 +232,7 @@ class DashboardController extends Controller
         // They cannot permanently end the program — that's an admin action.
         if ($isRecurring) {
             $endedAt = $group->getRawOriginal('ended_at');
-            $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday();
+            $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday() && !$group->isLiveSessionNow();
 
             if ($sessionEndedToday) {
                 // Reopen the session (coordinator pressed the button again today)
