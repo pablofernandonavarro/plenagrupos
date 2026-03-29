@@ -129,16 +129,16 @@
             $myCheckedIn    = $myToday && !$myToday->left_at && $enSesion;
             $myNoCheckout   = $myToday && !$myToday->left_at && !$enSesion;
             $myLeft         = $myToday && $myToday->left_at;
+
+            // Solo mostrar si hay sesión en vivo, link virtual, o estado de asistencia hoy
+            $showCard = $enSesion || $joinUrl || $myToday;
         @endphp
+
+        @if($showCard)
         <div class="rounded-xl border overflow-hidden {{ $myCheckedIn ? 'border-green-400 shadow-green-100 shadow-md' : ($enSesion ? 'border-green-200' : 'border-gray-200') }}">
             <div class="px-4 py-3 flex items-start justify-between gap-2 {{ $enSesion ? 'bg-green-50' : 'bg-teal-50' }}">
                 <div>
                     <p class="font-semibold text-gray-800 leading-snug">{{ $vg->name }}</p>
-                    @if($vg->meetingDaysDisplay || $vg->meeting_time)
-                        <p class="text-xs text-gray-500 mt-0.5">
-                            {{ $vg->meetingDaysDisplay }}{{ $vg->meetingDaysDisplay && $vg->meeting_time ? ' · ' : '' }}{{ $vg->meeting_time ? $vg->meeting_time_formatted . ' hs' : '' }}
-                        </p>
-                    @endif
                     {{-- Estado personal de hoy --}}
                     @if($myCheckedIn)
                         <p class="text-xs text-green-600 font-semibold mt-1">● Estás en sesión</p>
@@ -181,6 +181,7 @@
                 Salir del grupo «{{ $vg->name }}»
             </button>
         </form>
+        @endif
         @endif
     @endforeach
 
