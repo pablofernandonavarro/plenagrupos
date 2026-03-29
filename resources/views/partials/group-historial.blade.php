@@ -40,9 +40,12 @@
                         <tbody class="divide-y divide-gray-50">
                             @foreach($groupSessions as $i => $sess)
                                 @php
+                                    $tz = 'America/Argentina/Buenos_Aires';
                                     $sessDate = $sess->session_date->toDateString();
-                                    $isToday  = $sessDate === $today;
-                                    $isPast   = $sessDate < $today;
+                                    $todayDate = \Carbon\Carbon::today($tz)->toDateString();
+                                    $isToday  = $sessDate === $todayDate;
+                                    $isPast   = $sessDate < $todayDate;
+                                    $isFuture = $sessDate > $todayDate;
                                     $url = $historialFormAction . '?' . http_build_query(['historial' => $sessDate]);
                                     $hidden = $showToggle && $i >= 5;
                                 @endphp
@@ -56,13 +59,15 @@
                                         {{ $sess->attendances_count }}
                                     </td>
                                     <td class="px-3 py-2.5">
-                                        @if($isToday)
+                                        @if($isToday && $group->isLiveSessionNow())
                                             <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En curso
                                             </span>
+                                        @elseif($isToday)
+                                            <span class="text-xs text-gray-400 font-medium">Hoy</span>
                                         @elseif($isPast)
                                             <span class="text-xs text-gray-400 font-medium">Realizada</span>
-                                        @else
+                                        @elseif($isFuture)
                                             <span class="text-xs text-purple-500 font-medium">Programada</span>
                                         @endif
                                     </td>
