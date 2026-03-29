@@ -97,6 +97,11 @@ class Group extends Model
     private function isWithinSessionWindowNow(Carbon $now): bool
     {
         [$h, $m] = array_pad(explode(':', $this->meeting_time), 2, '0');
+
+        // Ensure we're working in Argentina timezone
+        $tz = 'America/Argentina/Buenos_Aires';
+        $now = $now->copy()->timezone($tz);
+
         $start = $now->copy()->setTime((int) $h, (int) $m, 0);
         $end = $start->copy()->addMinutes((int) ($this->attributes['session_duration_minutes'] ?? 120));
 
@@ -113,6 +118,11 @@ class Group extends Model
         if (empty($days)) {
             return false;
         }
+
+        // Ensure we're checking day of week in Argentina timezone
+        $tz = 'America/Argentina/Buenos_Aires';
+        $date = $date->copy()->timezone($tz);
+
         $dayMap = ['Domingo' => 0, 'Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6];
         $dayNums = array_values(array_filter(
             array_map(fn ($d) => $dayMap[$d] ?? null, $days),
@@ -168,9 +178,11 @@ class Group extends Model
     /** True when $date falls on a scheduled meeting day for this group. */
     private function isTodayMeetingDay(Carbon $date): bool
     {
+        $tz = 'America/Argentina/Buenos_Aires';
         $type = $this->attributes['recurrence_type'] ?? 'none';
         $interval = max(1, (int) ($this->attributes['recurrence_interval'] ?? 1));
-        $ref = Carbon::parse($this->getRawOriginal('created_at'))->startOfDay();
+        $ref = Carbon::parse($this->getRawOriginal('created_at'))->timezone($tz)->startOfDay();
+        $date = $date->copy()->timezone($tz);
 
         if ($type === 'daily') {
             return (int) $ref->diffInDays($date) % $interval === 0;
