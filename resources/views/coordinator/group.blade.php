@@ -28,9 +28,9 @@
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">Sin iniciar</span>
                     @endif
                 </div>
-                @if($group->meetingDaysDisplay || $group->meeting_time)
+                @if($group->meetingDaysDisplay || $group->meeting_time || $group->session_duration_minutes)
                     <p class="text-sm text-teal-600 font-medium mt-0.5">
-                        {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
+                        {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}{{ ($group->meetingDaysDisplay || $group->meeting_time) && $group->session_duration_minutes ? ' · ' : '' }}{{ $group->session_duration_minutes ? $group->session_duration_minutes . ' min' : '' }}
                     </p>
                 @endif
                 @if($group->started_at || $group->auto_sessions)

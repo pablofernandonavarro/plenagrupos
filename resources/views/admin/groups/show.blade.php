@@ -31,9 +31,9 @@
                     @if($group->description)
                         <p class="text-sm text-gray-500">{{ $group->description }}</p>
                     @endif
-                    @if($group->meetingDaysDisplay || $group->meeting_time)
+                    @if($group->meetingDaysDisplay || $group->meeting_time || $group->session_duration_minutes)
                         <span class="text-xs bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full">
-                            {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
+                            {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}{{ ($group->meetingDaysDisplay || $group->meeting_time) && $group->session_duration_minutes ? ' · ' : '' }}{{ $group->session_duration_minutes ? $group->session_duration_minutes . ' min' : '' }}
                         </span>
                     @endif
                 </div>

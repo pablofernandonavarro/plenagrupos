@@ -106,9 +106,9 @@
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0 flex-1">
                         <h2 class="font-semibold text-gray-900 text-base leading-snug">{{ $group->name }}</h2>
-                        @if($group->meetingDaysDisplay || $group->meeting_time)
+                        @if($group->meetingDaysDisplay || $group->meeting_time || $group->session_duration_minutes)
                             <p class="text-xs text-teal-600 font-medium mt-1">
-                                {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}
+                                {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time ? $group->meeting_time_formatted . ' hs' : '' }}{{ ($group->meetingDaysDisplay || $group->meeting_time) && $group->session_duration_minutes ? ' · ' : '' }}{{ $group->session_duration_minutes ? $group->session_duration_minutes . ' min' : '' }}
                             </p>
                         @endif
                     </div>
@@ -155,17 +155,17 @@
             </div>
 
             {{-- Recurrencia / fechas --}}
-            @if($group->started_at || $group->auto_sessions || ($group->isProgramPending() && ! $group->auto_sessions && ($group->meetingDaysDisplay || $group->meeting_time)))
+            @if($group->started_at || $group->auto_sessions || ($group->isProgramPending() && ! $group->auto_sessions && ($group->meetingDaysDisplay || $group->meeting_time || $group->session_duration_minutes)))
             <div class="px-4 sm:px-5 py-2.5 flex flex-wrap gap-1.5 border-b border-gray-50 bg-gray-50/50">
                 @if($group->started_at)
                     <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-medium">
                         <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         {{ $group->started_at->format('d/m/Y · H:i') }}@if($group->ended_at) → {{ $group->started_at->isSameDay($group->ended_at) ? $group->ended_at->format('H:i') : $group->ended_at->format('d/m/Y · H:i') }}@endif
                     </span>
-                @elseif($group->isProgramPending() && ! $group->auto_sessions && ($group->meetingDaysDisplay || $group->meeting_time))
+                @elseif($group->isProgramPending() && ! $group->auto_sessions && ($group->meetingDaysDisplay || $group->meeting_time || $group->session_duration_minutes))
                     <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-medium">
                         <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time_formatted ? $group->meeting_time_formatted . ' hs' : '' }}
+                        {{ $group->meetingDaysDisplay }}{{ $group->meetingDaysDisplay && $group->meeting_time ? ' · ' : '' }}{{ $group->meeting_time_formatted ? $group->meeting_time_formatted . ' hs' : '' }}{{ ($group->meetingDaysDisplay || $group->meeting_time) && $group->session_duration_minutes ? ' · ' : '' }}{{ $group->session_duration_minutes ? $group->session_duration_minutes . ' min' : '' }}
                     </span>
                 @endif
                 @if($group->auto_sessions)

@@ -139,6 +139,11 @@
             <div class="px-4 py-3 flex items-start justify-between gap-2 {{ $enSesion ? 'bg-green-50' : 'bg-teal-50' }}">
                 <div>
                     <p class="font-semibold text-gray-800 leading-snug">{{ $vg->name }}</p>
+                    @if($vg->meetingDaysDisplay || $vg->meeting_time || $vg->session_duration_minutes)
+                        <p class="text-xs text-teal-600 font-medium mt-0.5">
+                            {{ $vg->meetingDaysDisplay }}{{ $vg->meetingDaysDisplay && $vg->meeting_time ? ' · ' : '' }}{{ $vg->meeting_time ? $vg->meeting_time_formatted . ' hs' : '' }}{{ ($vg->meetingDaysDisplay || $vg->meeting_time) && $vg->session_duration_minutes ? ' · ' : '' }}{{ $vg->session_duration_minutes ? $vg->session_duration_minutes . ' min' : '' }}
+                        </p>
+                    @endif
                     {{-- Estado personal de hoy --}}
                     @if($myCheckedIn)
                         <p class="text-xs text-green-600 font-semibold mt-1">● Estás en sesión</p>
