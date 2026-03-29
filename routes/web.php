@@ -35,6 +35,36 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// Debug route - REMOVE IN PRODUCTION AFTER TESTING
+Route::get('/debug-group/{id}', function ($id) {
+    $group = \App\Models\Group::findOrFail($id);
+    $tz = 'America/Argentina/Buenos_Aires';
+    $now = \Carbon\Carbon::now($tz);
+
+    return response()->json([
+        'group_id' => $group->id,
+        'group_name' => $group->name,
+        'recurrence_type' => $group->recurrence_type,
+        'meeting_time' => $group->meeting_time,
+        'meeting_days' => $group->meeting_days,
+        'session_duration_minutes' => $group->session_duration_minutes,
+        'started_at' => $group->getRawOriginal('started_at'),
+        'ended_at' => $group->getRawOriginal('ended_at'),
+        'active_flag' => $group->attributes['active'] ?? false,
+        'now_argentina' => $now->toDateTimeString(),
+        'now_utc' => \Carbon\Carbon::now('UTC')->toDateTimeString(),
+        'server_time' => now()->toDateTimeString(),
+        'server_timezone' => date_default_timezone_get(),
+        'config_timezone' => config('app.timezone'),
+        'day_of_week_argentina' => $now->dayOfWeek . ' (' . $now->englishDayOfWeek . ')',
+        'is_today_meeting_day' => method_exists($group, 'isTodayMeetingDay') ? 'method is private' : false,
+        'status' => $group->status,
+        'is_live_session_now' => $group->isLiveSessionNow(),
+        'is_program_vigente' => $group->isProgramVigente(),
+        'is_program_closed' => $group->isProgramClosed(),
+    ]);
+});
+
 // QR Group Join
 Route::get('/grupo/{token}', [GroupJoinController::class, 'show'])->name('group.join');
 Route::post('/grupo/{token}', [GroupJoinController::class, 'join'])->name('group.join.post')->middleware('auth');
