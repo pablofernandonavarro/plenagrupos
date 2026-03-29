@@ -6,22 +6,66 @@
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Comparativa por grupo</h1>
         <p class="text-gray-500 text-sm mt-1">
-            Promedio de asistencias por semana en las últimas {{ $weeksWindow }} semanas (desde {{ now()->subWeeks($weeksWindow)->startOfWeek()->format('d/m/Y') }}).
-            Pérdida media solo con ≥2 pesajes en ese grupo. % en rango con piso/techo definidos.
+            Promedio de asistencias por semana. Pérdida media solo con ≥2 pesajes en ese grupo. % en rango con piso/techo definidos.
         </p>
     </div>
 
     @include('admin.analytics._nav', ['active' => 'groups'])
 
+    {{-- Filtros de fecha --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <form method="GET" action="{{ route('admin.analytics.groups') }}" class="space-y-4">
+            <input type="hidden" name="sort" value="{{ $sort }}">
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Fecha desde</label>
+                    <input type="date" name="date_from" value="{{ $dateFrom }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Fecha hasta</label>
+                    <input type="date" name="date_to" value="{{ $dateTo }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold px-4 py-2 rounded-lg transition text-sm">
+                        Aplicar filtro
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 text-sm">
+                <span class="text-gray-500">Períodos rápidos:</span>
+                <button type="submit" name="weeks" value="4" class="text-teal-600 hover:underline">4 semanas</button>
+                <span class="text-gray-300">|</span>
+                <button type="submit" name="weeks" value="8" class="text-teal-600 hover:underline">8 semanas</button>
+                <span class="text-gray-300">|</span>
+                <button type="submit" name="weeks" value="12" class="text-teal-600 hover:underline">12 semanas</button>
+                <span class="text-gray-300">|</span>
+                <button type="submit" name="weeks" value="26" class="text-teal-600 hover:underline">6 meses</button>
+                <span class="text-gray-300">|</span>
+                <button type="submit" name="weeks" value="52" class="text-teal-600 hover:underline">1 año</button>
+            </div>
+
+            <p class="text-xs text-gray-400">
+                Analizando {{ $weeksWindow }} semanas: desde {{ $dateFrom }} hasta {{ $dateTo }}
+            </p>
+        </form>
+    </div>
+
     <div class="flex flex-wrap gap-2 text-sm">
         <span class="text-gray-500">Ordenar:</span>
-        <a href="{{ route('admin.analytics.groups', ['sort' => 'nombre']) }}" class="{{ $sort === 'nombre' ? 'font-semibold text-teal-600' : 'text-gray-600 hover:underline' }}">Nombre</a>
+        @php
+            $filterParams = array_filter(['date_from' => request('date_from'), 'date_to' => request('date_to'), 'weeks' => request('weeks')]);
+        @endphp
+        <a href="{{ route('admin.analytics.groups', array_merge($filterParams, ['sort' => 'nombre'])) }}" class="{{ $sort === 'nombre' ? 'font-semibold text-teal-600' : 'text-gray-600 hover:underline' }}">Nombre</a>
         <span class="text-gray-300">|</span>
-        <a href="{{ route('admin.analytics.groups', ['sort' => 'asistencias']) }}" class="{{ $sort === 'asistencias' ? 'font-semibold text-teal-600' : 'text-gray-600 hover:underline' }}">Asistencias/sem</a>
+        <a href="{{ route('admin.analytics.groups', array_merge($filterParams, ['sort' => 'asistencias'])) }}" class="{{ $sort === 'asistencias' ? 'font-semibold text-teal-600' : 'text-gray-600 hover:underline' }}">Asistencias/sem</a>
         <span class="text-gray-300">|</span>
-        <a href="{{ route('admin.analytics.groups', ['sort' => 'rango']) }}" class="{{ $sort === 'rango' ? 'font-semibold text-teal-600' : 'text-gray-600 hover:underline' }}">% en rango</a>
+        <a href="{{ route('admin.analytics.groups', array_merge($filterParams, ['sort' => 'rango'])) }}" class="{{ $sort === 'rango' ? 'font-semibold text-teal-600' : 'text-gray-600 hover:underline' }}">% en rango</a>
         <span class="text-gray-300">|</span>
-        <a href="{{ route('admin.analytics.groups', ['sort' => 'perdida']) }}" class="{{ $sort === 'perdida' ? 'font-semibold text-teal-600' : 'text-gray-600 hover:underline' }}">Pérdida media</a>
+        <a href="{{ route('admin.analytics.groups', array_merge($filterParams, ['sort' => 'perdida'])) }}" class="{{ $sort === 'perdida' ? 'font-semibold text-teal-600' : 'text-gray-600 hover:underline' }}">Pérdida media</a>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">

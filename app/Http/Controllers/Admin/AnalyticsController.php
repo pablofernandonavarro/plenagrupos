@@ -26,10 +26,25 @@ class AnalyticsController extends Controller
      */
     public function groups(Request $request)
     {
-        $since = now()->subWeeks(self::WEEKS_WINDOW)->startOfWeek();
+        // Permitir filtro personalizado de fechas o usar ventana por defecto
+        $weeksWindow = $request->integer('weeks', self::WEEKS_WINDOW);
+        $weeksWindow = max(1, min(52, $weeksWindow)); // Entre 1 y 52 semanas
+
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        if ($dateFrom && $dateTo) {
+            $since = Carbon::parse($dateFrom)->startOfDay();
+            $until = Carbon::parse($dateTo)->endOfDay();
+            $weeksCount = max(1, $since->diffInWeeks($until));
+        } else {
+            $since = now()->subWeeks($weeksWindow)->startOfWeek();
+            $until = now();
+            $weeksCount = $weeksWindow;
+        }
 
         $attendanceTotals = GroupAttendance::query()
-            ->where('attended_at', '>=', $since)
+            ->whereBetween('attended_at', [$since, $until])
             ->selectRaw('group_id, COUNT(*) as total')
             ->groupBy('group_id')
             ->pluck('total', 'group_id');
@@ -39,9 +54,9 @@ class AnalyticsController extends Controller
             ->orderBy('name')
             ->get();
 
-        $rows = $groups->map(function (Group $group) use ($attendanceTotals) {
+        $rows = $groups->map(function (Group $group) use ($attendanceTotals, $weeksCount) {
             $total = (int) ($attendanceTotals[$group->id] ?? 0);
-            $avgWeekly = round($total / self::WEEKS_WINDOW, 2);
+            $avgWeekly = round($total / $weeksCount, 2);
 
             $patientCount = $group->patients->count();
 
@@ -99,8 +114,11 @@ class AnalyticsController extends Controller
 
         return view('admin.analytics.groups', [
             'rows' => $rows,
-            'weeksWindow' => self::WEEKS_WINDOW,
+            'weeksWindow' => $weeksCount,
             'sort' => $sort,
+            'dateFrom' => $dateFrom ?? $since->format('Y-m-d'),
+            'dateTo' => $dateTo ?? $until->format('Y-m-d'),
+            'weeksInput' => $weeksWindow,
         ]);
     }
 
