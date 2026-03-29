@@ -97,6 +97,13 @@ class AutoCloseAttendances extends Command
 
             if ($now->gt($autoCloseAt)) {
                 $group->update(['active' => false, 'ended_at' => $autoCloseAt]);
+
+                // Close all open attendances
+                $count = GroupAttendance::where('group_id', $group->id)
+                    ->whereNull('left_at')
+                    ->update(['left_at' => $autoCloseAt]);
+
+                $closed += $count;
             }
         }
 
@@ -116,6 +123,14 @@ class AutoCloseAttendances extends Command
 
             if ($now->gt($sessionEnd)) {
                 $group->update(['ended_at' => $sessionEnd, 'started_at' => null]);
+
+                // Close all open attendances for today
+                $count = GroupAttendance::where('group_id', $group->id)
+                    ->whereDate('attended_at', $now->toDateString())
+                    ->whereNull('left_at')
+                    ->update(['left_at' => $sessionEnd]);
+
+                $closed += $count;
             }
         }
 
