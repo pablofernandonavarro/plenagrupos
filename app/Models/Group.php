@@ -125,25 +125,34 @@ class Group extends Model
     /** Sesión en curso ahora (ventana horaria de hoy): recurrente o manual con día/hora. */
     public function isLiveSessionNow(): bool
     {
-        if (! $this->meeting_time) {
-            return false;
-        }
-
         if ($this->isProgramClosed()) {
             return false;
         }
 
         $tz = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz);
-        $type = $this->attributes['recurrence_type'] ?? 'none';
+        $startedAt = $this->getRawOriginal('started_at');
+        $endedAt = $this->getRawOriginal('ended_at');
 
-        // If coordinator manually ended today's session, it's not live
-        if ($type !== 'none') {
-            $endedAt = $this->getRawOriginal('ended_at');
-            if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
-                return false;
+        // If coordinator manually started today's session and hasn't ended it, it's live
+        if ($startedAt && Carbon::parse($startedAt)->timezone($tz)->isToday()) {
+            // Check if it hasn't been ended today
+            if (!$endedAt || !Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+                return true;
             }
         }
+
+        // If coordinator manually ended today's session, it's not live
+        if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+            return false;
+        }
+
+        // Otherwise, check scheduled time window
+        if (! $this->meeting_time) {
+            return false;
+        }
+
+        $type = $this->attributes['recurrence_type'] ?? 'none';
 
         if ($type === 'none') {
             if (! $this->isManualMeetingDay($now)) {
