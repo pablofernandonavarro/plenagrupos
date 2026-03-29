@@ -50,7 +50,7 @@
             </select>
         </div>
         <div class="flex items-center gap-2">
-            @foreach(['today'=>'Hoy', 'active'=>'Vigentes', 'closed'=>'Finalizados', ''=>'Todos'] as $val => $label)
+            @foreach(['today'=>'Hoy', 'live'=>'En curso', 'active'=>'Vigentes', 'closed'=>'Finalizados', ''=>'Todos'] as $val => $label)
                 <button type="button"
                     onclick="document.getElementById('status-input').value='{{ $val }}'; this.closest('form').submit()"
                     class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm font-medium border transition
@@ -227,6 +227,9 @@
                 @if($status === 'today')
                     <p class="font-medium text-gray-500">No hay grupos programados para hoy</p>
                     <p class="text-sm mt-1 text-gray-400">Los grupos con sesión hoy aparecerán aquí</p>
+                @elseif($status === 'live')
+                    <p class="font-medium text-gray-500">No hay grupos en sesión ahora</p>
+                    <p class="text-sm mt-1 text-gray-400">Los grupos con sesión en vivo aparecerán aquí</p>
                 @elseif($status === 'active')
                     <p class="font-medium text-gray-500">No hay grupos vigentes</p>
                     <a href="{{ route('admin.groups.create') }}" class="mt-2 inline-block text-teal-600 hover:underline text-sm">Crear grupo</a>

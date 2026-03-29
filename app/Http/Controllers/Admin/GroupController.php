@@ -33,6 +33,14 @@ class GroupController extends Controller
             if ($search = $request->input('search')) {
                 $query->where('name', 'like', '%'.$search.'%');
             }
+        } elseif ($status === 'live') {
+            // Grupos con sesión en vivo ahora
+            $query = Group::with(['coordinators', 'patients'])
+                ->orderByRaw('CASE WHEN meeting_time IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('meeting_time');
+            if ($search = $request->input('search')) {
+                $query->where('name', 'like', '%'.$search.'%');
+            }
         } else {
             $query = Group::with(['coordinators', 'patients'])->latest();
             if ($search = $request->input('search')) {
@@ -86,6 +94,19 @@ class GroupController extends Controller
                 ]
             );
             $groups->getCollection()->load(['groupSessions' => fn ($q) => $q->where('session_date', $now->toDateString())]);
+        } elseif ($status === 'live') {
+            $filtered = $query->get()->filter(fn (Group $group) => $group->isLiveSessionNow())->values();
+            $page = LengthAwarePaginator::resolveCurrentPage();
+            $groups = new LengthAwarePaginator(
+                $filtered->forPage($page, $perPage)->values(),
+                $filtered->count(),
+                $perPage,
+                $page,
+                [
+                    'path' => $request->url(),
+                    'query' => $request->query(),
+                ]
+            );
         } else {
             $groups = $query->paginate($perPage)->withQueryString();
         }
