@@ -63,18 +63,38 @@ class Group extends Model
         $endedAt   = $this->getRawOriginal('ended_at');
         $startedAt = $this->getRawOriginal('started_at');
 
-        // If the coordinator manually closed today's session, treat as pending until tomorrow
-        if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
-            return 'pending';
-        }
-
         // If the coordinator manually (re)opened today's session (started today, not ended),
         // keep it active regardless of the scheduled time window
         if ($startedAt && Carbon::parse($startedAt)->timezone($tz)->isToday()) {
-            return 'active';
+            if (!$endedAt || !Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+                return 'active';
+            }
         }
 
-        return $this->isCurrentlyInSession() ? 'active' : 'pending';
+        // Check if currently in a scheduled session window
+        $inScheduledWindow = $this->isCurrentlyInSession();
+
+        // If the coordinator manually closed today's session
+        if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday() && $inScheduledWindow) {
+            $endedTime = Carbon::parse($endedAt)->timezone($tz);
+            $now = Carbon::now($tz);
+
+            // Get current session window start
+            if ($this->meeting_time) {
+                [$h, $m] = array_pad(explode(':', $this->meeting_time), 2, '0');
+                $windowStart = $now->copy()->setTime((int) $h, (int) $m, 0);
+
+                // If ended before current window started, allow reopening (new session window)
+                if ($endedTime->lt($windowStart)) {
+                    return 'active';
+                }
+
+                // If ended during current window, respect the closure
+                return 'pending';
+            }
+        }
+
+        return $inScheduledWindow ? 'active' : 'pending';
     }
 
     /** True when the current wall-clock time is inside today's session window. */
@@ -152,12 +172,7 @@ class Group extends Model
             }
         }
 
-        // If coordinator manually ended today's session, it's not live
-        if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
-            return false;
-        }
-
-        // Otherwise, check scheduled time window
+        // Check scheduled time window first
         if (! $this->meeting_time) {
             return false;
         }
@@ -172,7 +187,32 @@ class Group extends Model
             return false;
         }
 
-        return $this->isWithinSessionWindowNow($now);
+        $isInWindow = $this->isWithinSessionWindowNow($now);
+
+        // If not in scheduled window, definitely not live
+        if (!$isInWindow) {
+            return false;
+        }
+
+        // If we're in a scheduled window, check if coordinator closed it during this window
+        if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+            $endedTime = Carbon::parse($endedAt)->timezone($tz);
+
+            // Get current session window bounds
+            [$h, $m] = array_pad(explode(':', $this->meeting_time), 2, '0');
+            $windowStart = $now->copy()->setTime((int) $h, (int) $m, 0);
+
+            // If ended before current window started, allow reopening (new session window)
+            if ($endedTime->lt($windowStart)) {
+                return true;
+            }
+
+            // If ended during current window, respect the closure
+            return false;
+        }
+
+        // In window and not manually closed during this window
+        return true;
     }
 
     /** True when $date falls on a scheduled meeting day for this group. */
