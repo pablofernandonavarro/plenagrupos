@@ -35,6 +35,26 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// Debug - REMOVE AFTER TESTING
+Route::get('/debug-patient-group/{groupId}/{userId}', function ($groupId, $userId) {
+    $pivot = DB::table('group_patient')
+        ->where('group_id', $groupId)
+        ->where('user_id', $userId)
+        ->first();
+
+    $user = \App\Models\User::find($userId);
+    $group = \App\Models\Group::find($groupId);
+
+    return response()->json([
+        'user' => $user ? ['id' => $user->id, 'name' => $user->name, 'email' => $user->email] : null,
+        'group' => $group ? ['id' => $group->id, 'name' => $group->name] : null,
+        'pivot_exists' => $pivot !== null,
+        'pivot_data' => $pivot,
+        'active_patients_count' => $group?->patients()->count(),
+        'all_patients_count' => $group?->patientsAll()->count(),
+    ]);
+});
+
 // QR Group Join
 Route::get('/grupo/{token}', [GroupJoinController::class, 'show'])->name('group.join');
 Route::post('/grupo/{token}', [GroupJoinController::class, 'join'])->name('group.join.post')->middleware('auth');
