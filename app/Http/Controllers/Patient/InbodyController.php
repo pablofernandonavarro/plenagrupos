@@ -129,4 +129,70 @@ PROMPT;
         return redirect()->route('patient.inbody.create')
             ->with('success', 'Registro InBody guardado correctamente.');
     }
+
+    public function edit(InbodyRecord $record)
+    {
+        if ($record->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $records = auth()->user()->inbodyRecords()->orderByDesc('test_date')->get();
+
+        return view('patient.inbody.edit', compact('record', 'records'));
+    }
+
+    public function update(Request $request, InbodyRecord $record)
+    {
+        if ($record->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'test_date'            => 'required|date',
+            'weight'               => 'nullable|numeric|min:20|max:300',
+            'skeletal_muscle_mass' => 'nullable|numeric|min:0',
+            'body_fat_mass'        => 'nullable|numeric|min:0',
+            'body_fat_percentage'  => 'nullable|numeric|min:0|max:100',
+            'bmi'                  => 'nullable|numeric|min:0',
+            'basal_metabolic_rate' => 'nullable|integer|min:0',
+            'visceral_fat_level'   => 'nullable|numeric|min:0',
+            'total_body_water'     => 'nullable|numeric|min:0',
+            'proteins'             => 'nullable|numeric|min:0',
+            'minerals'             => 'nullable|numeric|min:0',
+            'inbody_score'         => 'nullable|integer|min:0|max:100',
+            'obesity_degree'       => 'nullable|numeric',
+            'notes'                => 'nullable|string|max:1000',
+            'images'               => 'nullable|array|max:5',
+            'images.*'             => 'image|max:10240',
+        ]);
+
+        if ($request->hasFile('images')) {
+            // Delete old image
+            if ($record->image_path) {
+                Storage::disk('public')->delete($record->image_path);
+            }
+            $validated['image_path'] = $request->file('images')[0]->store("inbody/{$record->user_id}", 'public');
+        }
+
+        $record->update($validated);
+
+        return redirect()->route('patient.inbody.create')
+            ->with('success', 'Registro InBody actualizado correctamente.');
+    }
+
+    public function destroy(InbodyRecord $record)
+    {
+        if ($record->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($record->image_path) {
+            Storage::disk('public')->delete($record->image_path);
+        }
+
+        $record->delete();
+
+        return redirect()->route('patient.inbody.create')
+            ->with('success', 'Registro InBody eliminado correctamente.');
+    }
 }

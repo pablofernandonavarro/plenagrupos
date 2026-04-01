@@ -149,4 +149,7 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient')->name('patient.')
     Route::get('/inbody', [Patient\InbodyController::class, 'create'])->name('inbody.create');
     Route::post('/inbody/extraer', [Patient\InbodyController::class, 'extract'])->name('inbody.extract');
     Route::post('/inbody', [Patient\InbodyController::class, 'store'])->name('inbody.store');
+    Route::get('/inbody/{record}/editar', [Patient\InbodyController::class, 'edit'])->name('inbody.edit');
+    Route::put('/inbody/{record}', [Patient\InbodyController::class, 'update'])->name('inbody.update');
+    Route::delete('/inbody/{record}', [Patient\InbodyController::class, 'destroy'])->name('inbody.destroy');
 });
