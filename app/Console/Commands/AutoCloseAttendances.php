@@ -6,6 +6,7 @@ use App\Models\Group;
 use App\Models\GroupAttendance;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AutoCloseAttendances extends Command
@@ -104,6 +105,12 @@ class AutoCloseAttendances extends Command
                     ->update(['left_at' => $autoCloseAt]);
 
                 $closed += $count;
+
+                // Sacar a todos los pacientes del grupo finalizado
+                DB::table('group_patient')
+                    ->where('group_id', $group->id)
+                    ->whereNull('left_at')
+                    ->update(['left_at' => $autoCloseAt]);
             }
         }
 
@@ -141,6 +148,20 @@ class AutoCloseAttendances extends Command
             ->whereDate('started_at', '<', $now->toDateString())
             ->whereNull('ended_at')
             ->update(['started_at' => null]);
+
+        // 5. Grupos recurrentes que alcanzaron su recurrence_end_date — sacar pacientes
+        $expiredRecurring = Group::whereNotIn('recurrence_type', ['none'])
+            ->whereNotNull('recurrence_end_date')
+            ->where('recurrence_end_date', '<', $now->toDateString())
+            ->get();
+
+        foreach ($expiredRecurring as $group) {
+            // Sacar a todos los pacientes del grupo que alcanzó su fecha de fin
+            DB::table('group_patient')
+                ->where('group_id', $group->id)
+                ->whereNull('left_at')
+                ->update(['left_at' => Carbon::parse($group->recurrence_end_date)->endOfDay()]);
+        }
 
         $this->info("Auto-closed {$closed} open attendance(s).");
         Log::info("attendances:auto-close ran — closed {$closed} attendance(s).");

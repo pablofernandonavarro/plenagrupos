@@ -300,7 +300,12 @@ class GroupController extends Controller
     {
         $request->validate(['user_id' => 'required|exists:users,id']);
 
-        $group->patientsAll()->detach($request->user_id);
+        // Marcar left_at en lugar de eliminar el registro
+        DB::table('group_patient')
+            ->where('group_id', $group->id)
+            ->where('user_id', $request->user_id)
+            ->whereNull('left_at')
+            ->update(['left_at' => now()]);
 
         return back()->with('success', 'Paciente removido del grupo.');
     }
@@ -402,8 +407,16 @@ class GroupController extends Controller
                 $updates['recurrence_end_date'] = Carbon::now($tz)->subDay()->startOfDay()->toDateString();
             }
             $group->update($updates);
+
+            // Cerrar asistencias abiertas del día
             GroupAttendance::where('group_id', $group->id)
                 ->whereDate('attended_at', today())
+                ->whereNull('left_at')
+                ->update(['left_at' => $now]);
+
+            // Sacar a todos los pacientes del grupo
+            DB::table('group_patient')
+                ->where('group_id', $group->id)
                 ->whereNull('left_at')
                 ->update(['left_at' => $now]);
 
@@ -416,8 +429,16 @@ class GroupController extends Controller
                 'recurrence_end_date' => Carbon::now($tz)->subDay()->startOfDay()->toDateString(),
                 'ended_at' => $group->ended_at ?? $now,
             ]);
+
+            // Cerrar asistencias abiertas del día
             GroupAttendance::where('group_id', $group->id)
                 ->whereDate('attended_at', today())
+                ->whereNull('left_at')
+                ->update(['left_at' => $now]);
+
+            // Sacar a todos los pacientes del grupo
+            DB::table('group_patient')
+                ->where('group_id', $group->id)
                 ->whereNull('left_at')
                 ->update(['left_at' => $now]);
 
