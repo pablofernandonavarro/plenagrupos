@@ -198,22 +198,38 @@
             </div>
             <div class="divide-y divide-gray-50">
                 @foreach($sessionHistory as $s)
-                <div class="px-4 py-3 flex items-center justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="text-sm font-medium text-gray-800 truncate">{{ $s->group_name }}</p>
-                        <p class="text-xs text-gray-400 mt-0.5">
-                            {{ $s->date }} · {{ $s->time }} hs
-                            @if($s->session_num) · Sesión {{ $s->session_num }} @endif
-                        </p>
+                <div class="px-4 py-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-gray-800 truncate">{{ $s->group_name }}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                {{ $s->date }} · {{ $s->time }} hs
+                                @if($s->session_num) · Sesión {{ $s->session_num }} @endif
+                                @if($s->has_weight)
+                                    <span class="text-teal-600 font-semibold"> · {{ $s->weight }} kg</span>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="shrink-0 flex items-center gap-2">
+                            @if($s->minutes !== null)
+                                <span class="text-sm font-semibold text-teal-600">{{ $s->minutes }} min</span>
+                            @elseif($s->is_live)
+                                <span class="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700">En curso</span>
+                            @elseif($s->is_today)
+                                <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-400">Sin cierre</span>
+                            @else
+                                <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-400">Sin cierre</span>
+                            @endif
+                        </div>
                     </div>
-                    @if($s->minutes !== null)
-                        <span class="shrink-0 text-sm font-semibold text-teal-600">{{ $s->minutes }} min</span>
-                    @elseif($s->is_live)
-                        <span class="shrink-0 text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700">En curso</span>
-                    @elseif($s->is_today)
-                        <span class="shrink-0 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-400">Sin cierre</span>
-                    @else
-                        <span class="shrink-0 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-400">Sin cierre</span>
+                    @if(!$s->has_weight && !$s->is_live)
+                        <a href="{{ route('patient.weight.create', ['attendance' => $s->id]) }}"
+                           class="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-teal-600 hover:text-teal-700 transition">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Registrar peso de esta sesión
+                        </a>
                     @endif
                 </div>
                 @endforeach

@@ -28,6 +28,11 @@
             </div>
 
             <div>
+                <p class="font-medium mb-1">⏱️ ¿Olvidé registrar mi peso?</p>
+                <p class="text-xs opacity-80">¡No hay problema! En tu <strong>Historial de sesiones</strong> verás un botón "Registrar peso de esta sesión" en las asistencias que no tienen peso. Podés agregarlo después cuando quieras.</p>
+            </div>
+
+            <div>
                 <p class="font-medium mb-1">🎯 Peso ideal y rangos</p>
                 <p class="text-xs opacity-80">Tu coordinador puede definir un <strong>peso piso</strong> y <strong>peso techo</strong> para tu seguimiento. El objetivo es mantenerte en ese rango saludable.</p>
             </div>

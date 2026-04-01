@@ -49,10 +49,11 @@ class DashboardController extends Controller
             ->keyBy('group_id');
 
         $sessionHistory = GroupAttendance::where('user_id', $user->id)
-            ->with(['group', 'groupSession'])
+            ->with(['group', 'groupSession', 'weightRecord'])
             ->latest('attended_at')
             ->get()
             ->map(fn ($a) => (object) [
+                'id'          => $a->id,
                 'group_name'  => $a->group?->name ?? '(grupo eliminado)',
                 'date'        => $a->attended_at->format('d/m/Y'),
                 'time'        => $a->attended_at->format('H:i'),
@@ -60,6 +61,8 @@ class DashboardController extends Controller
                 'minutes'     => $a->left_at ? (int) $a->attended_at->diffInMinutes($a->left_at) : null,
                 'is_today'    => $a->attended_at->toDateString() === $todayDate,
                 'is_live'     => !$a->left_at && $a->attended_at->toDateString() === $todayDate && ($a->group?->isLiveSessionNow() ?? false),
+                'has_weight'  => $a->weightRecord !== null,
+                'weight'      => $a->weightRecord?->weight,
             ]);
 
         // Chart data (chronological)
