@@ -62,6 +62,7 @@ Route::post('/grupo/{token}', [GroupJoinController::class, 'join'])->name('group
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/ayuda', fn() => view('admin.help'))->name('help');
 
     Route::prefix('analytics')->name('analytics.')->group(function () {
         Route::get('/', [AnalyticsController::class, 'index'])->name('index');
@@ -112,6 +113,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 // Coordinator routes
 Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('coordinator.')->group(function () {
     Route::get('/dashboard', [Coordinator\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/ayuda', fn() => view('coordinator.help'))->name('help');
     Route::get('/grupos/{group}', [Coordinator\DashboardController::class, 'showGroup'])->name('groups.show');
     Route::get('/grupos/{group}/asistencia', [Coordinator\DashboardController::class, 'liveAttendances'])->name('groups.live');
     Route::patch('/grupos/{group}/asistencias/{attendance}/checkout', [Coordinator\DashboardController::class, 'checkoutAttendance'])->name('groups.attendance.checkout');
@@ -137,6 +139,7 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
 // Patient routes
 Route::middleware(['auth', 'role:patient'])->prefix('patient')->name('patient.')->group(function () {
     Route::get('/dashboard', [Patient\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/ayuda', fn() => view('patient.help'))->name('help');
     Route::get('/perfil', [Patient\DashboardController::class, 'profile'])->name('profile');
     Route::post('/perfil', [Patient\DashboardController::class, 'updateProfile'])->name('profile.update');
     Route::get('/peso/registrar', [Patient\WeightController::class, 'create'])->name('weight.create');
