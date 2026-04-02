@@ -251,32 +251,39 @@ class GroupController extends Controller
     {
         $tz = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz);
+        $todayDate = $now->toDateString();
 
         // If session is not live, close all open attendances for today
         if (!$group->isLiveSessionNow()) {
-            $todayDate = $now->toDateString();
-
             // Get session end time
             $sessionEnd = null;
-            if ($group->meeting_time && $group->session_duration_minutes) {
-                [$h, $m] = array_pad(explode(':', $group->meeting_time), 2, '0');
-                $sessionEnd = $now->copy()->setTime((int) $h, (int) $m, 0)
-                    ->addMinutes((int) $group->session_duration_minutes);
-            }
 
-            // If manually closed, use that time
+            // Priority 1: If manually closed today, use that time
             $endedAt = $group->getRawOriginal('ended_at');
             if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
                 $sessionEnd = Carbon::parse($endedAt)->timezone($tz);
             }
+            // Priority 2: Use scheduled end time (meeting_time + duration)
+            elseif ($group->meeting_time && $group->session_duration_minutes) {
+                [$h, $m] = array_pad(explode(':', $group->meeting_time), 2, '0');
+                $sessionEnd = $now->copy()->setTime((int) $h, (int) $m, 0)
+                    ->addMinutes((int) $group->session_duration_minutes);
+
+                // Don't use future time, cap at now
+                if ($sessionEnd->isFuture()) {
+                    $sessionEnd = $now;
+                }
+            }
+            // Priority 3: Use current time as fallback
+            else {
+                $sessionEnd = $now;
+            }
 
             // Close open attendances from today
-            if ($sessionEnd) {
-                GroupAttendance::where('group_id', $group->id)
-                    ->whereDate('attended_at', $todayDate)
-                    ->whereNull('left_at')
-                    ->update(['left_at' => $sessionEnd]);
-            }
+            GroupAttendance::where('group_id', $group->id)
+                ->whereDate('attended_at', $todayDate)
+                ->whereNull('left_at')
+                ->update(['left_at' => $sessionEnd]);
         }
     }
 

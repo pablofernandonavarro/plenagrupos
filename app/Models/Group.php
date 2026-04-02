@@ -164,12 +164,20 @@ class Group extends Model
         $startedAt = $this->getRawOriginal('started_at');
         $endedAt = $this->getRawOriginal('ended_at');
 
-        // If coordinator manually started today's session and hasn't ended it, it's live
+        // If manually ended today, it's not live
+        if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+            return false;
+        }
+
+        // If coordinator manually started today's session and hasn't ended it
         if ($startedAt && Carbon::parse($startedAt)->timezone($tz)->isToday()) {
-            // Check if it hasn't been ended today
-            if (!$endedAt || !Carbon::parse($endedAt)->timezone($tz)->isToday()) {
-                return true;
+            // For recurring groups with schedule, check time window
+            if ($this->meeting_time && $this->session_duration_minutes && ($this->attributes['recurrence_type'] ?? 'none') !== 'none') {
+                // Must be within scheduled time window
+                return $this->isWithinSessionWindowNow($now);
             }
+            // For manual groups without schedule, consider live until manually closed
+            return true;
         }
 
         // Check scheduled time window first
