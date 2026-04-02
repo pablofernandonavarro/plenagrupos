@@ -217,6 +217,9 @@ class GroupController extends Controller
 
     public function show(Request $request, Group $group)
     {
+        // Auto-close stale attendances before showing the view
+        $this->autoCloseStaleAttendances($group);
+
         $group->load(['coordinators', 'patients', 'patientsAll']);
         $allCoordinators = User::where('role', 'coordinator')->get();
         $allPatients = User::where('role', 'patient')->get();
@@ -242,6 +245,39 @@ class GroupController extends Controller
             $this->buildGroupHistorialData($group, $request),
             ['historialFormAction' => route('admin.groups.show', $group)]
         ));
+    }
+
+    private function autoCloseStaleAttendances(Group $group)
+    {
+        $tz = 'America/Argentina/Buenos_Aires';
+        $now = Carbon::now($tz);
+
+        // If session is not live, close all open attendances for today
+        if (!$group->isLiveSessionNow()) {
+            $todayDate = $now->toDateString();
+
+            // Get session end time
+            $sessionEnd = null;
+            if ($group->meeting_time && $group->session_duration_minutes) {
+                [$h, $m] = array_pad(explode(':', $group->meeting_time), 2, '0');
+                $sessionEnd = $now->copy()->setTime((int) $h, (int) $m, 0)
+                    ->addMinutes((int) $group->session_duration_minutes);
+            }
+
+            // If manually closed, use that time
+            $endedAt = $group->getRawOriginal('ended_at');
+            if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+                $sessionEnd = Carbon::parse($endedAt)->timezone($tz);
+            }
+
+            // Close open attendances from today
+            if ($sessionEnd) {
+                GroupAttendance::where('group_id', $group->id)
+                    ->whereDate('attended_at', $todayDate)
+                    ->whereNull('left_at')
+                    ->update(['left_at' => $sessionEnd]);
+            }
+        }
     }
 
     public function addCoordinator(Request $request, Group $group)
@@ -312,6 +348,9 @@ class GroupController extends Controller
 
     public function liveAttendances(Group $group)
     {
+        // Auto-close stale attendances before showing live view
+        $this->autoCloseStaleAttendances($group);
+
         $colors = ['#09cda6', '#3b82f6', '#8b5cf6', '#6366f1', '#f43f5e', '#f59e0b', '#06b6d4', '#10b981'];
 
         $tz = 'America/Argentina/Buenos_Aires';

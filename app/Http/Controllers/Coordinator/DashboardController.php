@@ -95,6 +95,9 @@ class DashboardController extends Controller
     {
         $this->ensureCoordinator($group);
 
+        // Auto-close stale attendances before showing the view
+        $this->autoCloseStaleAttendances($group);
+
         $group->load(['patients', 'coordinators']);
         $attendances = $group->attendances()->with(['user', 'weightRecord', 'groupSession'])->latest('attended_at')->paginate(20);
         $avgWeight = $group->weightRecords()->avg('weight');
@@ -141,6 +144,9 @@ class DashboardController extends Controller
     public function liveAttendances(Group $group)
     {
         $this->ensureCoordinator($group);
+
+        // Auto-close stale attendances before showing live view
+        $this->autoCloseStaleAttendances($group);
 
         $colors = ['#09cda6', '#3b82f6', '#8b5cf6', '#6366f1', '#f43f5e', '#f59e0b', '#06b6d4', '#10b981'];
 
@@ -281,5 +287,38 @@ class DashboardController extends Controller
             $group->coordinators()->where('users.id', auth()->id())->exists(),
             403
         );
+    }
+
+    private function autoCloseStaleAttendances(Group $group)
+    {
+        $tz = 'America/Argentina/Buenos_Aires';
+        $now = Carbon::now($tz);
+
+        // If session is not live, close all open attendances for today
+        if (!$group->isLiveSessionNow()) {
+            $todayDate = $now->toDateString();
+
+            // Get session end time
+            $sessionEnd = null;
+            if ($group->meeting_time && $group->session_duration_minutes) {
+                [$h, $m] = array_pad(explode(':', $group->meeting_time), 2, '0');
+                $sessionEnd = $now->copy()->setTime((int) $h, (int) $m, 0)
+                    ->addMinutes((int) $group->session_duration_minutes);
+            }
+
+            // If manually closed, use that time
+            $endedAt = $group->getRawOriginal('ended_at');
+            if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
+                $sessionEnd = Carbon::parse($endedAt)->timezone($tz);
+            }
+
+            // Close open attendances from today
+            if ($sessionEnd) {
+                GroupAttendance::where('group_id', $group->id)
+                    ->whereDate('attended_at', $todayDate)
+                    ->whereNull('left_at')
+                    ->update(['left_at' => $sessionEnd]);
+            }
+        }
     }
 }
