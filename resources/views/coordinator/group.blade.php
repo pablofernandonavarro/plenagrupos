@@ -66,14 +66,18 @@
     </div>
 
     {{-- Stats --}}
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <p id="stat-count" class="text-2xl sm:text-3xl font-bold text-teal-600">{{ $todayVisits }}</p>
             <p class="text-xs text-gray-500 mt-1">Presentes hoy</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <p class="text-2xl sm:text-3xl font-bold text-blue-600">{{ $group->attendances()->distinct('user_id')->count('user_id') }}</p>
-            <p class="text-xs text-gray-500 mt-1">Pacientes</p>
+            <p id="active-patients-count" class="text-2xl sm:text-3xl font-bold text-blue-600">{{ $group->patients->count() }}</p>
+            <p class="text-xs text-gray-500 mt-1">Activos del grupo</p>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+            <p class="text-2xl sm:text-3xl font-bold text-purple-600">{{ $group->attendances()->distinct('user_id')->count('user_id') }}</p>
+            <p class="text-xs text-gray-500 mt-1">Total histórico</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <p class="text-2xl sm:text-3xl font-bold text-green-600">{{ $avgWeight ? number_format($avgWeight, 1) : '—' }}</p>
@@ -233,22 +237,41 @@
     {{-- Pacientes del grupo --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-800">Pacientes del grupo (<span id="patients-count">{{ $group->patients->count() }}</span>)</h2>
+            <h2 class="font-semibold text-gray-800">Pacientes del grupo</h2>
+            <p class="text-xs text-gray-400 mt-0.5">
+                <span id="patients-count-active">{{ $group->patients->count() }}</span> activos ·
+                <span id="patients-count-total">{{ $group->patientsAll->count() }}</span> total (histórico)
+            </p>
         </div>
         <div id="patients-list" class="divide-y divide-gray-50">
-            @forelse($group->patients as $patient)
-                <div class="px-5 py-3 flex items-center gap-3">
+            @forelse($group->patientsAll as $patient)
+                @php
+                    $isActive = $patient->pivot->left_at === null;
+                @endphp
+                <div class="px-5 py-3 flex items-center gap-3 {{ $isActive ? '' : 'opacity-50' }}">
                     <x-avatar :user="$patient" size="sm" />
-                    <div class="min-w-0">
-                        <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
+                            @if($isActive)
+                                <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2 py-0.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Activo
+                                </span>
+                            @else
+                                <span class="text-xs font-medium text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Inactivo</span>
+                            @endif
+                        </div>
                         <p class="text-[10px] text-gray-400 mt-0.5">
                             Alta: {{ \Carbon\Carbon::parse($patient->pivot->joined_at)->format('d/m/Y H:i') }}
                             · {{ $patient->pivot->join_source === 'qr' ? 'QR' : 'Manual' }}
+                            @if(!$isActive && $patient->pivot->left_at)
+                                · Salió: {{ \Carbon\Carbon::parse($patient->pivot->left_at)->format('d/m/Y H:i') }}
+                            @endif
                         </p>
                     </div>
                 </div>
             @empty
-                <p class="px-5 py-4 text-sm text-gray-400 text-center">Sin asistencias registradas.</p>
+                <p class="px-5 py-4 text-sm text-gray-400 text-center">Sin pacientes registrados.</p>
             @endforelse
         </div>
     </div>
@@ -385,10 +408,12 @@ const countEl      = document.getElementById('stat-count');
 const sessionBadge = document.getElementById('live-session-badge');
 const updateEl     = document.getElementById('last-update');
 const patientsList  = document.getElementById('patients-list');
-const patientsCount = document.getElementById('patients-count');
+const patientsCountActive = document.getElementById('patients-count-active');
+const patientsCountTotal = document.getElementById('patients-count-total');
+const activePatientsCountStat = document.getElementById('active-patients-count');
 
 const patientRanges = {
-    @foreach($group->patients as $p)
+    @foreach($group->patientsAll as $p)
         {{ $p->id }}: { piso: {{ $p->peso_piso ?? 'null' }}, techo: {{ $p->peso_techo ?? 'null' }} },
     @endforeach
 };
@@ -482,21 +507,39 @@ function renderRow(a) {
 
 
 function renderPatients(patients) {
-    patientsCount.textContent = patients.length;
+    const activeCount = patients.filter(p => p.is_active).length;
+    const totalCount = patients.length;
+
+    patientsCountActive.textContent = activeCount;
+    patientsCountTotal.textContent = totalCount;
+    activePatientsCountStat.textContent = activeCount;
+
     if (patients.length === 0) {
-        patientsList.innerHTML = '<p class="px-5 py-4 text-sm text-gray-400 text-center">Sin asistencias registradas.</p>';
+        patientsList.innerHTML = '<p class="px-5 py-4 text-sm text-gray-400 text-center">Sin pacientes registrados.</p>';
         return;
     }
-    patientsList.innerHTML = patients.map(p => `
-        <div class="px-5 py-3 flex items-center gap-3">
+
+    patientsList.innerHTML = patients.map(p => {
+        const isActive = p.is_active;
+        const activeBadge = isActive
+            ? '<span class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded-full px-2 py-0.5"><span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Activo</span>'
+            : '<span class="text-xs font-medium text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">Inactivo</span>';
+        const leftAtText = !isActive && p.left_at ? ` · Salió: ${p.left_at}` : '';
+
+        return `
+        <div class="px-5 py-3 flex items-center gap-3 ${isActive ? '' : 'opacity-50'}">
             ${avatarHtml(p)}
-            <div class="min-w-0">
-                <p class="text-sm font-medium text-gray-800">${p.name}</p>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <p class="text-sm font-medium text-gray-800">${p.name}</p>
+                    ${activeBadge}
+                </div>
                 <p class="text-[10px] text-gray-400 mt-0.5">
-                    Alta: ${p.joined_at ?? '—'} · ${p.join_source === 'qr' ? 'QR' : 'Manual'}
+                    Alta: ${p.joined_at ?? '—'} · ${p.join_source === 'qr' ? 'QR' : 'Manual'}${leftAtText}
                 </p>
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
 async function fetchAttendances() {

@@ -98,7 +98,7 @@ class DashboardController extends Controller
         // Auto-close stale attendances before showing the view
         $this->autoCloseStaleAttendances($group);
 
-        $group->load(['patients', 'coordinators']);
+        $group->load(['patients', 'patientsAll', 'coordinators']);
         $attendances = $group->attendances()->with(['user', 'weightRecord', 'groupSession'])->latest('attended_at')->paginate(20);
         $avgWeight = $group->weightRecords()->avg('weight');
         $totalVisits = $group->attendances()->count();
@@ -175,13 +175,15 @@ class DashboardController extends Controller
                 'session_number' => $a->groupSession?->sequence_number,
             ]);
 
-        $patients = $group->patients()->get()->map(fn ($p) => [
+        $patients = $group->patientsAll()->get()->map(fn ($p) => [
             'id' => $p->id,
             'name' => $p->name,
             'initials' => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
             'color' => $colors[$p->id % count($colors)],
             'avatar_url' => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
             'joined_at' => $p->pivot->joined_at ? Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
+            'left_at' => $p->pivot->left_at ? Carbon::parse($p->pivot->left_at)->format('d/m/Y H:i') : null,
+            'is_active' => $p->pivot->left_at === null,
             'join_source' => $p->pivot->join_source,
         ]);
 
