@@ -15,7 +15,7 @@
                     <h1 class="text-xl sm:text-2xl font-bold text-gray-800">{{ $group->name }}</h1>
                     @if($group->isProgramClosed())
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
-                    @elseif($group->status === 'active')
+                    @elseif($group->isLiveSessionNow())
                         <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En sesión
                         </span>
@@ -229,15 +229,15 @@
             <h2 class="font-semibold text-gray-800 flex items-center gap-2 flex-wrap">
                 Presentes hoy
                 <span id="live-session-badge" class="text-xs font-semibold text-teal-700 tabular-nums">@if($todaySessionRecord)Sesión n.º {{ $todaySessionRecord->sequence_number }}@else<span class="text-gray-400 font-normal">—</span>@endif</span>
-                @if($sessionEndedToday)
-                <span class="inline-flex items-center gap-1 text-xs text-gray-400 font-normal">
-                    <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
-                    Sesión cerrada
-                </span>
-                @else
+                @if($group->isLiveSessionNow())
                 <span id="live-badge" class="inline-flex items-center gap-1 text-xs text-green-600 font-normal">
                     <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                     En vivo
+                </span>
+                @elseif($sessionEndedToday)
+                <span class="inline-flex items-center gap-1 text-xs text-gray-400 font-normal">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                    Sesión cerrada
                 </span>
                 @endif
             </h2>
