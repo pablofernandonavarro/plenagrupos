@@ -16,7 +16,7 @@
                     {{-- Misma lógica que el listado del dashboard (no solo $group->status: los recurrentes fuera de horario son "pending" pero el programa sigue vigente) --}}
                     @if($group->isProgramClosed())
                         <span class="text-xs px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500">Finalizado</span>
-                    @elseif($group->status === 'active')
+                    @elseif($group->isLiveSessionNow())
                         <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>En sesión
                         </span>
@@ -325,7 +325,7 @@
                             </button>
                         </form>
                         <p class="text-[11px] text-gray-400 text-center mt-2">La sesión de hoy está cerrada. El programa continúa la próxima clase.</p>
-                    @elseif($group->status === 'active')
+                    @elseif($group->isLiveSessionNow())
                         {{-- Session in progress — offer to close --}}
                         <form action="{{ route('coordinator.groups.toggle', $group) }}" method="POST">
                             @csrf

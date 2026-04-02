@@ -73,7 +73,7 @@
     <div class="space-y-3">
         @forelse($groups as $group)
             @php
-                $isInSession = $group->status === 'active';
+                $isInSession = $group->isLiveSessionNow();
                 $borderClass = $isInSession ? 'border-green-200 shadow-green-50' : 'border-gray-100';
             @endphp
             <div class="bg-white rounded-2xl border {{ $borderClass }} shadow-sm overflow-hidden">
@@ -109,7 +109,7 @@
                             @if($status !== 'today')
                                 @if($group->isProgramClosed())
                                     <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Finalizado</span>
-                                @elseif($group->status === 'active')
+                                @elseif($group->isLiveSessionNow())
                                     <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
                                         <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                                         En sesión
