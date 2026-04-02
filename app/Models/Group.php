@@ -152,75 +152,58 @@ class Group extends Model
         return in_array($date->dayOfWeek, $dayNums, true);
     }
 
-    /** Sesión en curso ahora (ventana horaria de hoy): recurrente o manual con día/hora. */
+    /**
+     * Determina si la sesión del grupo está en curso AHORA MISMO.
+     *
+     * CASOS:
+     * 1. Programa cerrado → NO (ended_at hoy O recurrence_end_date pasado)
+     * 2. Tiene horario programado (meeting_time) → Verifica ventana horaria
+     * 3. Sin horario → Usa started_at/ended_at manual
+     */
     public function isLiveSessionNow(): bool
     {
+        // CASO 1: Programa finalizado → nunca en vivo
         if ($this->isProgramClosed()) {
             return false;
         }
 
         $tz = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz);
-        $startedAt = $this->getRawOriginal('started_at');
         $endedAt = $this->getRawOriginal('ended_at');
 
-        // If manually ended today, it's not live
+        // CASO 2: Si se cerró manualmente HOY → no está en vivo
         if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
             return false;
         }
 
-        // If coordinator manually started today's session and hasn't ended it
+        // CASO 3: Si tiene horario programado (meeting_time) → verificar ventana
+        if ($this->meeting_time) {
+            $type = $this->attributes['recurrence_type'] ?? 'none';
+
+            // 3a. Grupos recurrentes: verificar día de reunión
+            if ($type !== 'none') {
+                if (! $this->isTodayMeetingDay($now)) {
+                    return false; // Hoy no es día de reunión
+                }
+            }
+            // 3b. Grupos manuales: verificar si está activo y es día programado
+            else {
+                if (! $this->isManualMeetingDay($now)) {
+                    return false; // No está activo o no es día programado
+                }
+            }
+
+            // Verificar ventana horaria: ¿Estamos entre meeting_time y meeting_time + duration?
+            return $this->isWithinSessionWindowNow($now);
+        }
+
+        // CASO 4: Sin horario programado → control manual con started_at/ended_at
+        $startedAt = $this->getRawOriginal('started_at');
         if ($startedAt && Carbon::parse($startedAt)->timezone($tz)->isToday()) {
-            // For recurring groups with schedule, check time window
-            if ($this->meeting_time && $this->session_duration_minutes && ($this->attributes['recurrence_type'] ?? 'none') !== 'none') {
-                // Must be within scheduled time window
-                return $this->isWithinSessionWindowNow($now);
-            }
-            // For manual groups without schedule, consider live until manually closed
-            return true;
+            return true; // Iniciado hoy y no cerrado hoy
         }
 
-        // Check scheduled time window first
-        if (! $this->meeting_time) {
-            return false;
-        }
-
-        $type = $this->attributes['recurrence_type'] ?? 'none';
-
-        if ($type === 'none') {
-            if (! $this->isManualMeetingDay($now)) {
-                return false;
-            }
-        } elseif (! $this->isTodayMeetingDay($now)) {
-            return false;
-        }
-
-        $isInWindow = $this->isWithinSessionWindowNow($now);
-
-        // If not in scheduled window, definitely not live
-        if (!$isInWindow) {
-            return false;
-        }
-
-        // If we're in a scheduled window, check if coordinator closed it during this window
-        if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
-            $endedTime = Carbon::parse($endedAt)->timezone($tz);
-
-            // Get current session window bounds
-            [$h, $m] = array_pad(explode(':', $this->meeting_time), 2, '0');
-            $windowStart = $now->copy()->setTime((int) $h, (int) $m, 0);
-
-            // If ended before current window started, allow reopening (new session window)
-            if ($endedTime->lt($windowStart)) {
-                return true;
-            }
-
-            // If ended during current window, respect the closure
-            return false;
-        }
-
-        // In window and not manually closed during this window
-        return true;
+        return false;
     }
 
     /** True when $date falls on a scheduled meeting day for this group. */
