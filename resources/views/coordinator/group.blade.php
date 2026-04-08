@@ -549,10 +549,10 @@ async function fetchAttendances() {
         data = await res.json();
     } catch (e) { return; }
 
-    // Update patients section (independent of attendance rendering)
-    if (data.patients !== undefined) renderPatients(data.patients);
-
     countEl.textContent = data.count;
+
+    // Update patients section (independent of attendance rendering)
+    try { if (data.patients !== undefined) renderPatients(data.patients); } catch(e) {}
     if (sessionBadge) {
         sessionBadge.textContent = data.session_number != null ? 'Sesión n.º ' + data.session_number : '—';
     }

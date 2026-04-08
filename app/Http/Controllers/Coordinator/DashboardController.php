@@ -176,18 +176,19 @@ class DashboardController extends Controller
                 'session_number' => $a->groupSession?->sequence_number,
             ]);
 
-        $patients = Cache::remember("group_{$group->id}_patients_all", 30, fn () => $group->patientsAll()->get())
-            ->map(fn ($p) => [
-            'id' => $p->id,
-            'name' => $p->name,
-            'initials' => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
-            'color' => $colors[$p->id % count($colors)],
-            'avatar_url' => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
-            'joined_at' => $p->pivot->joined_at ? Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
-            'left_at' => $p->pivot->left_at ? Carbon::parse($p->pivot->left_at)->format('d/m/Y H:i') : null,
-            'is_active' => $p->pivot->left_at === null,
-            'join_source' => $p->pivot->join_source,
-        ]);
+        $patients = Cache::remember("group_{$group->id}_patients_all", 30, function () use ($group, $colors) {
+            return $group->patientsAll()->get()->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'initials' => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
+                'color' => $colors[$p->id % count($colors)],
+                'avatar_url' => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
+                'joined_at' => $p->pivot->joined_at ? Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
+                'left_at' => $p->pivot->left_at ? Carbon::parse($p->pivot->left_at)->format('d/m/Y H:i') : null,
+                'is_active' => $p->pivot->left_at === null,
+                'join_source' => $p->pivot->join_source,
+            ])->values()->all();
+        });
 
         return response()->json([
             'count' => $attendances->count(),
