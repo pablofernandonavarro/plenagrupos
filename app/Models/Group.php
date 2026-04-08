@@ -172,8 +172,19 @@ class Group extends Model
         $endedAt = $this->getRawOriginal('ended_at');
 
         // CASO 2: Si se cerró manualmente HOY → no está en vivo
+        // Para grupos con horario: solo aplica si el cierre fue dentro de la ventana actual,
+        // permitiendo que un grupo con múltiples ventanas en el día se reactive en la siguiente.
         if ($endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday()) {
-            return false;
+            if (! $this->meeting_time) {
+                return false; // Sin horario: el cierre de hoy siempre bloquea
+            }
+            $endedTime = Carbon::parse($endedAt)->timezone($tz);
+            [$h, $m] = array_pad(explode(':', $this->meeting_time), 2, '0');
+            $windowStart = $now->copy()->setTime((int) $h, (int) $m, 0);
+            if ($endedTime->gte($windowStart)) {
+                return false; // Cerrado durante la ventana actual → no está en vivo
+            }
+            // Cerrado antes de la ventana actual → puede estar en vivo en nueva ventana
         }
 
         // CASO 3: Si tiene horario programado (meeting_time) → verificar ventana

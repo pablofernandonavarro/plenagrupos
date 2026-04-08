@@ -72,7 +72,7 @@
             <p class="text-xs text-gray-500 mt-1">Presentes hoy</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
-            <p id="active-patients-count" class="text-2xl sm:text-3xl font-bold text-blue-600">{{ $group->patients->count() }}</p>
+            <p id="active-patients-count" class="text-2xl sm:text-3xl font-bold text-blue-600">{{ $group->patientsAll->filter(fn($p) => $p->pivot->left_at === null)->count() }}</p>
             <p class="text-xs text-gray-500 mt-1">Activos del grupo</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
@@ -239,7 +239,7 @@
         <div class="px-5 py-4 border-b border-gray-100">
             <h2 class="font-semibold text-gray-800">Pacientes del grupo</h2>
             <p class="text-xs text-gray-400 mt-0.5">
-                <span id="patients-count-active">{{ $group->patients->count() }}</span> activos ·
+                <span id="patients-count-active">{{ $group->patientsAll->filter(fn($p) => $p->pivot->left_at === null)->count() }}</span> activos ·
                 <span id="patients-count-total">{{ $group->patientsAll->count() }}</span> total (histórico)
             </p>
         </div>

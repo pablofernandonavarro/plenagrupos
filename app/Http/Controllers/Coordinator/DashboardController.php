@@ -9,6 +9,7 @@ use App\Models\GroupAttendance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -98,7 +99,7 @@ class DashboardController extends Controller
         // Auto-close stale attendances before showing the view
         $this->autoCloseStaleAttendances($group);
 
-        $group->load(['patients', 'patientsAll', 'coordinators']);
+        $group->load(['patientsAll', 'coordinators']);
         $attendances = $group->attendances()->with(['user', 'weightRecord', 'groupSession'])->latest('attended_at')->paginate(20);
         $avgWeight = $group->weightRecords()->avg('weight');
         $totalVisits = $group->attendances()->count();
@@ -175,7 +176,8 @@ class DashboardController extends Controller
                 'session_number' => $a->groupSession?->sequence_number,
             ]);
 
-        $patients = $group->patientsAll()->get()->map(fn ($p) => [
+        $patients = Cache::remember("group_{$group->id}_patients_all", 30, fn () => $group->patientsAll()->get())
+            ->map(fn ($p) => [
             'id' => $p->id,
             'name' => $p->name,
             'initials' => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
