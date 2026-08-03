@@ -66,9 +66,10 @@ PROMPT;
         $response = Http::withToken(config('services.groq.key'))
             ->timeout(90)
             ->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model'      => 'meta-llama/llama-4-scout-17b-16e-instruct',
-                'max_tokens' => 600,
-                'messages'   => [['role' => 'user', 'content' => $content]],
+                'model'            => 'qwen/qwen3.6-27b',
+                'max_tokens'       => 600,
+                'reasoning_effort' => 'none',
+                'messages'         => [['role' => 'user', 'content' => $content]],
             ]);
 
         foreach ($tmpPaths as $p) Storage::disk('local')->delete($p);
