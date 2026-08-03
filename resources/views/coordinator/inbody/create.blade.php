@@ -31,20 +31,30 @@
         </div>
 
         <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
-                Fotos del reporte InBody
-                <span class="text-gray-400 font-normal">(una por hoja)</span>
-            </label>
+            <label class="block text-sm font-medium text-gray-700">Foto del reporte InBody</label>
+            <p class="text-xs text-gray-400 -mt-1">Con la hoja que muestra la Puntuación InBody alcanza — no hace falta subir el resto de las hojas.</p>
 
-            <div id="image-inputs" class="space-y-2"></div>
+            <div id="photo-empty">
+                <label for="inbody-photo"
+                    class="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 hover:border-teal-400 text-gray-400 hover:text-teal-600 rounded-xl py-6 text-sm font-medium transition cursor-pointer">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Seleccionar foto
+                </label>
+                <input type="file" accept="image/*" id="inbody-photo" class="hidden" onchange="onPhotoChange(this)">
+            </div>
 
-            <button type="button" onclick="addImageSlot()"
-                class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 hover:border-teal-400 text-gray-400 hover:text-teal-600 rounded-xl py-3 text-sm font-medium transition">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                Agregar hoja
-            </button>
+            <div id="photo-filled" class="hidden flex items-center gap-3 border border-gray-200 rounded-xl p-2 bg-gray-50">
+                <img id="photo-thumb" class="w-14 h-14 object-cover rounded-lg border border-gray-200 shrink-0" alt="Vista previa">
+                <p id="photo-name" class="flex-1 min-w-0 text-sm text-gray-700 truncate"></p>
+                <button type="button" onclick="clearPhoto()" class="text-gray-400 hover:text-red-500 transition shrink-0 p-1">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <button id="btn-extract" type="button" onclick="extractData()"
@@ -131,12 +141,12 @@
             {{-- Image re-upload for actual storage --}}
             <div>
                 <label class="block text-xs font-medium text-gray-500 mb-1">Imágenes del reporte (se guardarán)</label>
-                <input type="file" name="images[]" id="imageStore" accept="image/*" multiple
+                <input type="file" name="images[]" id="imageStore" accept="image/*"
                     class="block w-full text-sm text-gray-600
                            file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
                            file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-600
                            hover:file:bg-gray-100 cursor-pointer">
-                <p id="store-count" class="text-xs text-gray-400 mt-1">Pre-seleccionadas automáticamente · podés cambiarlas</p>
+                <p id="store-count" class="text-xs text-gray-400 mt-1">Pre-seleccionada automáticamente · podés cambiarla</p>
             </div>
         </div>
 
@@ -213,64 +223,35 @@
 <script>
 const extractUrl = '{{ route("coordinator.patients.inbody.extract", $patient) }}';
 const csrfToken  = '{{ csrf_token() }}';
-let slotCount = 0;
 
-function addImageSlot() {
-    if (slotCount >= 5) return;
-    slotCount++;
-    const idx = slotCount;
+function onPhotoChange(input) {
+    const file = input.files[0];
+    if (!file) return;
 
-    const wrapper = document.createElement('div');
-    wrapper.id = `slot-${idx}`;
-    wrapper.className = 'flex items-center gap-2';
+    const reader = new FileReader();
+    reader.onload = e => { document.getElementById('photo-thumb').src = e.target.result; };
+    reader.readAsDataURL(file);
 
-    const label = document.createElement('label');
-    label.className = 'flex-1 flex items-center gap-3 border border-gray-200 rounded-xl px-3 py-2.5 cursor-pointer hover:border-teal-400 transition bg-gray-50';
-    label.innerHTML = `
-        <svg class="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <span id="slot-label-${idx}" class="text-sm text-gray-400">Hoja ${idx}</span>
-        <input type="file" accept="image/*" class="hidden" id="slot-file-${idx}"
-            onchange="onSlotChange(${idx}, this)">
-    `;
-
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'text-gray-300 hover:text-red-400 transition p-1 shrink-0';
-    removeBtn.innerHTML = `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
-    removeBtn.onclick = () => { wrapper.remove(); slotCount = Math.max(0, slotCount - 1); };
-
-    wrapper.appendChild(label);
-    wrapper.appendChild(removeBtn);
-    document.getElementById('image-inputs').appendChild(wrapper);
-
-    // Auto-open the picker on the new slot
-    document.getElementById(`slot-file-${idx}`).click();
+    document.getElementById('photo-name').textContent = file.name;
+    document.getElementById('photo-empty').classList.add('hidden');
+    document.getElementById('photo-filled').classList.remove('hidden');
 }
 
-function onSlotChange(idx, input) {
-    const lbl = document.getElementById(`slot-label-${idx}`);
-    if (input.files.length) {
-        lbl.textContent = input.files[0].name;
-        lbl.classList.remove('text-gray-400');
-        lbl.classList.add('text-gray-700', 'font-medium');
-    }
+function clearPhoto() {
+    document.getElementById('inbody-photo').value = '';
+    document.getElementById('photo-filled').classList.add('hidden');
+    document.getElementById('photo-empty').classList.remove('hidden');
 }
 
 function collectFiles() {
-    const files = [];
-    document.querySelectorAll('[id^="slot-file-"]').forEach(input => {
-        if (input.files.length) files.push(input.files[0]);
-    });
-    return files;
+    const input = document.getElementById('inbody-photo');
+    return input.files.length ? [input.files[0]] : [];
 }
 
 async function extractData() {
     const files = collectFiles();
     if (!files.length) {
-        alert('Agregá al menos una imagen primero.');
+        alert('Seleccioná una foto primero.');
         return;
     }
 
@@ -279,7 +260,7 @@ async function extractData() {
     const errDiv = document.getElementById('extract-error');
 
     btn.disabled = true;
-    label.textContent = files.length > 1 ? `Analizando ${files.length} hojas...` : 'Extrayendo datos...';
+    label.textContent = 'Extrayendo datos...';
     errDiv.classList.add('hidden');
 
     const formData = new FormData();
@@ -336,7 +317,7 @@ async function extractData() {
         const storeInput = document.getElementById('imageStore');
         storeInput.files = dt.files;
         document.getElementById('store-count').textContent =
-            `${files.length} imagen(es) pre-seleccionada(s) · podés cambiarlas`;
+            'Foto pre-seleccionada automáticamente · podés cambiarla';
 
         document.getElementById('inbody-form').classList.remove('hidden');
         document.getElementById('inbody-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -350,7 +331,5 @@ async function extractData() {
     }
 }
 
-// Start with one slot open
-addImageSlot();
 </script>
 @endsection
