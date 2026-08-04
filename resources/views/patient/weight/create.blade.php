@@ -11,13 +11,17 @@
             </svg>
         </div>
         <h1 class="text-xl font-bold text-gray-800">Registrar mi peso</h1>
-        <p class="text-sm text-gray-500 mt-1">{{ $attendance->group->name }} · {{ now()->format('d/m/Y') }}</p>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ $attendance ? $attendance->group->name . ' · ' : '' }}{{ now()->format('d/m/Y') }}
+        </p>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <form action="{{ route('patient.weight.store') }}" method="POST" class="space-y-5">
             @csrf
-            <input type="hidden" name="attendance_id" value="{{ $attendance->id }}">
+            @if($attendance)
+                <input type="hidden" name="attendance_id" value="{{ $attendance->id }}">
+            @endif
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2 text-center">Peso actual (kg)</label>

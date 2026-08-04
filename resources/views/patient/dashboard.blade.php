@@ -23,6 +23,15 @@
         Escanear QR del grupo
     </button>
 
+    {{-- Manual weight entry button --}}
+    <a href="{{ route('patient.weight.create') }}"
+        class="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-50 active:bg-gray-100 text-teal-700 font-semibold py-3 rounded-2xl border border-teal-200 transition text-sm">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Registrar peso manualmente
+    </a>
+
     {{-- Scanner modal --}}
     <div id="scanner-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/70" id="modal-backdrop"></div>

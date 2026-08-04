@@ -12,6 +12,11 @@ class WeightController extends Controller
     public function create(Request $request)
     {
         $attendanceId = $request->query('attendance');
+
+        if (! $attendanceId) {
+            return view('patient.weight.create', ['attendance' => null]);
+        }
+
         $attendance = GroupAttendance::with('group')->findOrFail($attendanceId);
 
         if ($attendance->user_id !== auth()->id()) {
@@ -29,25 +34,33 @@ class WeightController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'attendance_id' => 'required|exists:group_attendances,id',
+            'attendance_id' => 'nullable|exists:group_attendances,id',
             'weight' => 'required|numeric|min:1|max:300',
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $attendance = GroupAttendance::findOrFail($data['attendance_id']);
+        $groupId = null;
+        $attendanceId = null;
 
-        if ($attendance->user_id !== auth()->id()) {
-            abort(403);
+        if (! empty($data['attendance_id'])) {
+            $attendance = GroupAttendance::findOrFail($data['attendance_id']);
+
+            if ($attendance->user_id !== auth()->id()) {
+                abort(403);
+            }
+
+            $groupId = $attendance->group_id;
+            $attendanceId = $attendance->id;
         }
 
         WeightRecord::create([
             'user_id' => auth()->id(),
-            'group_id' => $attendance->group_id,
-            'attendance_id' => $attendance->id,
+            'group_id' => $groupId,
+            'attendance_id' => $attendanceId,
             'weight' => $data['weight'],
             'notes' => $data['notes'] ?? null,
         ]);
 
-        return redirect()->route('patient.dashboard')->with('success', 'Peso registrado: ' . $data['weight'] . ' kg');
+        return redirect()->route('patient.dashboard')->with('success', 'Peso registrado: '.$data['weight'].' kg');
     }
 }
