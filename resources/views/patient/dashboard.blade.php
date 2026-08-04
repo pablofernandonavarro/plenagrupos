@@ -199,6 +199,39 @@
         @endif
     @endforeach
 
+    {{-- Historial de peso --}}
+    @if($weightHistory->total() > 0)
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h2 class="font-semibold text-gray-800">Historial de peso</h2>
+                <p class="text-xs text-gray-400 mt-0.5">Registros en grupo y manuales</p>
+            </div>
+            <div class="divide-y divide-gray-50">
+                @foreach($weightHistory as $w)
+                <div class="px-4 py-3 flex items-center justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-teal-600">{{ $w->weight }} kg</p>
+                        <p class="text-xs text-gray-400 mt-0.5 truncate">
+                            {{ $w->recorded_at->format('d/m/Y · H:i') }} · {{ $w->group?->name ?? 'Registro manual' }}
+                        </p>
+                        @if($w->notes)
+                            <p class="text-xs text-gray-400 mt-1 italic truncate">"{{ $w->notes }}"</p>
+                        @endif
+                    </div>
+                    <span class="shrink-0 text-xs font-medium px-2 py-1 rounded-full {{ $w->group ? 'bg-teal-50 text-teal-600' : 'bg-gray-100 text-gray-500' }}">
+                        {{ $w->group ? 'Grupo' : 'Manual' }}
+                    </span>
+                </div>
+                @endforeach
+            </div>
+            @if($weightHistory->hasPages())
+                <div class="px-4 py-3 border-t border-gray-50">
+                    {{ $weightHistory->links() }}
+                </div>
+            @endif
+        </div>
+    @endif
+
     {{-- Historial de sesiones --}}
     @if($sessionHistory->total() > 0)
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">

@@ -48,10 +48,16 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('group_id');
 
+        $weightHistory = $user->weightRecords()
+            ->with('group')
+            ->latest('recorded_at')
+            ->paginate(10, ['*'], 'pesos')
+            ->withQueryString();
+
         $sessionHistory = GroupAttendance::where('user_id', $user->id)
             ->with(['group', 'groupSession', 'weightRecord'])
             ->latest('attended_at')
-            ->paginate(10)
+            ->paginate(10, ['*'], 'sesiones')
             ->withQueryString()
             ->through(fn ($a) => (object) [
                 'id'          => $a->id,
@@ -109,7 +115,7 @@ class DashboardController extends Controller
         ];
 
         return view('patient.dashboard', compact(
-            'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'sessionHistory',
+            'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'sessionHistory', 'weightHistory',
             'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
             'attendanceStats', 'todayAttendances'
         ));
