@@ -201,7 +201,7 @@
 
     {{-- Historial de peso --}}
     @if($weightHistory->total() > 0)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div id="historial-peso" class="bg-white rounded-xl shadow-sm border border-gray-100">
             <div class="px-5 py-4 border-b border-gray-100">
                 <h2 class="font-semibold text-gray-800">Historial de peso</h2>
                 <p class="text-xs text-gray-400 mt-0.5">Registros en grupo y manuales</p>
@@ -234,7 +234,7 @@
 
     {{-- Historial de sesiones --}}
     @if($sessionHistory->total() > 0)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div id="historial-sesiones" class="bg-white rounded-xl shadow-sm border border-gray-100">
             <div class="px-5 py-4 border-b border-gray-100">
                 <h2 class="font-semibold text-gray-800">Historial de sesiones</h2>
             </div>

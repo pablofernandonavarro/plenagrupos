@@ -52,13 +52,15 @@ class DashboardController extends Controller
             ->with('group')
             ->latest('recorded_at')
             ->paginate(10, ['*'], 'pesos')
-            ->withQueryString();
+            ->withQueryString()
+            ->fragment('historial-peso');
 
         $sessionHistory = GroupAttendance::where('user_id', $user->id)
             ->with(['group', 'groupSession', 'weightRecord'])
             ->latest('attended_at')
             ->paginate(10, ['*'], 'sesiones')
             ->withQueryString()
+            ->fragment('historial-sesiones')
             ->through(fn ($a) => (object) [
                 'id'          => $a->id,
                 'group_name'  => $a->group?->name ?? '(grupo eliminado)',
