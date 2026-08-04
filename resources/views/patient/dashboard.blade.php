@@ -200,7 +200,7 @@
     @endforeach
 
     {{-- Historial de sesiones --}}
-    @if($sessionHistory->isNotEmpty())
+    @if($sessionHistory->total() > 0)
         <div class="bg-white rounded-xl shadow-sm border border-gray-100">
             <div class="px-5 py-4 border-b border-gray-100">
                 <h2 class="font-semibold text-gray-800">Historial de sesiones</h2>
@@ -243,6 +243,11 @@
                 </div>
                 @endforeach
             </div>
+            @if($sessionHistory->hasPages())
+                <div class="px-4 py-3 border-t border-gray-50">
+                    {{ $sessionHistory->links() }}
+                </div>
+            @endif
         </div>
     @endif
 

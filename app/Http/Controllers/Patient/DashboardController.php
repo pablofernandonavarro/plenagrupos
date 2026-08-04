@@ -51,8 +51,9 @@ class DashboardController extends Controller
         $sessionHistory = GroupAttendance::where('user_id', $user->id)
             ->with(['group', 'groupSession', 'weightRecord'])
             ->latest('attended_at')
-            ->get()
-            ->map(fn ($a) => (object) [
+            ->paginate(10)
+            ->withQueryString()
+            ->through(fn ($a) => (object) [
                 'id'          => $a->id,
                 'group_name'  => $a->group?->name ?? '(grupo eliminado)',
                 'date'        => $a->attended_at->format('d/m/Y'),
