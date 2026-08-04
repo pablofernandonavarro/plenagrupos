@@ -30,6 +30,14 @@
                     <div class="flex-1">
                         <p class="text-base font-semibold text-gray-800">{{ auth()->user()->name }}</p>
                         <p class="text-xs text-gray-400 mt-0.5">{{ auth()->user()->email }}</p>
+                        @php
+                            $planLabels = ['descenso' => 'Descenso', 'mantenimiento' => 'Mantenimiento', 'mantenimiento_pleno' => 'Mantenimiento Pleno'];
+                            $planLabel = $planLabels[auth()->user()->faseEfectiva()] ?? 'Sin asignar';
+                        @endphp
+                        <span class="inline-block mt-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-teal-50 text-teal-700">
+                            Plan: {{ $planLabel }}
+                        </span>
+                        <p class="text-[11px] text-gray-400 mt-1">Tu plan lo asigna el equipo de coordinación.</p>
                         <label class="block text-xs text-gray-500 mt-2 mb-1">Cambiar foto</label>
                         <input type="file" name="avatar" accept="image/*"
                             class="block w-full text-sm text-gray-500
