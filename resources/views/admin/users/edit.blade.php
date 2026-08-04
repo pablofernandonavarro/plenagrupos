@@ -77,7 +77,7 @@
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm">
                 @error('plan_start_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
-            <div>
+            <div id="section-ideal-weight">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Peso ideal (kg)</label>
                 <input type="number" step="0.01" min="0" max="300" name="ideal_weight"
                     value="{{ old('ideal_weight', $user->ideal_weight) }}"
@@ -118,7 +118,7 @@
                     <p class="text-xs text-gray-400">Último cambio de estado: {{ $user->patient_status_at->format('d/m/Y H:i') }}</p>
                 @endif
             </div>
-            <div>
+            <div id="section-maintenance-range">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Rango de mantenimiento (kg)</label>
                 <p class="text-xs text-gray-400 mb-2">Peso mínimo y máximo aceptable para este paciente.</p>
                 <div class="grid grid-cols-2 gap-3">
@@ -233,4 +233,24 @@
         @endif
     </div>
 </div>
+
+@if($user->role === 'patient')
+<script>
+(function () {
+    const idealSection = document.getElementById('section-ideal-weight');
+    const rangeSection = document.getElementById('section-maintenance-range');
+    const planRadios = document.querySelectorAll('input[name="plan"]');
+
+    function update() {
+        const checked = document.querySelector('input[name="plan"]:checked');
+        const isMantenimiento = checked && (checked.value === 'mantenimiento' || checked.value === 'mantenimiento_pleno');
+        idealSection.style.display = isMantenimiento ? 'none' : '';
+        rangeSection.style.display = isMantenimiento ? '' : 'none';
+    }
+
+    planRadios.forEach(r => r.addEventListener('change', update));
+    update();
+})();
+</script>
+@endif
 @endsection
