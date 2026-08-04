@@ -414,12 +414,19 @@ const activePatientsCountStat = document.getElementById('active-patients-count')
 
 const patientRanges = {
     @foreach($group->patientsAll as $p)
-        {{ $p->id }}: { piso: {{ $p->peso_piso ?? 'null' }}, techo: {{ $p->peso_techo ?? 'null' }} },
+        {{ $p->id }}: { piso: {{ $p->peso_piso ?? 'null' }}, techo: {{ $p->peso_techo ?? 'null' }}, mant: {{ $p->estaEnMantenimiento() ? 'true' : 'false' }} },
     @endforeach
 };
 
-function calcStatus(rw, piso, techo) {
+function calcStatus(rw, piso, techo, mant, ideal) {
     if (!rw) return { text: '—', color: 'text-gray-300', icon: '' };
+    if (!mant) {
+        if (ideal === null) return { text: '—', color: 'text-gray-300', icon: '' };
+        const d = Math.round((rw - ideal) * 100) / 100;
+        if (d > 0) return { text: '+' + d + ' kg', color: 'text-red-500', icon: '↑' };
+        if (d < 0) return { text: d + ' kg', color: 'text-green-600', icon: '↓' };
+        return { text: 'en objetivo', color: 'text-gray-400', icon: '=' };
+    }
     if (techo !== null && rw > techo) {
         const d = Math.round((rw - techo) * 100) / 100;
         return { text: '+' + d + ' kg', color: 'text-red-500', icon: '↑' };
@@ -459,14 +466,17 @@ async function checkout(attendanceId, btn) {
 }
 
 function renderRow(a) {
-    const range = patientRanges[a.id] ?? { piso: null, techo: null };
+    const range = patientRanges[a.id] ?? { piso: null, techo: null, mant: false };
     const rw    = a.weight;
     const piso  = range.piso;
     const techo = range.techo;
-    const s     = calcStatus(rw, piso, techo);
-    const rangeText = (piso !== null || techo !== null)
-        ? (piso ?? '?') + ' – ' + (techo ?? '?') + ' kg'
-        : '—';
+    const mant  = range.mant;
+    const ideal = a.ideal_weight ?? null;
+    const s     = calcStatus(rw, piso, techo, mant, ideal);
+    const rangeLabel = mant ? 'Rango' : 'Objetivo';
+    const rangeText = mant
+        ? ((piso !== null || techo !== null) ? (piso ?? '?') + ' – ' + (techo ?? '?') + ' kg' : '—')
+        : (ideal !== null ? ideal + ' kg' : '—');
     const isPresent = !a.left_at;
     const checkoutBtn = `<button onclick="checkout(${a.attendance_id}, this)"
         class="text-xs text-teal-600 border border-teal-200 rounded px-2 py-0.5 hover:bg-teal-50 transition">
@@ -495,7 +505,7 @@ function renderRow(a) {
             </div>
             <div class="bg-gray-50 rounded-lg p-2 text-center">
                 <p class="font-semibold text-gray-600 text-xs leading-tight">${rangeText}</p>
-                <p class="text-gray-400 mt-0.5">Rango</p>
+                <p class="text-gray-400 mt-0.5">${rangeLabel}</p>
             </div>
             <div class="bg-gray-50 rounded-lg p-2 text-center">
                 <p class="font-semibold ${s.color}">${s.icon} ${s.text}</p>

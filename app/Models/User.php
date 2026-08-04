@@ -78,6 +78,15 @@ class User extends Authenticatable
         return $this->fase_actual ?? $this->plan;
     }
 
+    /**
+     * true si la fase efectiva es mantenimiento (usa rango piso/techo).
+     * false para descenso o fase sin definir (usa peso objetivo).
+     */
+    public function estaEnMantenimiento(): bool
+    {
+        return in_array($this->faseEfectiva(), ['mantenimiento', 'mantenimiento_pleno'], true);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

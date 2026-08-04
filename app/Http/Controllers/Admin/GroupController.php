@@ -382,6 +382,9 @@ class GroupController extends Controller
                 'left_at' => $a->left_at?->format('H:i'),
                 'weight' => $a->weightRecord?->weight,
                 'ideal_weight' => $a->user->ideal_weight,
+                'peso_piso' => $a->user->peso_piso,
+                'peso_techo' => $a->user->peso_techo,
+                'en_mantenimiento' => $a->user->estaEnMantenimiento(),
                 'session_number' => $a->groupSession?->sequence_number,
             ]);
 

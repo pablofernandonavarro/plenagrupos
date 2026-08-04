@@ -258,9 +258,17 @@
                 <tbody id="attendance-body" class="divide-y divide-gray-50">
                     @forelse($todayAttendances as $att)
                         @php
-                            $rw   = $att->weightRecord?->weight;
-                            $iw   = $att->user->ideal_weight;
-                            $diff = ($rw && $iw) ? round($rw - $iw, 2) : null;
+                            $rw = $att->weightRecord?->weight;
+                            $enMant = $att->user->estaEnMantenimiento();
+                            if ($enMant) {
+                                $piso = $att->user->peso_piso; $techo = $att->user->peso_techo;
+                                $diff = null;
+                                if ($rw && $techo && $rw > $techo) $diff = round($rw - $techo, 2);
+                                elseif ($rw && $piso && $rw < $piso) $diff = round($rw - $piso, 2);
+                            } else {
+                                $iw = $att->user->ideal_weight;
+                                $diff = ($rw && $iw) ? round($rw - $iw, 2) : null;
+                            }
                         @endphp
                         <tr>
                             <td class="px-5 py-3">
@@ -322,16 +330,26 @@
                         <th class="px-5 py-3 text-left">Fecha y hora</th>
                         <th class="px-5 py-3 text-center">Sesión</th>
                         <th class="px-5 py-3 text-right">Peso</th>
-                        <th class="px-5 py-3 text-right">Peso ideal</th>
+                        <th class="px-5 py-3 text-right">Objetivo / Rango</th>
                         <th class="px-5 py-3 text-right">Dif.</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
                     @foreach($pastAttendances as $att)
                         @php
-                            $rw   = $att->weightRecord?->weight;
-                            $iw   = $att->user->ideal_weight;
-                            $diff = ($rw && $iw) ? round($rw - $iw, 2) : null;
+                            $rw = $att->weightRecord?->weight;
+                            $enMant = $att->user->estaEnMantenimiento();
+                            if ($enMant) {
+                                $piso = $att->user->peso_piso; $techo = $att->user->peso_techo;
+                                $targetLabel = ($piso || $techo) ? ($piso ?? '?').'–'.($techo ?? '?').' kg' : null;
+                                $diff = null;
+                                if ($rw && $techo && $rw > $techo) $diff = round($rw - $techo, 2);
+                                elseif ($rw && $piso && $rw < $piso) $diff = round($rw - $piso, 2);
+                            } else {
+                                $iw = $att->user->ideal_weight;
+                                $targetLabel = $iw ? $iw.' kg' : null;
+                                $diff = ($rw && $iw) ? round($rw - $iw, 2) : null;
+                            }
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-5 py-3">
@@ -351,7 +369,7 @@
                             <td class="px-5 py-3 text-right font-semibold {{ $rw ? 'text-teal-600' : 'text-gray-300' }}">
                                 {{ $rw ? $rw . ' kg' : '—' }}
                             </td>
-                            <td class="px-5 py-3 text-right text-gray-400">{{ $iw ? $iw . ' kg' : '—' }}</td>
+                            <td class="px-5 py-3 text-right text-gray-400">{{ $targetLabel ?? '—' }}</td>
                             <td class="px-5 py-3 text-right font-semibold">
                                 @if($diff !== null)
                                     @if($diff > 0)<span class="text-red-500">↑ +{{ $diff }} kg</span>
@@ -464,9 +482,14 @@ async function fetchAttendances() {
             tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-gray-400">Sin visitas registradas aún.</td></tr>';
         } else {
             tbody.innerHTML = data.attendances.map(a => {
-                const rw   = a.weight;
-                const iw   = a.ideal_weight;
-                const diff = (rw && iw) ? Math.round((rw - iw) * 100) / 100 : null;
+                const rw = a.weight;
+                let diff = null;
+                if (a.en_mantenimiento) {
+                    if (rw && a.peso_techo && rw > a.peso_techo) diff = Math.round((rw - a.peso_techo) * 100) / 100;
+                    else if (rw && a.peso_piso && rw < a.peso_piso) diff = Math.round((rw - a.peso_piso) * 100) / 100;
+                } else if (rw && a.ideal_weight) {
+                    diff = Math.round((rw - a.ideal_weight) * 100) / 100;
+                }
                 const diffHtml = diff !== null
                     ? (diff > 0
                         ? `<span class="text-red-500">↑ +${diff} kg</span>`

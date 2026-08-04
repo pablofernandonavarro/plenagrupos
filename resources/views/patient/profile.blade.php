@@ -60,39 +60,63 @@
         </div>
     </div>
 
-    {{-- Rango de mantenimiento --}}
+    {{-- Rango de mantenimiento (mantenimiento) o peso objetivo (descenso) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h2 class="font-semibold text-gray-800">Rango de mantenimiento</h2>
-            <p class="text-xs text-gray-400 mt-0.5">Peso mínimo (piso) y máximo (techo) que querés mantener.</p>
-        </div>
-        <div class="px-5 py-4">
-            <form action="{{ route('patient.profile.update') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Piso (kg)</label>
-                        <input type="number" step="0.01" min="0" max="300" name="peso_piso"
-                            value="{{ old('peso_piso', auth()->user()->peso_piso) }}"
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
-                            placeholder="Ej: 68.00">
-                        @error('peso_piso')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+        @if(auth()->user()->estaEnMantenimiento())
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h2 class="font-semibold text-gray-800">Rango de mantenimiento</h2>
+                <p class="text-xs text-gray-400 mt-0.5">Peso mínimo (piso) y máximo (techo) que querés mantener.</p>
+            </div>
+            <div class="px-5 py-4">
+                <form action="{{ route('patient.profile.update') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Piso (kg)</label>
+                            <input type="number" step="0.01" min="0" max="300" name="peso_piso"
+                                value="{{ old('peso_piso', auth()->user()->peso_piso) }}"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                                placeholder="Ej: 68.00">
+                            @error('peso_piso')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Techo (kg)</label>
+                            <input type="number" step="0.01" min="0" max="300" name="peso_techo"
+                                value="{{ old('peso_techo', auth()->user()->peso_techo) }}"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
+                                placeholder="Ej: 72.00">
+                            @error('peso_techo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Techo (kg)</label>
-                        <input type="number" step="0.01" min="0" max="300" name="peso_techo"
-                            value="{{ old('peso_techo', auth()->user()->peso_techo) }}"
+                    <button type="submit"
+                        class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+                        Guardar
+                    </button>
+                </form>
+            </div>
+        @else
+            <div class="px-5 py-4 border-b border-gray-100">
+                <h2 class="font-semibold text-gray-800">Peso objetivo</h2>
+                <p class="text-xs text-gray-400 mt-0.5">El peso que querés alcanzar en tu fase de descenso.</p>
+            </div>
+            <div class="px-5 py-4">
+                <form action="{{ route('patient.profile.update') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Peso objetivo (kg)</label>
+                        <input type="number" step="0.01" min="0" max="300" name="ideal_weight"
+                            value="{{ old('ideal_weight', auth()->user()->ideal_weight) }}"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
-                            placeholder="Ej: 72.00">
-                        @error('peso_techo')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                            placeholder="Ej: 70.00">
+                        @error('ideal_weight')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
-                </div>
-                <button type="submit"
-                    class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">
-                    Guardar
-                </button>
-            </form>
-        </div>
+                    <button type="submit"
+                        class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+                        Guardar
+                    </button>
+                </form>
+            </div>
+        @endif
     </div>
 
     {{-- InBody --}}

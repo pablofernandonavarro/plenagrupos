@@ -144,6 +144,7 @@ class DashboardController extends Controller
         $data = $request->validate([
             'peso_piso'          => 'nullable|numeric|min:0|max:300',
             'peso_techo'         => 'nullable|numeric|min:0|max:300',
+            'ideal_weight'       => 'nullable|numeric|min:0|max:300',
             'avatar'             => 'nullable|image|max:2048',
             'belonging_group_id' => 'nullable|exists:groups,id',
         ]);
@@ -155,6 +156,9 @@ class DashboardController extends Controller
         }
         if ($request->has('peso_techo')) {
             $user->peso_techo = $data['peso_techo'] ?? null;
+        }
+        if ($request->has('ideal_weight')) {
+            $user->ideal_weight = $data['ideal_weight'] ?? null;
         }
 
         if ($request->has('belonging_group_id')) {

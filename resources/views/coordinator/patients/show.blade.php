@@ -18,7 +18,8 @@
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-800">{{ $patient->name }}</h1>
                 @php
                     $piso = $patient->peso_piso; $techo = $patient->peso_techo;
-                    if ($lastWeight && $techo && $lastWeight > $techo) $badge = ['↑ Sobre techo', 'bg-red-100 text-red-600'];
+                    if (!$patient->estaEnMantenimiento()) $badge = null;
+                    elseif ($lastWeight && $techo && $lastWeight > $techo) $badge = ['↑ Sobre techo', 'bg-red-100 text-red-600'];
                     elseif ($lastWeight && $piso && $lastWeight < $piso) $badge = ['↓ Bajo piso', 'bg-blue-100 text-blue-600'];
                     elseif ($lastWeight && ($piso || $techo)) $badge = ['✓ En rango', 'bg-green-100 text-green-700'];
                     else $badge = null;
@@ -240,7 +241,7 @@
             <p class="text-sm font-semibold text-gray-800">Tendencia de peso</p>
             <p class="text-xs {{ $tc }}">{{ $tt }}</p>
         </div>
-        @if($inRange !== null)
+        @if($inRange !== null && $patient->estaEnMantenimiento())
             @php $piso = $patient->peso_piso; $techo = $patient->peso_techo; @endphp
             <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full
                 {{ $inRange ? 'bg-green-100 text-green-700' : ($lastWeight > $techo ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700') }}">
@@ -251,7 +252,7 @@
     @endif
 
     {{-- Progress toward ideal --}}
-    @if($progressPct !== null)
+    @if($progressPct !== null && !$patient->estaEnMantenimiento())
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
         <div class="flex justify-between items-center mb-2">
             <p class="text-sm font-semibold text-gray-700">Progreso hacia peso ideal</p>
@@ -268,22 +269,23 @@
     @endif
 
     {{-- Weight range info --}}
-    @if($patient->ideal_weight || $piso || $techo)
+    @php $enMantenimiento = $patient->estaEnMantenimiento(); @endphp
+    @if(($enMantenimiento && ($piso || $techo)) || (!$enMantenimiento && $patient->ideal_weight) || $firstWeight)
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4">
         <div class="flex flex-wrap gap-4 sm:gap-8 text-sm">
-            @if($patient->ideal_weight)
+            @if(!$enMantenimiento && $patient->ideal_weight)
                 <div>
-                    <p class="text-xs text-gray-400 mb-0.5">Peso ideal</p>
+                    <p class="text-xs text-gray-400 mb-0.5">Peso objetivo</p>
                     <p class="font-semibold text-gray-700">{{ $patient->ideal_weight }} kg</p>
                 </div>
             @endif
-            @if($piso)
+            @if($enMantenimiento && $piso)
                 <div>
                     <p class="text-xs text-gray-400 mb-0.5">Piso</p>
                     <p class="font-semibold text-gray-700">{{ $piso }} kg</p>
                 </div>
             @endif
-            @if($techo)
+            @if($enMantenimiento && $techo)
                 <div>
                     <p class="text-xs text-gray-400 mb-0.5">Techo</p>
                     <p class="font-semibold text-gray-700">{{ $techo }} kg</p>

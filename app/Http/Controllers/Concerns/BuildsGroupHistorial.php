@@ -23,18 +23,25 @@ trait BuildsGroupHistorial
         $noWeight = 0;
         foreach ($attendances as $a) {
             $rw = $a->weightRecord?->weight;
-            $piso = $a->user->peso_piso;
-            $techo = $a->user->peso_techo;
             if (! $rw) {
                 $noWeight++;
-            } elseif ($techo && $rw > $techo) {
+
+                continue;
+            }
+            if (! $a->user->estaEnMantenimiento()) {
+                // Descenso: no hay rango piso/techo que evaluar, solo importa que haya pesado.
+                $inRange++;
+
+                continue;
+            }
+            $piso = $a->user->peso_piso;
+            $techo = $a->user->peso_techo;
+            if ($techo && $rw > $techo) {
                 $above++;
             } elseif ($piso && $rw < $piso) {
                 $below++;
-            } elseif ($piso || $techo) {
-                $inRange++;
             } else {
-                $noWeight++;
+                $inRange++;
             }
         }
 
