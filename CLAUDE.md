@@ -36,7 +36,10 @@ Un grupo es no-recurrente (`recurrence_type = 'none'`, iniciado/detenido manualm
 `Coordinator\InbodyController` y `Patient\InbodyController` envían fotos de reportes InBody a la API de visión de Groq (`config/services.php` → `groq.key` / `GROQ_API_KEY`) con un prompt fijo, parseando la respuesta JSON hacia los campos de `InbodyRecord` (peso, grasa corporal, masa muscular esquelética, etc.).
 
 ### Scheduling
-Dos comandos programados en `routes/console.php`, ambos fijados a la zona horaria `America/Argentina/Buenos_Aires`: `sessions:generate-recurring` (diario a las 08:00, pre-genera los `GroupSession` del día siguiente) y `attendances:auto-close` (cada 5 min, cierra asistencias una vez pasada la ventana horaria de la sesión).
+Tres comandos programados en `routes/console.php`, los dos primeros fijados a la zona horaria `America/Argentina/Buenos_Aires`: `sessions:generate-recurring` (diario a las 08:00, pre-genera los `GroupSession` del día siguiente), `attendances:auto-close` (cada 5 min, cierra asistencias una vez pasada la ventana horaria de la sesión) y `pulse:check` (cada minuto, agrega datos para Laravel Pulse).
+
+### Base de conocimiento para IA
+`AiDocument` (CRUD en `Admin\AiDocumentController`, resembrado por `AiDocumentSeeder`) guarda documentos activos/ordenados que se usan como contexto adicional para funcionalidades de IA de la app (p. ej. la extracción de InBody). No confundir con `InbodyRecord`, que es el dato estructurado ya extraído.
 
 ### Deploy
 `.github/workflows/deploy.yml` sincroniza el repo directamente a un servidor de producción por SSH (rsync) en cada push a `main` (sin correr tests en el pipeline), y luego ejecuta `migrate --force` y resiembra `AiDocumentSeeder`.
