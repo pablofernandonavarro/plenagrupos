@@ -117,7 +117,7 @@
     </div>
 
     {{-- Historial de pesos --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="historial-pesos" class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100">
             <h2 class="font-semibold text-gray-800">Historial de pesos</h2>
         </div>
@@ -125,7 +125,7 @@
             @forelse($weightRecords as $record)
                 <div class="px-5 py-3 flex justify-between items-center">
                     <div>
-                        <p class="text-sm font-medium text-gray-800">{{ $record->group?->name ?? '(Grupo eliminado)' }}</p>
+                        <p class="text-sm font-medium text-gray-800">{{ $record->group?->name ?? 'Registro manual' }}</p>
                         <p class="text-xs text-gray-400">{{ $record->recorded_at->format('d/m/Y H:i') }}</p>
                         @if($record->notes)
                             <p class="text-xs text-gray-500 mt-0.5 italic">{{ $record->notes }}</p>
@@ -139,6 +139,11 @@
                 </div>
             @endforelse
         </div>
+        @if($weightRecords->hasPages())
+            <div class="px-4 py-3 border-t border-gray-50">
+                {{ $weightRecords->links() }}
+            </div>
+        @endif
     </div>
 
 </div>

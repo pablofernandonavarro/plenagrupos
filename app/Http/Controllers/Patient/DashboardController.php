@@ -130,7 +130,9 @@ class DashboardController extends Controller
         $weightRecords = $user->weightRecords()
             ->with('group')
             ->latest('recorded_at')
-            ->get();
+            ->paginate(10)
+            ->withQueryString()
+            ->fragment('historial-pesos');
 
         $availableGroups = Group::orderBy('name')->get();
 
