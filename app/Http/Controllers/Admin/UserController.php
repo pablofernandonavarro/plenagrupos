@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\GroupMembershipLog;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -154,6 +156,40 @@ class UserController extends Controller
         }
 
         $user->save();
+
+        // El grupo de pertenencia implica estar en el roster de ese grupo:
+        // si todavía no está inscripto (o ya salió), lo agregamos/reactivamos.
+        if ($user->role === 'patient' && $user->belonging_group_id) {
+            $existing = DB::table('group_patient')
+                ->where('group_id', $user->belonging_group_id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if (! $existing) {
+                Group::find($user->belonging_group_id)?->patients()->attach($user->id, [
+                    'joined_at' => now(),
+                    'join_source' => 'manual',
+                ]);
+                GroupMembershipLog::create([
+                    'group_id' => $user->belonging_group_id,
+                    'user_id' => $user->id,
+                    'joined_at' => now(),
+                    'join_source' => 'manual',
+                ]);
+            } elseif ($existing->left_at !== null) {
+                DB::table('group_patient')
+                    ->where('group_id', $user->belonging_group_id)
+                    ->where('user_id', $user->id)
+                    ->update(['joined_at' => now(), 'left_at' => null, 'join_source' => 'manual']);
+                GroupMembershipLog::create([
+                    'group_id' => $user->belonging_group_id,
+                    'user_id' => $user->id,
+                    'joined_at' => now(),
+                    'join_source' => 'manual',
+                ]);
+            }
+            // else: ya está activo en ese grupo, nada que hacer
+        }
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado correctamente.');
     }
