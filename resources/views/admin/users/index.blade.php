@@ -27,7 +27,10 @@
 
     <div class="flex justify-between items-center">
         <h1 class="text-2xl font-bold text-gray-800">Usuarios</h1>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
+            <a href="{{ route('admin.users.trashed') }}" class="text-sm text-gray-400 hover:text-gray-600 underline">
+                Ver papelera
+            </a>
             <a href="{{ route('admin.users.create', ['role' => 'coordinator']) }}" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
                 + Coordinador
             </a>
@@ -55,7 +58,7 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
-                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Eliminar usuario?')">
+                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Mover este usuario a la papelera?')">
                             @csrf @method('DELETE')
                             <button class="text-sm text-red-400 hover:text-red-600">Eliminar</button>
                         </form>
@@ -94,7 +97,7 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
-                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Eliminar usuario?')">
+                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Mover este usuario a la papelera?')">
                             @csrf @method('DELETE')
                             <button class="text-sm text-red-400 hover:text-red-600">Eliminar</button>
                         </form>

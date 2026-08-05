@@ -44,7 +44,7 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'name'           => 'required|string|max:255',
-            'email'          => 'required|email|unique:users',
+            'email'          => ['required', 'email', Rule::unique('users')->whereNull('deleted_at')],
             'phone'          => 'nullable|string|max:20',
             'role'           => 'required|in:coordinator,patient',
             'plan'           => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
@@ -94,7 +94,7 @@ class UserController extends Controller
     {
         $rules = [
             'name'           => 'required|string|max:255',
-            'email'          => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'email'          => ['required', 'email', Rule::unique('users')->ignore($user->id)->whereNull('deleted_at')],
             'phone'          => 'nullable|string|max:20',
             'plan'           => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
             'plan_start_date'=> 'nullable|date',
@@ -165,6 +165,34 @@ class UserController extends Controller
         }
         $user->delete();
 
-        return back()->with('success', 'Usuario eliminado.');
+        return back()->with('success', 'Usuario movido a la papelera.');
+    }
+
+    public function trashed(Request $request)
+    {
+        $search = $request->input('search');
+
+        $trashedUsers = User::onlyTrashed()
+            ->when($search, fn ($q) => $q->where(fn ($q) => $q
+                ->where('name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%")
+            ))
+            ->latest('deleted_at')->get();
+
+        return view('admin.users.trashed', compact('trashedUsers'));
+    }
+
+    public function restore(User $user)
+    {
+        $user->restore();
+
+        return redirect()->route('admin.users.trashed')->with('success', 'Usuario restaurado.');
+    }
+
+    public function forceDelete(User $user)
+    {
+        $user->forceDelete();
+
+        return redirect()->route('admin.users.trashed')->with('success', 'Usuario eliminado definitivamente.');
     }
 }

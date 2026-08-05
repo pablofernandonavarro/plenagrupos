@@ -80,7 +80,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/pacientes-por-grupo', [DataExportController::class, 'groupPatients'])->name('group-patients');
     });
 
+    Route::get('/groups/papelera', [Admin\GroupController::class, 'trashed'])->name('groups.trashed');
     Route::resource('groups', Admin\GroupController::class);
+    Route::post('/groups/{group}/restore', [Admin\GroupController::class, 'restore'])->name('groups.restore')->withTrashed();
+    Route::delete('/groups/{group}/force', [Admin\GroupController::class, 'forceDelete'])->name('groups.force-delete')->withTrashed();
     Route::post('/groups/{group}/toggle', [Admin\GroupController::class, 'toggle'])->name('groups.toggle');
     Route::post('/groups/{group}/close-session', [Admin\GroupController::class, 'closeSession'])->name('groups.close-session');
     Route::get('/groups/{group}/live', [Admin\GroupController::class, 'liveAttendances'])->name('groups.live');
@@ -91,6 +94,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/groups/{group}/patients', [Admin\GroupController::class, 'removePatient'])->name('groups.patients.remove');
 
     Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
+    Route::get('/users/papelera', [Admin\UserController::class, 'trashed'])->name('users.trashed');
+    Route::post('/users/{user}/restore', [Admin\UserController::class, 'restore'])->name('users.restore')->withTrashed();
+    Route::delete('/users/{user}/force', [Admin\UserController::class, 'forceDelete'])->name('users.force-delete')->withTrashed();
     Route::get('/users/import', [Admin\UserImportController::class, 'show'])->name('users.import');
     Route::post('/users/import', [Admin\UserImportController::class, 'import'])->name('users.import.store');
     Route::get('/users/import/template', [Admin\UserImportController::class, 'template'])->name('users.import.template');

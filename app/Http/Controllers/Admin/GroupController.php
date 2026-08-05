@@ -499,12 +499,37 @@ class GroupController extends Controller
 
     public function destroy(Group $group)
     {
-        $hasData = $group->attendances()->exists() || $group->weightRecords()->exists();
-        if ($hasData) {
-            return back()->with('error', 'No se puede eliminar el grupo porque tiene estadísticas registradas. Finalizalo en su lugar.');
-        }
         $group->delete();
 
-        return redirect()->route('admin.groups.index')->with('success', 'Grupo eliminado.');
+        return redirect()->route('admin.groups.index')->with('success', 'Grupo movido a la papelera.');
+    }
+
+    public function trashed(Request $request)
+    {
+        $search = $request->input('search');
+
+        $trashedGroups = Group::onlyTrashed()
+            ->when($search, fn ($q) => $q->where('name', 'like', "%$search%"))
+            ->latest('deleted_at')->get();
+
+        return view('admin.groups.trashed', compact('trashedGroups'));
+    }
+
+    public function restore(Group $group)
+    {
+        $group->restore();
+
+        return redirect()->route('admin.groups.trashed')->with('success', 'Grupo restaurado.');
+    }
+
+    public function forceDelete(Group $group)
+    {
+        $hasData = $group->attendances()->exists() || $group->weightRecords()->exists();
+        if ($hasData) {
+            return back()->with('error', 'No se puede eliminar definitivamente: el grupo tiene asistencias o pesos registrados.');
+        }
+        $group->forceDelete();
+
+        return redirect()->route('admin.groups.trashed')->with('success', 'Grupo eliminado definitivamente.');
     }
 }

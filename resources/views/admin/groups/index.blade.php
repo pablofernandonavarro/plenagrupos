@@ -7,10 +7,15 @@
     {{-- Header --}}
     <div class="flex justify-between items-center">
         <h1 class="text-2xl font-bold text-gray-800">Grupos</h1>
-        <a href="{{ route('admin.groups.create') }}"
-            class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition">
-            + Nuevo grupo
-        </a>
+        <div class="flex gap-3 items-center">
+            <a href="{{ route('admin.groups.trashed') }}" class="text-sm text-gray-400 hover:text-gray-600 underline">
+                Ver papelera
+            </a>
+            <a href="{{ route('admin.groups.create') }}"
+                class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition">
+                + Nuevo grupo
+            </a>
+        </div>
     </div>
 
     {{-- Search & filter --}}
@@ -208,7 +213,7 @@
                             Gestionar
                         </a>
                         <form action="{{ route('admin.groups.destroy', $group) }}" method="POST"
-                              onsubmit="return confirm('¿Eliminar el grupo «{{ addslashes($group->name) }}»?\n\nSi tiene asistencias o pesos registrados el sistema no lo permitirá. En ese caso usá Finalizar.')">
+                              onsubmit="return confirm('¿Mover el grupo «{{ addslashes($group->name) }}» a la papelera? Vas a poder restaurarlo desde ahí.')">
                             @csrf @method('DELETE')
                             <button class="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

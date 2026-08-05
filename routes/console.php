@@ -23,3 +23,9 @@ Schedule::command('attendances:auto-close')
 // Aggregate Pulse monitoring data every minute
 Schedule::command('pulse:check')->everyMinute();
 
+// Permanently purge trashed users/groups older than 30 days
+Schedule::command('purge:soft-deleted')
+    ->daily()
+    ->timezone('America/Argentina/Buenos_Aires')
+    ->withoutOverlapping();
+
