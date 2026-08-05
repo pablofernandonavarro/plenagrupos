@@ -190,7 +190,7 @@
     {{-- Patients --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 class="font-semibold text-gray-800">Pacientes del grupo (<span id="patients-count">{{ $group->patients->count() }}</span>)</h2>
+            <h2 class="font-semibold text-gray-800">{{ $group->name }} (<span id="patients-count">{{ $group->patients->count() }}</span>)</h2>
             <form action="{{ route('admin.groups.patients.add', $group) }}" method="POST" class="flex gap-2">
                 @csrf
                 <select name="user_id" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-teal-500 outline-none">
