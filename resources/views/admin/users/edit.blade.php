@@ -208,8 +208,8 @@
 
         @if($user->role === 'patient')
         <div class="border-t pt-4 mt-4">
-            <p class="text-sm font-medium text-gray-700 mb-1">Grupos activos</p>
-            <p class="text-xs text-gray-400 mb-3">Grupos en los que el paciente está inscripto actualmente.</p>
+            <p class="text-sm font-medium text-gray-700 mb-1">Otros grupos a los que asiste</p>
+            <p class="text-xs text-gray-400 mb-3">Además de su grupo de pertenencia, grupos donde también participa actualmente.</p>
             @if($activeGroupEnrollments->isNotEmpty())
                 <div class="space-y-2">
                     @foreach($activeGroupEnrollments as $g)
@@ -227,7 +227,7 @@
                     @endforeach
                 </div>
             @else
-                <p class="text-sm text-gray-400">Sin grupos activos.</p>
+                <p class="text-sm text-gray-400">No asiste a otros grupos.</p>
             @endif
         </div>
         @endif

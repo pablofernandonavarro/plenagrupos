@@ -86,7 +86,7 @@ class UserController extends Controller
     {
         $groups = Group::orderBy('name')->get();
         $activeGroupEnrollments = $user->role === 'patient'
-            ? $user->patientGroups()->wherePivotNull('left_at')->get()
+            ? $user->patientGroups()->wherePivotNull('left_at')->get()->reject(fn ($g) => $g->id === $user->belonging_group_id)
             : collect();
 
         return view('admin.users.edit', compact('user', 'groups', 'activeGroupEnrollments'));
