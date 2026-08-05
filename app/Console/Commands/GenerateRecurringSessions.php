@@ -3,10 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Group;
-use App\Models\TherapeuticSession;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 
 class GenerateRecurringSessions extends Command
 {
@@ -35,7 +33,7 @@ class GenerateRecurringSessions extends Command
         foreach ($groups as $group) {
             if (!$this->shouldCreateSession($group, $tomorrow)) continue;
 
-            $exists = TherapeuticSession::where('group_id', $group->id)
+            $exists = $group->groupSessions()
                 ->whereDate('session_date', $tomorrow->toDateString())
                 ->exists();
 
@@ -45,20 +43,10 @@ class GenerateRecurringSessions extends Command
                 continue;
             }
 
-            $timeLabel   = $group->meeting_time ? ' ' . substr($group->meeting_time, 0, 5) : '';
-            $sessionName = 'Sesión ' . $tomorrow->format('d/m/Y') . $timeLabel;
-
-            $this->line('  ' . ($isDryRun ? '[dry] ' : '') . "Crear: {$group->name} — {$sessionName}");
+            $this->line('  ' . ($isDryRun ? '[dry] ' : '') . "Crear: {$group->name} — sesión del {$tomorrow->format('d/m/Y')}");
 
             if (!$isDryRun) {
-                TherapeuticSession::create([
-                    'group_id'     => $group->id,
-                    'name'         => $sessionName,
-                    'session_date' => $tomorrow->toDateString(),
-                    'qr_token'     => Str::uuid(),
-                    'status'       => 'active',
-                    'created_by'   => $group->admin_id,
-                ]);
+                $group->findOrCreateSessionForDate($tomorrow);
             }
 
             $created++;
@@ -70,7 +58,7 @@ class GenerateRecurringSessions extends Command
 
     private function shouldCreateSession(Group $group, Carbon $tomorrow): bool
     {
-        $type     = $group->attributes['recurrence_type'] ?? 'none';
+        $type     = $group->recurrence_type ?? 'none';
         $interval = max(1, (int)($group->recurrence_interval ?? 1));
 
         // Check end date
@@ -86,7 +74,7 @@ class GenerateRecurringSessions extends Command
                 return (int)$ref->diffInDays($tomorrow) % $interval === 0;
 
             case 'weekly':
-                $days = $group->meeting_days ?? ($group->attributes['meeting_day'] ? [$group->attributes['meeting_day']] : []);
+                $days = $group->meeting_days ?? ($group->meeting_day ? [$group->meeting_day] : []);
                 if (empty($days)) return false;
                 $dayNums = array_values(array_filter(
                     array_map(fn($d) => self::DAY_MAP[$d] ?? null, $days),
