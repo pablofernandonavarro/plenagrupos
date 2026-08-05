@@ -497,6 +497,23 @@ class GroupController extends Controller
         return back()->with('error', 'Un grupo finalizado no puede volver a iniciarse.');
     }
 
+    public function reactivate(Group $group)
+    {
+        if (! $group->isProgramClosed()) {
+            return back()->with('error', 'Este programa no está finalizado.');
+        }
+
+        $isRecurring = ($group->recurrence_type ?? 'none') !== 'none';
+
+        if ($isRecurring) {
+            $group->update(['recurrence_end_date' => null]);
+        } else {
+            $group->update(['active' => true]);
+        }
+
+        return back()->with('success', ($isRecurring ? 'Programa' : 'Grupo').' reactivado. Los pacientes que fueron sacados tienen que volver a escanear el QR o re-agregarlos manualmente.');
+    }
+
     public function destroy(Group $group)
     {
         $group->delete();

@@ -85,6 +85,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/groups/{group}/restore', [Admin\GroupController::class, 'restore'])->name('groups.restore')->withTrashed();
     Route::delete('/groups/{group}/force', [Admin\GroupController::class, 'forceDelete'])->name('groups.force-delete')->withTrashed();
     Route::post('/groups/{group}/toggle', [Admin\GroupController::class, 'toggle'])->name('groups.toggle');
+    Route::post('/groups/{group}/reactivate', [Admin\GroupController::class, 'reactivate'])->name('groups.reactivate');
     Route::post('/groups/{group}/close-session', [Admin\GroupController::class, 'closeSession'])->name('groups.close-session');
     Route::get('/groups/{group}/live', [Admin\GroupController::class, 'liveAttendances'])->name('groups.live');
     Route::patch('/groups/{group}/attendances/{attendance}/checkout', [Admin\GroupController::class, 'checkoutAttendance'])->name('groups.attendance.checkout');

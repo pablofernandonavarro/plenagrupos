@@ -82,7 +82,7 @@
                     . "• Va a sacar a los {$activePatientsCount} paciente(s) actualmente inscriptos.\n"
                     . ($group->auto_sessions ? "• Corta la recurrencia: no se van a generar más sesiones futuras.\n" : '')
                     . "• El código QR deja de servir para nuevos check-ins.\n"
-                    . "• No hay botón para reactivarlo después de esto.\n\n"
+                    . "• Vas a poder reactivarlo después, pero los pacientes sacados no vuelven solos: tienen que volver a escanear el QR o los tenés que re-agregar vos.\n\n"
                     . "¿Confirmás?";
             @endphp
             <form action="{{ route('admin.groups.toggle', $group) }}" method="POST"
@@ -91,6 +91,16 @@
                 <button type="submit"
                     class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-red-300 text-red-600 hover:bg-red-50">
                     Finalizar {{ $group->auto_sessions ? 'programa' : 'grupo' }}
+                </button>
+            </form>
+            @endif
+            @if($group->isProgramClosed())
+            <form action="{{ route('admin.groups.reactivate', $group) }}" method="POST"
+                  onsubmit="return confirm('¿Reactivar {{ $group->auto_sessions ? 'el programa' : 'el grupo' }} «{{ addslashes($group->name) }}»?\n\nLos pacientes que fueron sacados al finalizarlo NO vuelven solos: tienen que volver a escanear el QR o los tenés que re-agregar vos.')">
+                @csrf
+                <button type="submit"
+                    class="text-sm font-semibold px-4 py-2 rounded-lg transition border border-teal-300 text-teal-600 hover:bg-teal-50">
+                    Reactivar {{ $group->auto_sessions ? 'programa' : 'grupo' }}
                 </button>
             </form>
             @endif
