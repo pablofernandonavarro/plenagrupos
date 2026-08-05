@@ -563,7 +563,7 @@ class Group extends Model
         )->wherePivotNull('left_at');
     }
 
-    /** All patients ever in this group, including those who have left. */
+    /** All patients ever in this group, including those who have left. Los que pertenecen al grupo van primero. */
     public function patientsAll()
     {
         return $this->belongsToMany(User::class, 'group_patient')->withPivot(
@@ -572,7 +572,7 @@ class Group extends Model
             'join_source',
             'utm_source',
             'utm_campaign',
-        );
+        )->orderByRaw('CASE WHEN users.belonging_group_id = ? THEN 0 ELSE 1 END', [$this->id]);
     }
 
     public function attendances()

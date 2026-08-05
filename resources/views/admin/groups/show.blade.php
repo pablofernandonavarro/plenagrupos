@@ -213,6 +213,8 @@
                                 <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
                                 @if($patient->belonging_group_id === $group->id)
                                     <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>
+                                @elseif(!$left)
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Visita</span>
                                 @endif
                                 @if($left)
                                     <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Salió</span>
@@ -454,7 +456,7 @@ function renderPatients(patients) {
         const utm = p.utm_source ? ` · UTM: ${p.utm_source}${p.utm_campaign ? ' / '+p.utm_campaign : ''}` : '';
         const belongingBadge = p.is_belonging
             ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>'
-            : '';
+            : (!p.left_at ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Visita</span>' : '');
         return `<div class="px-5 py-3 flex justify-between items-center gap-2">
             <div class="flex items-center gap-3 min-w-0">
                 ${avatarHtml(p)}
