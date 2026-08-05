@@ -206,7 +206,7 @@ $typeBadge = [
                     </td>
                     <td class="px-5 py-3 text-right">
                         <form action="{{ route('admin.attendances.destroy', $att) }}" method="POST"
-                              onsubmit="return confirm('¿Eliminar esta asistencia?')">
+                              onsubmit="return confirm('¿Eliminar esta asistencia? El peso registrado ese día se conservará como registro manual.')">
                             @csrf @method('DELETE')
                             <button class="text-xs text-red-400 hover:text-red-600 transition">Eliminar</button>
                         </form>

@@ -141,7 +141,8 @@
                                 <p class="text-xs text-gray-400">{{ $coord->email }}</p>
                             </div>
                         </div>
-                        <form action="{{ route('admin.groups.coordinators.remove', $group) }}" method="POST">
+                        <form action="{{ route('admin.groups.coordinators.remove', $group) }}" method="POST"
+                              onsubmit="return confirm('¿Quitar a {{ $coord->name }} como coordinador de este grupo?')">
                             @csrf @method('DELETE')
                             <input type="hidden" name="user_id" value="{{ $coord->id }}">
                             <button class="text-xs text-red-400 hover:text-red-600">✕</button>
