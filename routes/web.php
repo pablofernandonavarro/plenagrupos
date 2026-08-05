@@ -62,7 +62,6 @@ Route::post('/grupo/{token}', [GroupJoinController::class, 'join'])->name('group
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/diagnostico/grupo-pertenencia', [Admin\DashboardController::class, 'belongingGroupSync'])->name('diagnostics.belonging-group');
     Route::get('/ayuda', fn() => view('admin.help'))->name('help');
 
     Route::prefix('analytics')->name('analytics.')->group(function () {

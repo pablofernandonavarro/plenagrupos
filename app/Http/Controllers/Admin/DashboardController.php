@@ -67,22 +67,4 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', compact('stats', 'recentAttendances', 'groups', 'weeklyData'));
     }
-
-    /**
-     * Diagnóstico temporal (solo lectura): pacientes cuyo belonging_group_id
-     * no coincide con ninguno de sus grupos activos (group_patient sin left_at).
-     */
-    public function belongingGroupSync()
-    {
-        $patients = User::where('role', 'patient')
-            ->whereNotNull('belonging_group_id')
-            ->with(['belongingGroup', 'patientGroups' => fn ($q) => $q->wherePivotNull('left_at')])
-            ->get()
-            ->reject(fn ($u) => $u->patientGroups->pluck('id')->contains($u->belonging_group_id))
-            ->values();
-
-        $totalWithBelongingGroup = User::where('role', 'patient')->whereNotNull('belonging_group_id')->count();
-
-        return view('admin.diagnostics.belonging-group-sync', compact('patients', 'totalWithBelongingGroup'));
-    }
 }
