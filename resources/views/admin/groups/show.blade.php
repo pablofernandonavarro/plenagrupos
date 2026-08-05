@@ -457,11 +457,14 @@ function renderPatients(patients) {
         const belongingBadge = p.is_belonging
             ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>'
             : (!p.left_at ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Visita</span>' : '');
+        const leftBadge = p.left_at
+            ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Salió</span>'
+            : '';
         return `<div class="px-5 py-3 flex justify-between items-center gap-2">
             <div class="flex items-center gap-3 min-w-0">
                 ${avatarHtml(p)}
                 <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-800">${p.name} ${belongingBadge}</p>
+                    <p class="text-sm font-medium text-gray-800">${p.name} ${belongingBadge} ${leftBadge}</p>
                     <p class="text-xs text-gray-400">${p.email ?? ''}</p>
                     <p class="text-[10px] text-gray-400 mt-0.5">
                         Alta: ${p.joined_at ?? '—'}
