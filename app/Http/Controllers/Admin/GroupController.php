@@ -389,6 +389,7 @@ class GroupController extends Controller
                 'peso_techo' => $a->user->peso_techo,
                 'en_mantenimiento' => $a->user->estaEnMantenimiento(),
                 'session_number' => $a->groupSession?->sequence_number,
+                'is_belonging' => $a->user->belonging_group_id === $group->id,
             ]);
 
         $avg = $group->weightRecords()->whereDate('recorded_at', $todayDate)->avg('weight');

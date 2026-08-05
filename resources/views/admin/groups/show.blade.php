@@ -190,7 +190,7 @@
     {{-- Patients --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 class="font-semibold text-gray-800">{{ $group->name }} (<span id="patients-count">{{ $group->patients->count() }}</span>)</h2>
+            <h2 class="font-semibold text-gray-800">{{ $group->name }} (<span id="patients-count">{{ $group->patients->where('belonging_group_id', $group->id)->count() }}</span>)</h2>
             <form action="{{ route('admin.groups.patients.add', $group) }}" method="POST" class="flex gap-2">
                 @csrf
                 <select name="user_id" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-teal-500 outline-none">
@@ -203,7 +203,7 @@
             </form>
         </div>
         <div id="patients-list" class="divide-y divide-gray-50">
-            @forelse($group->patientsAll as $patient)
+            @forelse($group->patientsAll->where('belonging_group_id', $group->id) as $patient)
                 @php $piv = $patient->pivot; $left = $piv->left_at; @endphp
                 <div class="px-5 py-3 flex justify-between items-center gap-2">
                     <div class="flex items-center gap-3 min-w-0">
@@ -211,11 +211,6 @@
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
                                 <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
-                                @if($patient->belonging_group_id === $group->id)
-                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>
-                                @elseif(!$left)
-                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Visita</span>
-                                @endif
                                 @if($left)
                                     <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Salió</span>
                                 @endif
@@ -301,6 +296,11 @@
                                 <div class="flex items-center gap-2">
                                     <x-avatar :user="$att->user" size="sm" />
                                     <span class="font-medium text-gray-800">{{ $att->user->name }}</span>
+                                    @if($att->user->belonging_group_id === $group->id)
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>
+                                    @else
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Visita</span>
+                                    @endif
                                 </div>
                             </td>
                             <td class="px-5 py-3 text-center text-gray-600 tabular-nums text-xs">
@@ -438,8 +438,9 @@ function avatarHtml(a) {
     return `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-semibold text-white text-xs" style="background-color:${a.color}">${a.initials}</div>`;
 }
 
-function renderPatients(patients) {
-    patientsCount.textContent = patients.length;
+function renderPatients(allPatients) {
+    const patients = allPatients.filter(p => p.is_belonging);
+    patientsCount.textContent = patients.filter(p => !p.left_at).length;
     if (patients.length === 0) {
         patientsList.innerHTML = '<p class="px-5 py-4 text-sm text-gray-400 text-center">Sin pacientes. Los pacientes se agregan automáticamente al escanear el QR.</p>';
         return;
@@ -454,9 +455,6 @@ function renderPatients(patients) {
                </form>`
             : '';
         const utm = p.utm_source ? ` · UTM: ${p.utm_source}${p.utm_campaign ? ' / '+p.utm_campaign : ''}` : '';
-        const belongingBadge = p.is_belonging
-            ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>'
-            : (!p.left_at ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Visita</span>' : '');
         const leftBadge = p.left_at
             ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Salió</span>'
             : '';
@@ -464,7 +462,7 @@ function renderPatients(patients) {
             <div class="flex items-center gap-3 min-w-0">
                 ${avatarHtml(p)}
                 <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-800">${p.name} ${belongingBadge} ${leftBadge}</p>
+                    <p class="text-sm font-medium text-gray-800">${p.name} ${leftBadge}</p>
                     <p class="text-xs text-gray-400">${p.email ?? ''}</p>
                     <p class="text-[10px] text-gray-400 mt-0.5">
                         Alta: ${p.joined_at ?? '—'}
@@ -542,12 +540,15 @@ async function fetchAttendances() {
                 const sessCell = a.session_number != null
                     ? `n.º ${a.session_number}`
                     : '<span class="text-gray-300">—</span>';
+                const belongingBadge = a.is_belonging
+                    ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>'
+                    : '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-medium">Visita</span>';
                 return `<tr class="${isPresent ? '' : 'opacity-60'}">
                     <td class="px-5 py-3">
                         <div class="flex items-center gap-2">
                             ${avatarHtml(a)}
                             <div>
-                                <span class="font-medium text-gray-800">${a.name}</span>
+                                <span class="font-medium text-gray-800">${a.name}</span> ${belongingBadge}
                                 <div class="mt-0.5">${statusBadge}</div>
                             </div>
                         </div>
