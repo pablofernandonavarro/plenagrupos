@@ -54,7 +54,7 @@
 
             @if($user->role === 'patient')
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Plan contratado</label>
                 <div class="flex gap-2">
                     @foreach(['descenso'=>'Descenso','mantenimiento'=>'Mantenimiento','mantenimiento_pleno'=>'Mant. Pleno'] as $val => $label)
                         <div class="relative flex-1">
@@ -68,6 +68,19 @@
                         </div>
                     @endforeach
                 </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Grupo de pertenencia</label>
+                <p class="text-xs text-gray-400 mb-1">Grupo principal al que pertenece este paciente.</p>
+                <select name="belonging_group_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                    <option value="">— Sin grupo asignado —</option>
+                    @foreach($groups as $g)
+                        <option value="{{ $g->id }}" {{ old('belonging_group_id', $user->belonging_group_id) == $g->id ? 'selected' : '' }}>
+                            {{ $g->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('belonging_group_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio del plan</label>
@@ -84,19 +97,6 @@
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
                     placeholder="Ej: 70.50">
                 @error('ideal_weight')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Grupo de pertenencia</label>
-                <p class="text-xs text-gray-400 mb-1">Grupo principal al que pertenece este paciente.</p>
-                <select name="belonging_group_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
-                    <option value="">— Sin grupo asignado —</option>
-                    @foreach($groups as $g)
-                        <option value="{{ $g->id }}" {{ old('belonging_group_id', $user->belonging_group_id) == $g->id ? 'selected' : '' }}>
-                            {{ $g->name }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('belonging_group_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
             <div class="rounded-lg border border-gray-200 bg-gray-50/80 p-4 space-y-3">
                 <p class="text-sm font-medium text-gray-800">Estado en el programa</p>
@@ -182,14 +182,14 @@
                 <div class="space-y-3">
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">Nueva contraseña</label>
-                        <input type="password" name="password"
+                        <input type="password" name="password" autocomplete="new-password"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
                             placeholder="Mínimo 8 caracteres">
                         @error('password')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">Confirmar contraseña</label>
-                        <input type="password" name="password_confirmation"
+                        <input type="password" name="password_confirmation" autocomplete="new-password"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
                             placeholder="Repetir contraseña">
                     </div>
