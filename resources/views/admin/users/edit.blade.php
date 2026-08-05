@@ -72,14 +72,16 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Grupo de pertenencia</label>
                 <p class="text-xs text-gray-400 mb-1">Grupo principal al que pertenece este paciente.</p>
-                <select name="belonging_group_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
+                <select name="belonging_group_id" id="belonging-group-select" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm bg-white">
                     <option value="">— Sin grupo asignado —</option>
                     @foreach($groups as $g)
-                        <option value="{{ $g->id }}" {{ old('belonging_group_id', $user->belonging_group_id) == $g->id ? 'selected' : '' }}>
+                        <option value="{{ $g->id }}" data-group-type="{{ $g->group_type ?? 'descenso' }}"
+                            {{ old('belonging_group_id', $user->belonging_group_id) == $g->id ? 'selected' : '' }}>
                             {{ $g->name }}
                         </option>
                     @endforeach
                 </select>
+                <p class="text-xs text-gray-400 mt-1">Se muestran los grupos del tipo del plan contratado.</p>
                 @error('belonging_group_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
@@ -240,6 +242,8 @@
     const idealSection = document.getElementById('section-ideal-weight');
     const rangeSection = document.getElementById('section-maintenance-range');
     const planRadios = document.querySelectorAll('input[name="plan"]');
+    const belongingSelect = document.getElementById('belonging-group-select');
+    const initialBelongingValue = belongingSelect ? belongingSelect.value : '';
 
     function update() {
         const checked = document.querySelector('input[name="plan"]:checked');
@@ -248,8 +252,27 @@
         rangeSection.style.display = isMantenimiento ? '' : 'none';
     }
 
-    planRadios.forEach(r => r.addEventListener('change', update));
+    function updateBelongingOptions(userChangedPlan) {
+        if (!belongingSelect || !checkedPlan()) return;
+        const planValue = checkedPlan().value;
+        let selectedStillVisible = false;
+        Array.from(belongingSelect.options).forEach(opt => {
+            if (!opt.value) return;
+            const matches = opt.dataset.groupType === planValue;
+            const keepBecauseInitial = !userChangedPlan && opt.value === initialBelongingValue;
+            opt.hidden = !matches && !keepBecauseInitial;
+            if (opt.value === belongingSelect.value && !opt.hidden) selectedStillVisible = true;
+        });
+        if (userChangedPlan && !selectedStillVisible) belongingSelect.value = '';
+    }
+
+    function checkedPlan() {
+        return document.querySelector('input[name="plan"]:checked');
+    }
+
+    planRadios.forEach(r => r.addEventListener('change', () => { update(); updateBelongingOptions(true); }));
     update();
+    updateBelongingOptions(false);
 })();
 </script>
 @endif
