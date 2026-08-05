@@ -216,6 +216,13 @@ class GroupJoinController extends Controller
         }
         // else: already active member, no pivot/log change needed
 
+        // El grupo de pertenencia es informativo (para cuando el paciente asiste a
+        // varios grupos según plan_rules) — se autocompleta solo la primera vez,
+        // no se pisa si el paciente ya tiene uno elegido.
+        if (is_null($user->belonging_group_id)) {
+            $user->update(['belonging_group_id' => $group->id]);
+        }
+
         return redirect()->route('patient.weight.create', ['attendance' => $attendance->id])
             ->with('success', '¡Bienvenido! Registrá tu peso para continuar.');
     }

@@ -336,6 +336,9 @@ class GroupController extends Controller
             'join_source' => 'manual',
         ]);
 
+        // Autocompletar grupo de pertenencia solo si el paciente todavía no tiene uno.
+        User::where('id', $request->user_id)->whereNull('belonging_group_id')->update(['belonging_group_id' => $group->id]);
+
         return back()->with('success', 'Paciente agregado.');
     }
 
