@@ -405,6 +405,7 @@ class GroupController extends Controller
             'utm_source' => $p->pivot->utm_source,
             'utm_campaign' => $p->pivot->utm_campaign,
             'left_at' => $p->pivot->left_at ? Carbon::parse($p->pivot->left_at)->format('d/m/Y H:i') : null,
+            'is_belonging' => $p->belonging_group_id === $group->id,
         ]);
 
         return response()->json([

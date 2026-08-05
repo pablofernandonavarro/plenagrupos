@@ -211,6 +211,9 @@
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
                                 <p class="text-sm font-medium text-gray-800">{{ $patient->name }}</p>
+                                @if($patient->belonging_group_id === $group->id)
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>
+                                @endif
                                 @if($left)
                                     <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Salió</span>
                                 @endif
@@ -449,11 +452,14 @@ function renderPatients(patients) {
                </form>`
             : '';
         const utm = p.utm_source ? ` · UTM: ${p.utm_source}${p.utm_campaign ? ' / '+p.utm_campaign : ''}` : '';
+        const belongingBadge = p.is_belonging
+            ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 font-medium">Pertenece</span>'
+            : '';
         return `<div class="px-5 py-3 flex justify-between items-center gap-2">
             <div class="flex items-center gap-3 min-w-0">
                 ${avatarHtml(p)}
                 <div class="min-w-0">
-                    <p class="text-sm font-medium text-gray-800">${p.name}</p>
+                    <p class="text-sm font-medium text-gray-800">${p.name} ${belongingBadge}</p>
                     <p class="text-xs text-gray-400">${p.email ?? ''}</p>
                     <p class="text-[10px] text-gray-400 mt-0.5">
                         Alta: ${p.joined_at ?? '—'}
