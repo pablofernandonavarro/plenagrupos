@@ -255,10 +255,12 @@
     function updateBelongingOptions(userChangedPlan) {
         if (!belongingSelect || !checkedPlan()) return;
         const planValue = checkedPlan().value;
+        // No hay grupos de tipo "mantenimiento_pleno" propio: esos pacientes asisten a grupos de mantenimiento.
+        const matchType = planValue === 'mantenimiento_pleno' ? 'mantenimiento' : planValue;
         let selectedStillVisible = false;
         Array.from(belongingSelect.options).forEach(opt => {
             if (!opt.value) return;
-            const matches = opt.dataset.groupType === planValue;
+            const matches = opt.dataset.groupType === matchType;
             const keepBecauseInitial = !userChangedPlan && opt.value === initialBelongingValue;
             opt.hidden = !matches && !keepBecauseInitial;
             if (opt.value === belongingSelect.value && !opt.hidden) selectedStillVisible = true;
