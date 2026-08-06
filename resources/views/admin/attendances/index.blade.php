@@ -22,15 +22,13 @@ $typeBadge = [
     <form method="GET" action="{{ route('admin.attendances.index') }}"
           class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
+            <div class="relative">
                 <label class="block text-xs text-gray-500 mb-1">Paciente</label>
-                <select name="patient_id"
+                <input type="text" id="patient-filter-search" autocomplete="off" placeholder="Todos"
+                    value="{{ optional($patients->firstWhere('id', (int) request('patient_id')))->name }}"
                     class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
-                    <option value="">Todos</option>
-                    @foreach($patients as $p)
-                        <option value="{{ $p->id }}" {{ request('patient_id') == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
-                    @endforeach
-                </select>
+                <input type="hidden" name="patient_id" id="patient-filter-id" value="{{ request('patient_id') }}">
+                <div id="patient-filter-options" class="hidden absolute z-10 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg"></div>
             </div>
             <div>
                 <label class="block text-xs text-gray-500 mb-1">Grupo</label>
@@ -310,6 +308,62 @@ function openModal(idx)  { document.getElementById('modal-' + idx).classList.rem
 function closeModal(idx) { document.getElementById('modal-' + idx).classList.add('hidden'); }
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add('hidden'));
+});
+
+// Buscador del filtro "Paciente"
+const filterPatients = @json($patients->map(fn($p) => ['id' => $p->id, 'name' => $p->name]));
+const patientFilterSearch  = document.getElementById('patient-filter-search');
+const patientFilterId      = document.getElementById('patient-filter-id');
+const patientFilterOptions = document.getElementById('patient-filter-options');
+
+function escapeHtmlFilter(str) {
+    return (str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function normalizeFilterSearch(str) {
+    return (str ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function renderPatientFilterOptions(list) {
+    const allOption = `<button type="button" data-id="" data-name=""
+        class="patient-filter-option w-full text-left px-3 py-2 hover:bg-teal-50 text-sm text-gray-500">Todos</button>`;
+    const items = list.length
+        ? list.slice(0, 30).map(p => `
+            <button type="button" data-id="${p.id}" data-name="${escapeHtmlFilter(p.name)}"
+                class="patient-filter-option w-full text-left px-3 py-2 hover:bg-teal-50 text-sm text-gray-800">${escapeHtmlFilter(p.name)}</button>
+        `).join('')
+        : '<p class="px-3 py-2 text-xs text-gray-400">Sin resultados.</p>';
+    const more = list.length > 30
+        ? `<p class="px-3 py-1.5 text-[10px] text-gray-400 border-t">Mostrando 30 de ${list.length}. Seguí escribiendo para acotar.</p>`
+        : '';
+    patientFilterOptions.innerHTML = allOption + items + more;
+    patientFilterOptions.classList.remove('hidden');
+}
+
+function filterPatientList(q) {
+    q = normalizeFilterSearch(q);
+    return q === '' ? filterPatients : filterPatients.filter(p => normalizeFilterSearch(p.name).includes(q));
+}
+
+patientFilterSearch.addEventListener('input', () => {
+    patientFilterId.value = '';
+    renderPatientFilterOptions(filterPatientList(patientFilterSearch.value));
+});
+
+patientFilterSearch.addEventListener('focus', () => renderPatientFilterOptions(filterPatientList(patientFilterSearch.value)));
+
+patientFilterOptions.addEventListener('click', (e) => {
+    const btn = e.target.closest('.patient-filter-option');
+    if (!btn) return;
+    patientFilterId.value = btn.dataset.id;
+    patientFilterSearch.value = btn.dataset.name;
+    patientFilterOptions.classList.add('hidden');
+});
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#patient-filter-search') && !e.target.closest('#patient-filter-options')) {
+        patientFilterOptions.classList.add('hidden');
+    }
 });
 </script>
 @endsection
