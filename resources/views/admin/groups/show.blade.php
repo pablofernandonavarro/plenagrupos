@@ -191,15 +191,15 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
             <h2 class="font-semibold text-gray-800">{{ $group->name }} (<span id="patients-count">{{ $group->patients->where('belonging_group_id', $group->id)->count() }}</span>)</h2>
-            <form action="{{ route('admin.groups.patients.add', $group) }}" method="POST" class="flex gap-2">
+            <form action="{{ route('admin.groups.patients.add', $group) }}" method="POST" class="flex gap-2" id="add-patient-form">
                 @csrf
-                <select name="user_id" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-teal-500 outline-none">
-                    <option value="">Agregar paciente...</option>
-                    @foreach($allPatients->diff($group->patients) as $p)
-                        <option value="{{ $p->id }}">{{ $p->name }}</option>
-                    @endforeach
-                </select>
-                <button class="bg-teal-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-teal-700">Agregar</button>
+                <div class="relative">
+                    <input type="text" id="patient-search" autocomplete="off" placeholder="Agregar paciente..."
+                        class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 w-56 focus:ring-2 focus:ring-teal-500 outline-none">
+                    <input type="hidden" name="user_id" id="patient-user-id">
+                    <div id="patient-options" class="hidden absolute z-10 mt-1 w-72 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg"></div>
+                </div>
+                <button class="bg-teal-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-teal-700 shrink-0">Agregar</button>
             </form>
         </div>
         <div id="patients-list" class="divide-y divide-gray-50">
@@ -573,6 +573,73 @@ fetchAttendances();
 if (!groupClosed && !sessionEndedToday) {
     setInterval(fetchAttendances, 4000);
 }
+
+// Buscador del combo "Agregar paciente..."
+const availablePatients = @json($allPatients->diff($group->patients)->values()->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'email' => $p->email]));
+const patientSearch  = document.getElementById('patient-search');
+const patientUserId  = document.getElementById('patient-user-id');
+const patientOptions = document.getElementById('patient-options');
+const addPatientForm = document.getElementById('add-patient-form');
+
+function escapeHtml(str) {
+    return (str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function normalizeSearch(str) {
+    return (str ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function renderPatientOptions(list) {
+    if (list.length === 0) {
+        patientOptions.innerHTML = '<p class="px-3 py-2 text-xs text-gray-400">Sin resultados.</p>';
+    } else {
+        patientOptions.innerHTML = list.slice(0, 30).map(p => `
+            <button type="button" data-id="${p.id}" data-name="${escapeHtml(p.name)}"
+                class="patient-option w-full text-left px-3 py-2 hover:bg-teal-50 text-sm">
+                <p class="font-medium text-gray-800">${escapeHtml(p.name)}</p>
+                <p class="text-xs text-gray-400">${escapeHtml(p.email)}</p>
+            </button>
+        `).join('');
+        if (list.length > 30) {
+            patientOptions.innerHTML += `<p class="px-3 py-1.5 text-[10px] text-gray-400 border-t">Mostrando 30 de ${list.length}. Seguí escribiendo para acotar.</p>`;
+        }
+    }
+    patientOptions.classList.remove('hidden');
+}
+
+patientSearch.addEventListener('input', () => {
+    patientUserId.value = '';
+    const q = normalizeSearch(patientSearch.value);
+    const filtered = q === ''
+        ? availablePatients
+        : availablePatients.filter(p => normalizeSearch(p.name).includes(q) || normalizeSearch(p.email).includes(q));
+    renderPatientOptions(filtered);
+});
+
+patientSearch.addEventListener('focus', () => renderPatientOptions(
+    normalizeSearch(patientSearch.value) === ''
+        ? availablePatients
+        : availablePatients.filter(p => normalizeSearch(p.name).includes(normalizeSearch(patientSearch.value)) || normalizeSearch(p.email).includes(normalizeSearch(patientSearch.value)))
+));
+
+patientOptions.addEventListener('click', (e) => {
+    const btn = e.target.closest('.patient-option');
+    if (!btn) return;
+    patientUserId.value = btn.dataset.id;
+    patientSearch.value = btn.dataset.name;
+    patientOptions.classList.add('hidden');
+});
+
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#add-patient-form')) patientOptions.classList.add('hidden');
+});
+
+addPatientForm.addEventListener('submit', (e) => {
+    if (!patientUserId.value) {
+        e.preventDefault();
+        alert('Elegí un paciente de la lista antes de agregar.');
+    }
+});
 </script>
 
 @endsection
