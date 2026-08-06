@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Este archivo le da contexto a Claude Code (claude.ai/code) para trabajar en este repositorio.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Proyecto
 
@@ -9,6 +9,7 @@ App Laravel 13 ("Plena Grupos") para gestionar programas grupales de descenso de
 ## Comandos
 
 - `composer dev` — levanta todo el stack local en paralelo: `php artisan serve`, worker de colas, `php artisan pail` (logs en vivo) y `npm run dev` (Vite).
+- `composer setup` — setup completo desde cero: `composer install`, copia `.env.example`, genera key, corre migraciones y siembra seeders.
 - `php artisan test` / `composer test` — corre toda la suite de tests (phpunit.xml usa SQLite en memoria).
 - `php artisan test --filter=NombreDelTest` — corre un solo test.
 - `vendor/bin/pint` — aplica el estilo de código (preset default de Laravel, sin `pint.json` propio).
@@ -29,6 +30,11 @@ Un grupo es no-recurrente (`recurrence_type = 'none'`, iniciado/detenido manualm
 
 ### Flujo de check-in por QR
 `GroupJoinController` (`/grupo/{token}`) es el camino de check-in en vivo: valida que el grupo esté activo, aplica los límites mensuales de visitas vía `PlanRule` (indexado por `patient_plan` = `User::faseEfectiva()`, es decir `fase_actual` con fallback a `plan`, y `group_type`: `descenso|mantenimiento|mantenimiento_pleno`), y luego crea o reutiliza un `GroupAttendance` del día. `GroupSession` es una fila por día calendario (zona AR) por grupo (`Group::findOrCreateSessionForDate`), usada para agrupar asistencias y derivar un número de secuencia global. `group_patient` es una tabla pivot con seguimiento de ingreso/salida y columnas de atribución UTM.
+
+**Dos conceptos de membresía distintos**: `group_patient` (pivot) registra todos los grupos en que un paciente está actualmente inscripto (puede ser más de uno); `users.belonging_group_id` es el grupo "de pertenencia" asignado manualmente por el admin, usado para filtrado y ordenamiento visual (p.ej. en dropdowns de "Agregar paciente"). No son intercambiables.
+
+### Ciclo de vida del paciente
+`users.patient_status` tiene tres valores: `active` (en programa), `pause` (suspendido temporalmente) y `exited` (egresado). El cambio de estado lo registra el admin vía `UserController` y queda auditado automáticamente en `GroupMembershipLog` (tabla `group_membership_logs`, `timestamps = false`, campos `joined_at`/`left_at`/`join_source`) cuando el usuario es agregado o removido de un grupo. `WeightRecord` puede estar vinculado opcionalmente a una `GroupAttendance` vía `attendance_id` (nullable desde la migración del 2026-08-04).
 
 **Código legacy/muerto**: `TherapeuticSession`, `SessionAttendance` y `SessionJoinController` implementan un modelo de sesión QR más viejo y paralelo. No hay ninguna ruta registrada para `SessionJoinController` en `routes/web.php` — el flujo en vivo es enteramente `Group`/`GroupAttendance`/`GroupSession` vía `GroupJoinController`. No extender el camino de `TherapeuticSession` asumiendo que está activo.
 
