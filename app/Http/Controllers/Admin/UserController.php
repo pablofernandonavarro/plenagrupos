@@ -197,8 +197,8 @@ class UserController extends Controller
 
     public function makeAdmin(User $user)
     {
-        if ($user->isAdmin()) {
-            return back()->with('info', 'Ese usuario ya es administrador.');
+        if (! $user->isCoordinator()) {
+            return back()->with('error', 'Solo se puede convertir en administrador a un coordinador.');
         }
 
         $user->role = 'admin';

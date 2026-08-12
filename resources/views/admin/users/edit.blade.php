@@ -213,7 +213,7 @@
             </div>
         </form>
 
-        @if($user->role !== 'admin')
+        @if($user->role === 'coordinator')
         <div class="border-t pt-4 mt-4">
             <p class="text-sm font-medium text-gray-700 mb-1">Zona de riesgo</p>
             <p class="text-xs text-gray-400 mb-3">Convertir en administrador le da acceso total a la app: gestión de usuarios, grupos, reglas y WhatsApp.</p>
