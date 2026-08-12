@@ -106,6 +106,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/users/{user}/edit', [Admin\UserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [Admin\UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{user}/make-admin', [Admin\UserController::class, 'makeAdmin'])->name('users.make-admin');
 
     Route::resource('ai-documents', Admin\AiDocumentController::class)
         ->except(['show']);

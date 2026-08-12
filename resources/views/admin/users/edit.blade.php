@@ -213,6 +213,20 @@
             </div>
         </form>
 
+        @if($user->role !== 'admin')
+        <div class="border-t pt-4 mt-4">
+            <p class="text-sm font-medium text-gray-700 mb-1">Zona de riesgo</p>
+            <p class="text-xs text-gray-400 mb-3">Convertir en administrador le da acceso total a la app: gestión de usuarios, grupos, reglas y WhatsApp.</p>
+            <form action="{{ route('admin.users.make-admin', $user) }}" method="POST"
+                  onsubmit="return confirm('¿Convertir a {{ addslashes($user->name) }} en administrador? Va a tener acceso total a la app.')">
+                @csrf
+                <button type="submit" class="text-sm font-semibold px-4 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition">
+                    Hacer administrador
+                </button>
+            </form>
+        </div>
+        @endif
+
         @if($user->role === 'patient')
         <div class="border-t pt-4 mt-4">
             <p class="text-sm font-medium text-gray-700 mb-1">Otros grupos a los que asiste</p>

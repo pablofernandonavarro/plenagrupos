@@ -195,6 +195,18 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado correctamente.');
     }
 
+    public function makeAdmin(User $user)
+    {
+        if ($user->isAdmin()) {
+            return back()->with('info', 'Ese usuario ya es administrador.');
+        }
+
+        $user->role = 'admin';
+        $user->save();
+
+        return back()->with('success', "{$user->name} ahora es administrador.");
+    }
+
     public function destroy(User $user)
     {
         if ($user->isAdmin()) {
