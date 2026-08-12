@@ -58,6 +58,7 @@
                     <input type="tel" name="phone" value="{{ old('phone') }}"
                         class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition text-sm"
                         placeholder="+54 9 11 0000-0000">
+                    <p class="text-xs text-gray-400 mt-1">Con código de país y de área, sin el "15". Ejemplo: 5491122334455.</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>

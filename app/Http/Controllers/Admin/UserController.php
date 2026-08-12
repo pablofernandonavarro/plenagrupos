@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\GroupMembershipLog;
 use App\Models\User;
+use App\Rules\WhatsappPhone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -47,7 +48,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name'           => 'required|string|max:255',
             'email'          => ['required', 'email', Rule::unique('users')->whereNull('deleted_at')],
-            'phone'          => 'nullable|string|max:20',
+            'phone'          => ['nullable', 'string', 'max:20', new WhatsappPhone],
             'role'           => 'required|in:coordinator,patient',
             'plan'           => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
             'plan_start_date'=> 'nullable|date',
@@ -97,7 +98,7 @@ class UserController extends Controller
         $rules = [
             'name'           => 'required|string|max:255',
             'email'          => ['required', 'email', Rule::unique('users')->ignore($user->id)->whereNull('deleted_at')],
-            'phone'          => 'nullable|string|max:20',
+            'phone'          => ['nullable', 'string', 'max:20', new WhatsappPhone],
             'plan'           => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
             'plan_start_date'=> 'nullable|date',
             'ideal_weight'   => 'nullable|numeric|min:0|max:300',

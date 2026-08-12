@@ -49,7 +49,9 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                 <input type="tel" name="phone" value="{{ old('phone', $user->phone) }}"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm"
-                    placeholder="Opcional">
+                    placeholder="Ej: 5491122334455">
+                <p class="text-xs text-gray-400 mt-1">Opcional. Con código de país y de área, sin el "15". Ejemplo: 5491122334455.</p>
+                @error('phone')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
             @if($user->role === 'patient')

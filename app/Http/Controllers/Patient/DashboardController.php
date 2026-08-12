@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\GroupAttendance;
 use App\Models\GroupMembershipLog;
+use App\Rules\WhatsappPhone;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -147,9 +148,14 @@ class DashboardController extends Controller
             'ideal_weight'       => 'nullable|numeric|min:0|max:300',
             'avatar'             => 'nullable|image|max:2048',
             'belonging_group_id' => 'nullable|exists:groups,id',
+            'phone'              => ['nullable', 'string', 'max:20', new WhatsappPhone],
         ]);
 
         $user = auth()->user();
+
+        if ($request->has('phone')) {
+            $user->phone = $data['phone'] ?? null;
+        }
 
         if ($request->has('peso_piso')) {
             $user->peso_piso = $data['peso_piso'] ?? null;
