@@ -113,6 +113,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/plan-rules', [Admin\PlanRuleController::class, 'index'])->name('plan-rules.index');
     Route::post('/plan-rules', [Admin\PlanRuleController::class, 'save'])->name('plan-rules.save');
 
+    Route::get('/whatsapp', [Admin\WhatsAppController::class, 'index'])->name('whatsapp.index');
+    Route::get('/whatsapp/status', [Admin\WhatsAppController::class, 'status'])->name('whatsapp.status');
+    Route::get('/whatsapp/qr', [Admin\WhatsAppController::class, 'qr'])->name('whatsapp.qr');
+    Route::post('/whatsapp/connect', [Admin\WhatsAppController::class, 'connect'])->name('whatsapp.connect');
+    Route::post('/whatsapp/send', [Admin\WhatsAppController::class, 'send'])->name('whatsapp.send');
+    Route::delete('/whatsapp/disconnect', [Admin\WhatsAppController::class, 'disconnect'])->name('whatsapp.disconnect');
+
     Route::get('/attendances', [Admin\AttendanceController::class, 'index'])->name('attendances.index');
     Route::delete('/attendances/{attendance}', [Admin\AttendanceController::class, 'destroy'])->name('attendances.destroy');
 });
@@ -126,6 +133,10 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
     Route::patch('/grupos/{group}/asistencias/{attendance}/checkout', [Coordinator\DashboardController::class, 'checkoutAttendance'])->name('groups.attendance.checkout');
     Route::post('/grupos/{group}/mantenimiento', [Coordinator\DashboardController::class, 'updateMaintenanceWeight'])->name('groups.maintenance');
     Route::post('/grupos/{group}/toggle', [Coordinator\DashboardController::class, 'toggleGroup'])->name('groups.toggle');
+    Route::post('/grupos/{group}/coordinadores', [Coordinator\DashboardController::class, 'addCoordinator'])->name('groups.coordinators.add');
+    Route::delete('/grupos/{group}/coordinadores', [Coordinator\DashboardController::class, 'removeCoordinator'])->name('groups.coordinators.remove');
+    Route::post('/grupos/{group}/pacientes', [Coordinator\DashboardController::class, 'addPatient'])->name('groups.patients.add');
+    Route::delete('/grupos/{group}/pacientes', [Coordinator\DashboardController::class, 'removePatient'])->name('groups.patients.remove');
 
     Route::get('/perfil', [Coordinator\DashboardController::class, 'profile'])->name('profile');
     Route::post('/perfil', [Coordinator\DashboardController::class, 'updateProfile'])->name('profile.update');

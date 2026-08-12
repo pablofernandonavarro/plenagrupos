@@ -6,10 +6,12 @@ use App\Http\Controllers\Concerns\BuildsGroupHistorial;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\GroupAttendance;
+use App\Models\GroupMembershipLog;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -99,31 +101,106 @@ class DashboardController extends Controller
         // Auto-close stale attendances before showing the view
         $this->autoCloseStaleAttendances($group);
 
-        $group->load(['patientsAll', 'coordinators']);
-        $attendances = $group->attendances()->with(['user', 'weightRecord', 'groupSession'])->latest('attended_at')->paginate(20);
+        $group->load(['coordinators', 'patients', 'patientsAll']);
+        $allCoordinators = User::where('role', 'coordinator')->get();
+        $allPatients = User::where('role', 'patient')->get();
+
+        $joinUrl = route('group.join', $group->qr_token);
+        $qrCode = QrCode::size(220)->generate($joinUrl);
+
+        // Attendance stats
+        $attendances = $group->attendances()->with(['user', 'weightRecord', 'groupSession'])->latest('attended_at')->get();
+        $totalVisits = $attendances->count();
         $avgWeight = $group->weightRecords()->avg('weight');
-        $totalVisits = $group->attendances()->count();
 
         $tzAr = 'America/Argentina/Buenos_Aires';
         $todayDateAr = Carbon::now($tzAr)->toDateString();
-
-        $todayAttendances = $group->attendances()
-            ->with(['user', 'weightRecord', 'groupSession'])
-            ->whereDate('attended_at', $todayDateAr)
-            ->get();
-
-        $stats = $this->weightRangeStats($todayAttendances);
-        $todayVisits = $todayAttendances->count();
 
         $todaySessionRecord = $group->groupSessions()
             ->where('session_date', $todayDateAr)
             ->first();
 
+        $endedAt = $group->getRawOriginal('ended_at');
+        $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tzAr)->isToday() && ! $group->isLiveSessionNow();
+
         return view('coordinator.group', array_merge(
-            compact('group', 'attendances', 'avgWeight', 'totalVisits', 'todayVisits', 'stats', 'todaySessionRecord'),
+            compact('group', 'allCoordinators', 'allPatients', 'qrCode', 'joinUrl', 'attendances', 'totalVisits', 'avgWeight', 'todaySessionRecord', 'sessionEndedToday'),
             $this->buildGroupHistorialData($group, $request),
             ['historialFormAction' => route('coordinator.groups.show', $group)]
         ));
+    }
+
+    public function addCoordinator(Request $request, Group $group)
+    {
+        $this->ensureCoordinator($group);
+        $request->validate(['user_id' => 'required|exists:users,id']);
+        $group->coordinators()->syncWithoutDetaching([$request->user_id]);
+
+        return back()->with('success', 'Coordinador agregado.');
+    }
+
+    public function removeCoordinator(Request $request, Group $group)
+    {
+        $this->ensureCoordinator($group);
+        $request->validate(['user_id' => 'required|exists:users,id']);
+        $group->coordinators()->detach($request->user_id);
+
+        return back()->with('success', 'Coordinador removido.');
+    }
+
+    public function addPatient(Request $request, Group $group)
+    {
+        $this->ensureCoordinator($group);
+        $request->validate(['user_id' => 'required|exists:users,id']);
+
+        $now = now();
+
+        // Check for existing pivot row (may have left before)
+        $existing = DB::table('group_patient')
+            ->where('group_id', $group->id)
+            ->where('user_id', $request->user_id)
+            ->first();
+
+        if (! $existing) {
+            $group->patients()->attach($request->user_id, [
+                'joined_at' => $now,
+                'join_source' => 'manual',
+            ]);
+        } elseif ($existing->left_at !== null) {
+            DB::table('group_patient')
+                ->where('group_id', $group->id)
+                ->where('user_id', $request->user_id)
+                ->update(['joined_at' => $now, 'left_at' => null, 'join_source' => 'manual']);
+        } else {
+            return back()->with('info', 'El paciente ya está activo en este grupo.');
+        }
+
+        GroupMembershipLog::create([
+            'group_id' => $group->id,
+            'user_id' => $request->user_id,
+            'joined_at' => $now,
+            'join_source' => 'manual',
+        ]);
+
+        // Autocompletar grupo de pertenencia solo si el paciente todavía no tiene uno.
+        User::where('id', $request->user_id)->whereNull('belonging_group_id')->update(['belonging_group_id' => $group->id]);
+
+        return back()->with('success', 'Paciente agregado.');
+    }
+
+    public function removePatient(Request $request, Group $group)
+    {
+        $this->ensureCoordinator($group);
+        $request->validate(['user_id' => 'required|exists:users,id']);
+
+        // Marcar left_at en lugar de eliminar el registro
+        DB::table('group_patient')
+            ->where('group_id', $group->id)
+            ->where('user_id', $request->user_id)
+            ->whereNull('left_at')
+            ->update(['left_at' => now()]);
+
+        return back()->with('success', 'Paciente removido del grupo.');
     }
 
     public function updateMaintenanceWeight(Group $group, Request $request)
@@ -173,25 +250,33 @@ class DashboardController extends Controller
                 'left_at' => $a->left_at?->format('H:i'),
                 'weight' => $a->weightRecord?->weight,
                 'ideal_weight' => $a->user->ideal_weight,
+                'peso_piso' => $a->user->peso_piso,
+                'peso_techo' => $a->user->peso_techo,
+                'en_mantenimiento' => $a->user->estaEnMantenimiento(),
                 'session_number' => $a->groupSession?->sequence_number,
+                'is_belonging' => $a->user->belonging_group_id === $group->id,
             ]);
 
-        $patients = Cache::remember("group_{$group->id}_patients_all", 30, function () use ($group, $colors) {
-            return $group->patientsAll()->get()->map(fn ($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'initials' => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
-                'color' => $colors[$p->id % count($colors)],
-                'avatar_url' => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
-                'joined_at' => $p->pivot->joined_at ? Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
-                'left_at' => $p->pivot->left_at ? Carbon::parse($p->pivot->left_at)->format('d/m/Y H:i') : null,
-                'is_active' => $p->pivot->left_at === null,
-                'join_source' => $p->pivot->join_source,
-            ])->values()->all();
-        });
+        $avg = $group->weightRecords()->whereDate('recorded_at', $todayDate)->avg('weight');
+
+        $patients = $group->patientsAll()->get()->map(fn ($p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'email' => $p->email,
+            'initials' => collect(explode(' ', $p->name))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->join(''),
+            'color' => $colors[$p->id % count($colors)],
+            'avatar_url' => $p->avatar ? secure_asset('storage/'.$p->avatar) : null,
+            'joined_at' => $p->pivot->joined_at ? Carbon::parse($p->pivot->joined_at)->format('d/m/Y H:i') : null,
+            'join_source' => $p->pivot->join_source,
+            'utm_source' => $p->pivot->utm_source,
+            'utm_campaign' => $p->pivot->utm_campaign,
+            'left_at' => $p->pivot->left_at ? Carbon::parse($p->pivot->left_at)->format('d/m/Y H:i') : null,
+            'is_belonging' => $p->belonging_group_id === $group->id,
+        ]);
 
         return response()->json([
             'count' => $attendances->count(),
+            'avg_weight' => $avg ? number_format($avg, 1) : null,
             'session_number' => $todaySession?->sequence_number,
             'attendances' => $attendances,
             'patients' => $patients,
@@ -243,17 +328,19 @@ class DashboardController extends Controller
         // They cannot permanently end the program — that's an admin action.
         if ($isRecurring) {
             $endedAt = $group->getRawOriginal('ended_at');
-            $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday() && !$group->isLiveSessionNow();
+            $sessionEndedToday = $endedAt && Carbon::parse($endedAt)->timezone($tz)->isToday() && ! $group->isLiveSessionNow();
 
             if ($sessionEndedToday) {
                 // Reopen the session (coordinator pressed the button again today)
                 $group->update(['ended_at' => null, 'started_at' => now()]);
+
                 return back()->with('success', 'Sesión de hoy reabierta.');
             }
 
             if ($group->status !== 'active') {
                 // Start session manually (before the scheduled window)
                 $group->update(['started_at' => now(), 'ended_at' => null]);
+
                 return back()->with('success', 'Sesión iniciada.');
             }
 
@@ -264,6 +351,7 @@ class DashboardController extends Controller
                 ->whereDate('attended_at', today())
                 ->whereNull('left_at')
                 ->update(['left_at' => $now]);
+
             return back()->with('success', 'Sesión de hoy finalizada. El programa continúa la próxima clase.');
         }
 
@@ -275,6 +363,7 @@ class DashboardController extends Controller
                 ->whereDate('attended_at', today())
                 ->whereNull('left_at')
                 ->update(['left_at' => $now]);
+
             return back()->with('success', 'Grupo finalizado.');
         }
 
@@ -283,6 +372,7 @@ class DashboardController extends Controller
         }
 
         $group->update(['active' => true, 'started_at' => now()]);
+
         return back()->with('success', 'Grupo iniciado.');
     }
 
@@ -301,7 +391,7 @@ class DashboardController extends Controller
         $todayDate = $now->toDateString();
 
         // If session is not live, close all open attendances for today
-        if (!$group->isLiveSessionNow()) {
+        if (! $group->isLiveSessionNow()) {
             // Get session end time
             $sessionEnd = null;
 

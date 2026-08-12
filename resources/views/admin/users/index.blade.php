@@ -57,6 +57,10 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
+                        @if($user->phone)
+                            <button type="button" onclick="sendWhatsapp({{ $user->id }}, '{{ addslashes($user->phone) }}', '{{ addslashes($user->name) }}')"
+                                class="text-sm text-green-600 hover:underline">Enviar WhatsApp</button>
+                        @endif
                         <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
                         <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Mover este usuario a la papelera?')">
                             @csrf @method('DELETE')
@@ -96,6 +100,10 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
+                        @if($user->phone)
+                            <button type="button" onclick="sendWhatsapp({{ $user->id }}, '{{ addslashes($user->phone) }}', '{{ addslashes($user->name) }}')"
+                                class="text-sm text-green-600 hover:underline">Enviar WhatsApp</button>
+                        @endif
                         <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
                         <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Mover este usuario a la papelera?')">
                             @csrf @method('DELETE')
@@ -109,4 +117,38 @@
         </div>
     </div>
 </div>
+
+<script>
+const whatsappSendUrl = '{{ route('admin.whatsapp.send') }}';
+const whatsappCsrf = '{{ csrf_token() }}';
+
+async function sendWhatsapp(userId, phone, name) {
+    const confirmedPhone = prompt(`Número de WhatsApp para ${name} (con código de país, ej. 5491122334455):`, phone);
+    if (!confirmedPhone) return;
+
+    const text = prompt(`Mensaje para ${name}:`, 'Hola, te escribimos desde Plena Grupos.');
+    if (!text) return;
+
+    try {
+        const res = await fetch(whatsappSendUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': whatsappCsrf,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ phone: confirmedPhone, text }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            const validationError = data.errors?.phone?.[0] ?? data.errors?.text?.[0];
+            alert('No se pudo enviar: ' + (validationError ?? data.error ?? data.message ?? 'error desconocido'));
+            return;
+        }
+        alert('Mensaje enviado.');
+    } catch (e) {
+        alert('No se pudo enviar el mensaje (error de red).');
+    }
+}
+</script>
 @endsection

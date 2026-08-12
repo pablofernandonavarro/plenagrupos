@@ -139,6 +139,8 @@
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Bibliografía IA</a>
                         <a href="{{ route('admin.plan-rules.index') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Reglas</a>
+                        <a href="{{ route('admin.whatsapp.index') }}" class="text-sm text-gray-300 transition"
+                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">WhatsApp</a>
                         <a href="{{ route('admin.help') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">
                             <svg class="w-4 h-4 inline-block -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -229,6 +231,7 @@
                     <a href="{{ route('admin.users.import') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Importar desde Excel</a>
                     <a href="{{ route('admin.ai-documents.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Bibliografía IA</a>
                     <a href="{{ route('admin.plan-rules.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Reglas</a>
+                    <a href="{{ route('admin.whatsapp.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">WhatsApp</a>
                     <a href="{{ route('admin.help') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">📖 Documentación</a>
                 @elseif(auth()->user()->isCoordinator())
                     <a href="{{ route('coordinator.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Grupos</a>
