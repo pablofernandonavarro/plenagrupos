@@ -40,47 +40,16 @@
         </div>
     </div>
 
-    {{-- Coordinators --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-            <h2 class="font-semibold text-gray-800">Coordinadores ({{ $coordinators->count() }})</h2>
-        </div>
-        <div class="divide-y divide-gray-50">
-            @forelse($coordinators as $user)
-                <div class="px-5 py-3 flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <x-avatar :user="$user" size="sm" />
-                        <div>
-                            <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
-                            <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        @if($user->phone)
-                            <button type="button" onclick="sendWhatsapp({{ $user->id }}, '{{ addslashes($user->phone) }}', '{{ addslashes($user->name) }}')"
-                                class="text-sm text-green-600 hover:underline">Enviar WhatsApp</button>
-                        @endif
-                        <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
-                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Mover este usuario a la papelera?')">
-                            @csrf @method('DELETE')
-                            <button class="text-sm text-red-400 hover:text-red-600">Eliminar</button>
-                        </form>
-                    </div>
-                </div>
-            @empty
-                <p class="px-5 py-4 text-sm text-gray-400">Sin coordinadores.</p>
-            @endforelse
-        </div>
-    </div>
-
     {{-- Patients --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-green-500"></span>
-            <h2 class="font-semibold text-gray-800">Pacientes ({{ $patients->count() }})</h2>
-        </div>
-        <div class="divide-y divide-gray-50">
+    <details class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" open>
+        <summary class="px-5 py-4 cursor-pointer list-none flex items-center justify-between gap-3 hover:bg-gray-50/80 transition [&::-webkit-details-marker]:hidden">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                <h2 class="font-semibold text-gray-800">Pacientes ({{ $patients->count() }})</h2>
+            </span>
+            <svg class="w-5 h-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="divide-y divide-gray-50 border-t border-gray-100">
             @forelse($patients as $user)
                 <div class="px-5 py-3 flex justify-between items-center">
                     <div class="flex items-center gap-3">
@@ -120,7 +89,44 @@
                 <p class="px-5 py-4 text-sm text-gray-400">Sin pacientes.</p>
             @endforelse
         </div>
-    </div>
+    </details>
+
+    {{-- Coordinators --}}
+    <details class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" open>
+        <summary class="px-5 py-4 cursor-pointer list-none flex items-center justify-between gap-3 hover:bg-gray-50/80 transition [&::-webkit-details-marker]:hidden">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                <h2 class="font-semibold text-gray-800">Coordinadores ({{ $coordinators->count() }})</h2>
+            </span>
+            <svg class="w-5 h-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="divide-y divide-gray-50 border-t border-gray-100">
+            @forelse($coordinators as $user)
+                <div class="px-5 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <x-avatar :user="$user" size="sm" />
+                        <div>
+                            <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
+                            <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        @if($user->phone)
+                            <button type="button" onclick="sendWhatsapp({{ $user->id }}, '{{ addslashes($user->phone) }}', '{{ addslashes($user->name) }}')"
+                                class="text-sm text-green-600 hover:underline">Enviar WhatsApp</button>
+                        @endif
+                        <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
+                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Mover este usuario a la papelera?')">
+                            @csrf @method('DELETE')
+                            <button class="text-sm text-red-400 hover:text-red-600">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            @empty
+                <p class="px-5 py-4 text-sm text-gray-400">Sin coordinadores.</p>
+            @endforelse
+        </div>
+    </details>
 </div>
 
 <script>
