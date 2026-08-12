@@ -67,6 +67,7 @@
                             </option>
                         @endforeach
                     </select>
+                    <p class="text-xs text-gray-400 mt-1">Se muestran los grupos del tipo de tu plan.</p>
                     @error('belonging_group_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <button type="submit"

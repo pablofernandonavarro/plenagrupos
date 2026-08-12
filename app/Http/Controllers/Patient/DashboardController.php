@@ -135,7 +135,13 @@ class DashboardController extends Controller
             ->withQueryString()
             ->fragment('historial-pesos');
 
-        $availableGroups = Group::orderBy('name')->get();
+        // No hay grupos de tipo "mantenimiento_pleno" propio: esos pacientes asisten a grupos de mantenimiento.
+        $fase = $user->faseEfectiva();
+        $matchType = $fase === 'mantenimiento_pleno' ? 'mantenimiento' : $fase;
+
+        $availableGroups = Group::orderBy('name')->get()
+            ->when($matchType, fn ($groups) => $groups->filter(fn ($g) => ($g->group_type ?? 'descenso') === $matchType
+                || $g->id === $user->belonging_group_id)->values());
 
         return view('patient.profile', compact('weightRecords', 'availableGroups'));
     }
