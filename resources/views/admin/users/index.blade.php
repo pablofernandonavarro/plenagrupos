@@ -92,8 +92,13 @@
                                     <span class="text-xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Mantenimiento</span>
                                 @elseif($user->plan === 'mantenimiento_pleno')
                                     <span class="text-xs px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium">Mant. Pleno</span>
-                                @elseif($user->plan)
+                                @elseif($user->plan === 'descenso')
                                     <span class="text-xs px-1.5 py-0.5 rounded-full bg-sky-50 text-sky-700 font-medium">Descenso</span>
+                                @else
+                                    <a href="{{ route('admin.users.edit', $user) }}"
+                                        class="text-xs px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 font-medium hover:bg-red-100 transition">
+                                        ⚠ Sin plan · asignar
+                                    </a>
                                 @endif
                             </div>
                             <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
