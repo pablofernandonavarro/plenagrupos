@@ -62,7 +62,7 @@
                         <div class="relative flex-1">
                             <input type="radio" id="plan-{{ $val }}" name="plan" value="{{ $val }}"
                                 class="sr-only peer"
-                                {{ old('plan', $user->plan ?? 'descenso') === $val ? 'checked' : '' }}>
+                                {{ old('plan', $user->plan) === $val ? 'checked' : '' }}>
                             <label for="plan-{{ $val }}"
                                 class="block text-center px-2 py-2 rounded-lg text-sm font-medium border border-gray-300
                                 peer-checked:border-teal-600 peer-checked:bg-teal-600 peer-checked:text-white
@@ -70,6 +70,9 @@
                         </div>
                     @endforeach
                 </div>
+                @if(! old('plan', $user->plan))
+                    <p class="text-xs text-amber-600 mt-1.5">Sin plan asignado: no se le aplica ningún límite de visitas hasta que elijas uno y guardes.</p>
+                @endif
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Grupo de pertenencia</label>
