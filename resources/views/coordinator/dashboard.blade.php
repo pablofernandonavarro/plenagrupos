@@ -185,7 +185,7 @@
             {{-- Stats --}}
             <div class="px-4 sm:px-5 py-3 grid grid-cols-3 gap-2 text-center border-b border-gray-50">
                 <div>
-                    <p class="text-xl font-bold text-teal-600 tabular-nums">{{ $group->patients_count ?? $group->patients->count() }}</p>
+                    <p class="text-xl font-bold text-teal-600 tabular-nums">{{ $group->patients->where('belonging_group_id', $group->id)->count() }}</p>
                     <p class="text-xs text-gray-400 mt-0.5">Pacientes</p>
                 </div>
                 <div>

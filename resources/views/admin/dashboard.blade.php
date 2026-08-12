@@ -103,7 +103,7 @@
                 <div class="px-5 py-3 flex justify-between items-center">
                     <div>
                         <p class="font-medium text-gray-800 text-sm">{{ $group->name }}</p>
-                        <p class="text-xs text-gray-400">{{ $group->patients->count() }} pacientes</p>
+                        <p class="text-xs text-gray-400">{{ $group->patients->where('belonging_group_id', $group->id)->count() }} pacientes</p>
                     </div>
                     <a href="{{ route('admin.groups.show', $group) }}" class="text-xs text-teal-600 hover:underline">Ver QR y datos</a>
                 </div>
