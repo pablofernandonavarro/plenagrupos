@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Documentación del Sistema')
+@section('title', 'Ayuda')
 
 @section('content')
 <div class="space-y-6 max-w-5xl">
@@ -12,198 +12,142 @@
             </svg>
             Volver al dashboard
         </a>
-        <h1 class="text-2xl font-bold text-gray-800">Documentación del Sistema</h1>
-        <p class="text-gray-500 text-sm mt-0.5">Referencia técnica completa del funcionamiento interno</p>
+        <h1 class="text-2xl font-bold text-gray-800">Ayuda</h1>
+        <p class="text-gray-500 text-sm mt-0.5">Guía en criollo de cómo funciona todo, sin vueltas técnicas.</p>
     </div>
 
-    {{-- Attendance System --}}
-    <x-attendance-help-admin />
-
-    {{-- Group Types --}}
-    <x-help-card title="Tipos de Grupos" icon="info" color="purple">
+    {{-- Grupos --}}
+    <x-help-card title="Grupos" icon="info" color="blue">
         <div class="space-y-3">
             <div>
-                <p class="font-medium mb-1">🔵 Grupos Manuales (recurrence_type: none)</p>
-                <p class="text-xs opacity-80">Requieren apertura/cierre manual por coordinador o admin.</p>
+                <p class="font-medium mb-1">🟦 Grupos manuales</p>
+                <p class="text-xs opacity-80">Vos o el coordinador los abren y cierran a mano con un botón. Útiles para encuentros puntuales que no siguen un horario fijo.</p>
+            </div>
+            <div>
+                <p class="font-medium mb-1">🔄 Grupos recurrentes</p>
+                <p class="text-xs opacity-80">Se abren y cierran solos según el horario que configuraste — no hace falta que nadie los toque todos los días. Al crearlos, elegís cada cuánto se repiten:</p>
                 <ul class="text-xs opacity-80 ml-4 mt-1 space-y-1">
-                    <li>• <code class="bg-white/50 px-1 rounded">active=true</code> → Sesión abierta</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">started_at</code> registra cuándo se abrió</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">ended_at</code> registra cuándo se cerró</li>
-                    <li>• Se cierran auto después de <code class="bg-white/50 px-1 rounded">session_duration_minutes</code></li>
+                    <li>• <strong>Todos los días</strong></li>
+                    <li>• <strong>Todas las semanas</strong>, en los días que marques (ej: lunes y jueves)</li>
+                    <li>• <strong>Todos los meses</strong>, de dos formas posibles:
+                        <ul class="ml-4 mt-1 space-y-1">
+                            <li>– El mismo número de día cada mes (ej: siempre el 14)</li>
+                            <li>– Un día de la semana en particular, ej: <strong>"2do miércoles de cada mes"</strong> — esto se recalcula bien cada mes, no se va desviando con el tiempo</li>
+                        </ul>
+                    </li>
+                    <li>• <strong>Todos los años</strong></li>
                 </ul>
             </div>
-
             <div>
-                <p class="font-medium mb-1">🔄 Grupos Recurrentes (daily/weekly/monthly/yearly)</p>
-                <p class="text-xs opacity-80">Se abren/cierran automáticamente según horario configurado.</p>
-                <ul class="text-xs opacity-80 ml-4 mt-1 space-y-1">
-                    <li>• Estado calculado dinámicamente: <code class="bg-white/50 px-1 rounded">isLiveSessionNow()</code></li>
-                    <li>• <code class="bg-white/50 px-1 rounded">meeting_days</code>: días de la semana (array)</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">meeting_time</code>: hora de inicio (HH:mm)</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">recurrence_interval</code>: cada N días/semanas/meses</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">recurrence_end_date</code>: fecha de finalización</li>
-                </ul>
-            </div>
-
-            <div>
-                <p class="font-medium mb-1">📍 Modalidades</p>
-                <ul class="text-xs opacity-80 ml-4 mt-1 space-y-1">
-                    <li>• <strong>Presencial:</strong> Solo QR escaneable</li>
-                    <li>• <strong>Virtual:</strong> Link de acceso + QR</li>
-                    <li>• <strong>Híbrido:</strong> Ambas opciones disponibles</li>
-                </ul>
+                <p class="font-medium mb-1">📍 Modalidad</p>
+                <p class="text-xs opacity-80">Presencial (solo QR), Virtual (link + QR) o Híbrido (ambas).</p>
             </div>
         </div>
     </x-help-card>
 
-    {{-- Session States --}}
-    <x-help-card title="Estados de Sesión" icon="check" color="green">
+    {{-- QR y asistencia --}}
+    <x-help-card title="Código QR y asistencia" icon="check" color="green">
         <div class="space-y-3">
             <div>
-                <p class="font-medium mb-1">Estado del grupo (status attribute)</p>
-                <ul class="text-xs opacity-80 ml-4 mt-1 space-y-1">
-                    <li>• <code class="bg-white/50 px-1 rounded">pending</code>: No iniciado aún</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">active</code>: En sesión ahora (ventana horaria activa)</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">closed</code>: Finalizado permanentemente</li>
-                </ul>
+                <p class="font-medium mb-1">📷 Cómo se registran los pacientes</p>
+                <p class="text-xs opacity-80">Cada grupo tiene su propio QR, disponible en la pantalla del grupo. El paciente lo escanea al llegar y queda registrada su entrada; cuando se va, se marca la salida (a mano, o automáticamente cuando termina el horario del grupo).</p>
             </div>
-
             <div>
-                <p class="font-medium mb-1">Funciones helper en Group model</p>
-                <ul class="text-xs opacity-80 ml-4 mt-1 space-y-1">
-                    <li>• <code class="bg-white/50 px-1 rounded">isLiveSessionNow()</code>: ¿Hay sesión en curso ahora?</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">meetsOnDate($date)</code>: ¿El grupo se reúne esta fecha?</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">isProgramVigente()</code>: ¿Programa activo? (no finalizado)</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">isProgramClosed()</code>: ¿Programa terminado?</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">nextSessionAt</code>: Próxima sesión programada</li>
-                </ul>
+                <p class="font-medium mb-1">🟢 "En vivo"</p>
+                <p class="text-xs opacity-80">Ese cartel significa que el grupo está teniendo su sesión en este momento exacto — no que "está activo en general". Un grupo puede estar vigente pero no en vivo si todavía no llegó el horario de hoy.</p>
             </div>
-
             <div>
-                <p class="font-medium mb-1">⏰ Zona horaria</p>
-                <p class="text-xs opacity-80">Todo el sistema usa <code class="bg-white/50 px-1 rounded">America/Argentina/Buenos_Aires</code> para cálculos de fechas/horas.</p>
+                <p class="font-medium mb-1">🏷️ "Pertenece" vs "Visita"</p>
+                <p class="text-xs opacity-80">Un paciente puede escanear el QR de un grupo que no es el suyo (por ejemplo, si un día va a otro horario). En ese caso queda marcado como "Visita" en vez de "Pertenece", y el grupo que aparece como "Pacientes (N)" en los listados solo cuenta a los que realmente pertenecen ahí.</p>
             </div>
         </div>
     </x-help-card>
 
-    {{-- Database Schema --}}
-    <x-help-card title="Esquema de Base de Datos" icon="info" color="teal">
+    {{-- Coordinadores --}}
+    <x-help-card title="Coordinadores" icon="info" color="purple">
         <div class="space-y-3">
             <div>
-                <p class="font-medium mb-1">Tablas principales</p>
-                <div class="text-xs opacity-80 space-y-2 mt-2">
-                    <div class="bg-white/50 rounded p-2">
-                        <p class="font-mono font-semibold">groups</p>
-                        <p class="mt-1">Información del grupo, horarios, recurrencia</p>
-                    </div>
-                    <div class="bg-white/50 rounded p-2">
-                        <p class="font-mono font-semibold">group_sessions</p>
-                        <p class="mt-1">Una fila por día calendario por grupo (sequence_number global)</p>
-                    </div>
-                    <div class="bg-white/50 rounded p-2">
-                        <p class="font-mono font-semibold">group_attendances</p>
-                        <p class="mt-1">Registro individual de cada asistencia (attended_at, left_at)</p>
-                    </div>
-                    <div class="bg-white/50 rounded p-2">
-                        <p class="font-mono font-semibold">group_patient (pivot)</p>
-                        <p class="mt-1">Membresía de pacientes (joined_at, left_at, maintenance_weight)</p>
-                    </div>
-                    <div class="bg-white/50 rounded p-2">
-                        <p class="font-mono font-semibold">group_membership_logs</p>
-                        <p class="mt-1">Historial de altas/bajas de pacientes</p>
-                    </div>
-                    <div class="bg-white/50 rounded p-2">
-                        <p class="font-mono font-semibold">weight_records</p>
-                        <p class="mt-1">Registros de peso (vinculados a attendance_id)</p>
-                    </div>
-                    <div class="bg-white/50 rounded p-2">
-                        <p class="font-mono font-semibold">inbody_records</p>
-                        <p class="mt-1">Mediciones InBody completas</p>
-                    </div>
-                </div>
+                <p class="font-medium mb-1">👥 Qué pueden hacer</p>
+                <p class="text-xs opacity-80">Cada coordinador ve la misma pantalla de detalle de grupo que vos como admin: código QR, agregar/quitar coordinadores y pacientes, ver quién está presente, historial de sesiones anteriores. La diferencia es que no pueden finalizar un programa recurrente para siempre — solo pueden abrir o cerrar la sesión del día.</p>
+            </div>
+            <div>
+                <p class="font-medium mb-1">⭐ Convertir un coordinador en administrador</p>
+                <p class="text-xs opacity-80">En la ficha de edición de un coordinador (Usuarios → Editar) hay un botón "Hacer administrador" al final, en la sección "Zona de riesgo". Le da acceso total a la app, así que usalo solo si de verdad querés darle ese nivel de acceso. A los pacientes no se les puede dar ese permiso.</p>
             </div>
         </div>
     </x-help-card>
 
-    {{-- Commands --}}
-    <x-help-card title="Comandos Artisan" icon="check" color="blue">
+    {{-- Planes de pacientes --}}
+    <x-help-card title="Planes de los pacientes" icon="info" color="teal">
         <div class="space-y-3">
             <div>
-                <p class="font-medium mb-1 font-mono text-xs">php artisan attendances:auto-close</p>
-                <p class="text-xs opacity-80 mb-2">Cierra asistencias abiertas cuya ventana horaria terminó.</p>
-                <p class="text-xs opacity-80"><strong>Frecuencia recomendada:</strong> Cada hora o al final del día (cron)</p>
-                <p class="text-xs opacity-80 mt-1 bg-white/50 rounded p-2 font-mono">
-                    0 * * * * cd /path/to/app && php artisan attendances:auto-close >> /dev/null 2>&1
-                </p>
-            </div>
-
-            <div>
-                <p class="font-medium mb-1 font-mono text-xs">php artisan sessions:generate-recurring</p>
-                <p class="text-xs opacity-80">Genera entradas en <code class="bg-white/50 px-1 rounded">group_sessions</code> para grupos recurrentes (opcional, se crean on-demand).</p>
-            </div>
-        </div>
-    </x-help-card>
-
-    {{-- Plan Rules --}}
-    <x-help-card title="Reglas de Planes" icon="info" color="purple">
-        <div class="space-y-3">
-            <div>
-                <p class="font-medium mb-1">Sistema de límites</p>
-                <p class="text-xs opacity-80">Tabla <code class="bg-white/50 px-1 rounded">plan_rules</code> define límites por fase:</p>
+                <p class="font-medium mb-1">📋 Los tres planes</p>
                 <ul class="text-xs opacity-80 ml-4 mt-1 space-y-1">
-                    <li>• <strong>Adaptación:</strong> Límites mensuales de sesiones</li>
-                    <li>• <strong>Pérdida:</strong> Límites más flexibles</li>
-                    <li>• <strong>Mantenimiento:</strong> Límites ajustados</li>
+                    <li>• <strong>Descenso:</strong> el paciente busca bajar de peso</li>
+                    <li>• <strong>Mantenimiento:</strong> ya llegó a su peso y lo sostiene dentro de un rango</li>
+                    <li>• <strong>Mantenimiento Pleno:</strong> variante de mantenimiento, asiste a los mismos grupos de mantenimiento</li>
                 </ul>
             </div>
-
             <div>
-                <p class="font-medium mb-1">Ciclo de plan</p>
-                <p class="text-xs opacity-80">Los pacientes tienen ciclos de 30 días desde <code class="bg-white/50 px-1 rounded">plan_start_date</code>. El método <code class="bg-white/50 px-1 rounded">currentPlanCycle()</code> en User calcula el ciclo actual.</p>
+                <p class="font-medium mb-1">⚠️ Por qué importa asignar un plan</p>
+                <p class="text-xs opacity-80">El plan define cuántas visitas mensuales puede hacer el paciente a cada tipo de grupo (lo configurás en "Reglas"). Un paciente <strong>sin plan asignado</strong> — típicamente alguien que se registró solo, sin que nadie lo cargara — queda sin ningún límite aplicado. En la lista de Usuarios, esos pacientes aparecen con un cartel rojo "Sin plan · asignar" que te lleva directo a arreglarlo.</p>
             </div>
-
             <div>
-                <p class="font-medium mb-1">Fase efectiva</p>
-                <p class="text-xs opacity-80"><code class="bg-white/50 px-1 rounded">faseEfectiva()</code> = <code class="bg-white/50 px-1 rounded">fase_actual ?? plan</code>. Permite al coordinador override manual de la fase.</p>
+                <p class="font-medium mb-1">🏠 Grupo de pertenencia</p>
+                <p class="text-xs opacity-80">Es el grupo "principal" del paciente. Tanto vos como el paciente (desde su propio perfil) solo pueden elegir grupos que coincidan con el tipo de su plan — un paciente de Descenso no va a ver grupos de Mantenimiento en ese menú, y viceversa.</p>
             </div>
         </div>
     </x-help-card>
 
-    {{-- Analytics & Exports --}}
-    <x-help-card title="Analíticas y Exportación" icon="info" color="green">
+    {{-- WhatsApp --}}
+    <x-help-card title="WhatsApp" icon="check" color="green">
         <div class="space-y-3">
             <div>
-                <p class="font-medium mb-1">📊 Analytics disponibles</p>
-                <ul class="text-xs opacity-80 ml-4 mt-1 space-y-1">
-                    <li>• Análisis por grupos (asistencia, peso promedio, tendencias)</li>
-                    <li>• Seguimiento InBody (masa muscular, grasa, etc.)</li>
-                    <li>• Análisis de cohortes (comparación entre grupos)</li>
-                </ul>
+                <p class="font-medium mb-1">🔗 Vincular el número</p>
+                <p class="text-xs opacity-80">En el menú "WhatsApp" del panel de admin, tocá "Vincular WhatsApp" y escaneá el código QR con el WhatsApp del celular que va a usar la app para mandar mensajes (igual que WhatsApp Web). Una vez vinculado, se queda conectado — no hace falta repetirlo cada vez.</p>
             </div>
-
             <div>
-                <p class="font-medium mb-1">📥 Exports (Excel)</p>
-                <ul class="text-xs opacity-80 ml-4 mt-1 space-y-1">
-                    <li>• <code class="bg-white/50 px-1 rounded">/admin/exports/asistencias</code>: Todas las asistencias</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">/admin/exports/pesos</code>: Registros de peso</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">/admin/exports/inbody</code>: Mediciones InBody</li>
-                    <li>• <code class="bg-white/50 px-1 rounded">/admin/exports/pacientes-por-grupo</code>: Membresías</li>
-                </ul>
+                <p class="font-medium mb-1">✉️ Mandar un mensaje a un paciente o coordinador</p>
+                <p class="text-xs opacity-80">En la lista de Usuarios, cualquier persona con teléfono cargado tiene un botón "Enviar WhatsApp". Te pregunta el número (por si querés corregirlo) y el mensaje, y lo manda directo.</p>
+            </div>
+            <div>
+                <p class="font-medium mb-1">📞 Formato correcto del teléfono</p>
+                <p class="text-xs opacity-80">Tiene que llevar el código de país y de área, sin el "15" del discado local. Ejemplo correcto: <strong>5491122334455</strong>. Si el número está mal escrito, el sistema te avisa antes de guardar.</p>
+            </div>
+            <div class="pt-2 border-t border-current opacity-30">
+                <p class="text-xs">⚠️ <strong>Cuidado con mandar muchos mensajes seguidos</strong> a números que nunca hablaron con vos — no es la app oficial de WhatsApp Business, así que mandar en cantidad y de golpe puede hacer que WhatsApp banee el número. Para recordatorios puntuales a pacientes conocidos no hay problema.</p>
             </div>
         </div>
     </x-help-card>
 
-    {{-- Technical Notes --}}
-    <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4">
-        <p class="text-sm font-semibold text-yellow-900 mb-2">⚠️ Notas Técnicas Importantes</p>
-        <ul class="text-xs text-yellow-800 space-y-1 ml-4">
-            <li>• No usar <code class="bg-white/50 px-1 rounded">storage:link</code> en deploy (requiere exec())</li>
-            <li>• Avatares se guardan en <code class="bg-white/50 px-1 rounded">public/avatars/</code></li>
-            <li>• Laravel Pulse requiere <code class="bg-white/50 px-1 rounded">PULSE_ENABLED=true</code> en .env</li>
-            <li>• Queue driver: database (no requiere Redis/Beanstalk)</li>
-            <li>• Session driver: database (más confiable que file en múltiples workers)</li>
-        </ul>
-    </div>
+    {{-- Adherencia --}}
+    <x-help-card title="Adherencia (seguimiento de pacientes)" icon="info" color="purple">
+        <div class="space-y-3">
+            <div>
+                <p class="font-medium mb-1">📊 Qué muestra esta pantalla</p>
+                <p class="text-xs opacity-80">Por cada paciente: cuándo fue su última visita a un grupo, cuándo se pesó por última vez, y cuándo se hizo su último InBody. Sirve para detectar quién se está por perder de vista.</p>
+            </div>
+            <div>
+                <p class="font-medium mb-1">🎚️ Umbrales de alerta</p>
+                <p class="text-xs opacity-80">Vos elegís cuántos días sin actividad son "demasiados" para cada cosa (por defecto: 14 días sin visitar, 14 sin pesarse, 30 sin InBody). Si un paciente supera ese número, aparece marcado.</p>
+            </div>
+            <div>
+                <p class="font-medium mb-1">🔴 "Atrasado" vs "Sin registro"</p>
+                <p class="text-xs opacity-80">Si dice <strong>"atrasado"</strong> es porque el paciente sí tiene un registro, pero hace tiempo que no lo actualiza. Si dice directamente <strong>"Sin InBody"</strong> (o peso/visita) es porque nunca tuvo ninguno.</p>
+            </div>
+            <div>
+                <p class="font-medium mb-1">🔍 Buscar un paciente puntual</p>
+                <p class="text-xs opacity-80">Arriba de la tabla hay un buscador por nombre o email, para no tener que scrollear toda la lista.</p>
+            </div>
+        </div>
+    </x-help-card>
+
+    {{-- Exportar datos --}}
+    <x-help-card title="Exportar datos" icon="check" color="blue">
+        <div class="space-y-2">
+            <p class="text-xs opacity-80">Desde "Adherencia" podés descargar en Excel (CSV): todas las asistencias, todos los pesos registrados, todos los InBody, y un listado de qué paciente pertenece a qué grupo (con el canal por el que se sumó: QR o alta manual). Los archivos se generan al momento, con la fecha en el nombre.</p>
+        </div>
+    </x-help-card>
 
 </div>
 @endsection
