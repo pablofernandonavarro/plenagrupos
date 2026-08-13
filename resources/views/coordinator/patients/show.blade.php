@@ -472,7 +472,15 @@
                     <div class="flex items-start justify-between gap-2 flex-wrap">
                         <div>
                             <p class="text-sm font-semibold text-gray-800">{{ $entry['group_name'] }}</p>
-                            <p class="text-xs text-gray-400 mt-0.5">{{ $entry['date']->format('d/m/Y · H:i') }}</p>
+                            @php $entryHrs = intdiv($entry['minutes'], 60); $entryMin = $entry['minutes'] % 60; @endphp
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                {{ $entry['date']->format('d/m/Y · H:i') }}
+                                @if($entry['left_at'])
+                                    · {{ $entryHrs > 0 ? $entryHrs.'h ' : '' }}{{ $entryMin }}m en sesión
+                                @else
+                                    · <span class="text-teal-600">en sesión</span>
+                                @endif
+                            </p>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             @if($ch !== null)

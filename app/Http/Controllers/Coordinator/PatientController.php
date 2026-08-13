@@ -127,6 +127,10 @@ class PatientController extends Controller
                 'group_name'        => $att->group?->name ?? '(Grupo eliminado)',
                 'weight'            => $weightByAttendance->get($key)?->weight,
                 'coordinator_notes' => $att->coordinator_notes,
+                'left_at'           => $att->left_at,
+                'minutes'           => $att->left_at
+                    ? (int) $att->attended_at->diffInMinutes($att->left_at)
+                    : (int) $att->attended_at->diffInMinutes(now()),
             ];
         });
         $timelineWithChange = $timeline->values()->map(function ($entry, $index) use ($timeline) {
