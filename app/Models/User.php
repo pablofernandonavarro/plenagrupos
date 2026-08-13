@@ -162,7 +162,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Turnos completados/confirmados en el ciclo de 30 días vigente (currentPlanCycle), por especialidad.
+     * Turnos ya tomados (pendientes/confirmados/completados) en el ciclo de 30 días vigente
+     * (currentPlanCycle), por especialidad. Mismos estados que el tope de reserva en
+     * Appointment::bookSlot(), para que "cuántos ya tomó" sea consistente con "cuántos más puede tomar".
      */
     public function turnosThisMonth(string $specialty): int
     {
@@ -170,7 +172,7 @@ class User extends Authenticatable
 
         return $this->appointmentsAsPatient()
             ->where('specialty', $specialty)
-            ->whereIn('status', ['confirmed', 'completed'])
+            ->whereIn('status', ['pending', 'confirmed', 'completed'])
             ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
             ->count();
     }
