@@ -61,11 +61,18 @@ Route::get('/debug-patient-group/{groupId}/{userId}', function ($groupId, $userI
 Route::get('/grupo/{token}', [GroupJoinController::class, 'show'])->name('group.join');
 Route::post('/grupo/{token}', [GroupJoinController::class, 'join'])->name('group.join.post')->middleware('auth');
 
-// Confirmar/cancelar turno desde el link firmado que llega por WhatsApp (sin necesidad de login)
-Route::get('/turnos/{appointment}/confirmar', [AppointmentActionController::class, 'confirm'])
+// Confirmar/cancelar turno desde el link firmado que llega por WhatsApp (sin necesidad de login).
+// GET solo muestra la pantalla con el botón — no cambia nada, para que la vista previa que
+// WhatsApp genera automáticamente al mandar el mensaje no confirme/cancele el turno sola.
+// El paciente tiene que tocar el botón (POST) para que la acción se aplique de verdad.
+Route::get('/turnos/{appointment}/confirmar', [AppointmentActionController::class, 'confirmShow'])
     ->name('turnos.public.confirm')->middleware('signed');
-Route::get('/turnos/{appointment}/cancelar', [AppointmentActionController::class, 'cancel'])
+Route::post('/turnos/{appointment}/confirmar', [AppointmentActionController::class, 'confirm'])
+    ->name('turnos.public.confirm.submit')->middleware('signed');
+Route::get('/turnos/{appointment}/cancelar', [AppointmentActionController::class, 'cancelShow'])
     ->name('turnos.public.cancel')->middleware('signed');
+Route::post('/turnos/{appointment}/cancelar', [AppointmentActionController::class, 'cancel'])
+    ->name('turnos.public.cancel.submit')->middleware('signed');
 
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
