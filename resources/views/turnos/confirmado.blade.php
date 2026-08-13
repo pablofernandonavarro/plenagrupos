@@ -1,5 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Turno confirmado')
+@section('og_title', 'Turno confirmado — Plena Grupos')
+@section('og_description', $appointment->status === 'cancelled' ? 'Este turno ya fue cancelado.' : 'Tu turno con Plena Grupos quedó confirmado.')
 
 @section('content')
 <div class="max-w-md mx-auto">

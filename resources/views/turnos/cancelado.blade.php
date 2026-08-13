@@ -1,5 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Turno cancelado')
+@section('og_title', 'Turno cancelado — Plena Grupos')
+@section('og_description', 'Tu turno con Plena Grupos fue cancelado.')
 
 @section('content')
 <div class="max-w-md mx-auto">
