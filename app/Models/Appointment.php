@@ -135,16 +135,19 @@ class Appointment extends Model
 
             $specialty = $professional->role;
             $required = AppointmentRequirement::requiredCountFor($specialty);
+            [$cycleStart, $cycleEnd] = $patient->currentPlanCycle($startsAt);
             $alreadyBooked = self::where('patient_id', $patient->id)
                 ->where('specialty', $specialty)
                 ->whereIn('status', ['pending', 'confirmed', 'completed'])
-                ->whereBetween('starts_at', [$startsAt->copy()->startOfMonth(), $startsAt->copy()->endOfMonth()])
+                ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
                 ->count();
 
             if ($alreadyBooked >= $required) {
                 $label = $specialty === 'medico' ? 'médico clínico' : 'nutricionista';
+                $desde = $cycleStart->format('d/m/Y');
+                $hasta = $cycleEnd->format('d/m/Y');
                 throw ValidationException::withMessages([
-                    'starts_at' => "Ya alcanzó el límite de {$required} turno(s) de {$label} para este mes.",
+                    'starts_at' => "Ya alcanzó el límite de {$required} turno(s) de {$label} para el período del {$desde} al {$hasta}.",
                 ]);
             }
 

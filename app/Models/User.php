@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -71,18 +72,20 @@ class User extends Authenticatable
     }
 
     /**
-     * Returns [cycleStart, cycleEnd] for the patient's current 30-day billing period.
-     * Falls back to the current calendar month if no plan_start_date is set.
+     * Returns [cycleStart, cycleEnd] for the patient's 30-day billing period containing $date
+     * (defaults to now). Falls back to $date's calendar month if no plan_start_date is set.
      */
-    public function currentPlanCycle(): array
+    public function currentPlanCycle(?Carbon $date = null): array
     {
+        $date = $date ?? now();
+
         if (! $this->plan_start_date) {
-            return [now()->startOfMonth(), now()->endOfMonth()];
+            return [$date->copy()->startOfMonth(), $date->copy()->endOfMonth()];
         }
 
         $start = $this->plan_start_date->copy();
-        // Advance in 30-day increments until the next cycle start is in the future
-        while ($start->copy()->addDays(30)->lte(now())) {
+        // Advance in 30-day increments until the cycle containing $date is found
+        while ($start->copy()->addDays(30)->lte($date)) {
             $start->addDays(30);
         }
 
@@ -159,15 +162,16 @@ class User extends Authenticatable
     }
 
     /**
-     * Turnos completados/confirmados este mes calendario, por especialidad.
-     * Deliberadamente independiente de currentPlanCycle() (ciclo de 30 días de grupos).
+     * Turnos completados/confirmados en el ciclo de 30 días vigente (currentPlanCycle), por especialidad.
      */
     public function turnosThisMonth(string $specialty): int
     {
+        [$cycleStart, $cycleEnd] = $this->currentPlanCycle();
+
         return $this->appointmentsAsPatient()
             ->where('specialty', $specialty)
             ->whereIn('status', ['confirmed', 'completed'])
-            ->whereBetween('starts_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
             ->count();
     }
 
