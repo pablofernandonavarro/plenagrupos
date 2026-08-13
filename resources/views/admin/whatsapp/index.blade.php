@@ -4,8 +4,11 @@
 @section('content')
 <div class="max-w-2xl space-y-5">
 
-    <div class="flex items-center gap-3">
+    <div class="flex items-center justify-between gap-3">
         <h1 class="text-2xl font-bold text-gray-800">WhatsApp</h1>
+        <a href="{{ route('admin.whatsapp.templates.index') }}" class="text-sm text-teal-600 hover:underline">
+            Plantillas de mensajes
+        </a>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

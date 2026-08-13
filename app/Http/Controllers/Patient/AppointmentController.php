@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Patient;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Services\AppointmentWhatsapp;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -62,7 +63,7 @@ class AppointmentController extends Controller
         return response()->json($slots);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, AppointmentWhatsapp $notifier)
     {
         $data = $request->validate([
             'professional_id' => 'required|exists:users,id',
@@ -73,19 +74,22 @@ class AppointmentController extends Controller
         abort_unless($professional->isProfessional(), 422);
 
         try {
-            Appointment::bookSlot(auth()->user(), $professional, Carbon::parse($data['starts_at']), 'patient');
+            $appointment = Appointment::bookSlot(auth()->user(), $professional, Carbon::parse($data['starts_at']), 'patient');
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         }
 
+        $notifier->notifyBooked($appointment);
+
         return redirect()->route('patient.turnos.index')->with('success', 'Turno reservado correctamente.');
     }
 
-    public function destroy(Appointment $appointment)
+    public function destroy(Appointment $appointment, AppointmentWhatsapp $notifier)
     {
         abort_if($appointment->patient_id !== auth()->id(), 403);
 
         $appointment->update(['status' => 'cancelled']);
+        $notifier->notifyCancelled($appointment);
 
         return back()->with('success', 'Turno cancelado.');
     }

@@ -29,3 +29,9 @@ Schedule::command('purge:soft-deleted')
     ->timezone('America/Argentina/Buenos_Aires')
     ->withoutOverlapping();
 
+// Recordatorio por WhatsApp de turnos médicos/nutricionista, un día antes
+Schedule::command('turnos:enviar-recordatorios')
+    ->dailyAt('10:00')
+    ->timezone('America/Argentina/Buenos_Aires')
+    ->withoutOverlapping();
+

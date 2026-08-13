@@ -18,6 +18,7 @@ class Appointment extends Model
         'starts_at',
         'ends_at',
         'status',
+        'reminded_at',
         'booked_by',
         'notes',
     ];
@@ -25,6 +26,7 @@ class Appointment extends Model
     protected $casts = [
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'reminded_at' => 'datetime',
     ];
 
     private const TZ = 'America/Argentina/Buenos_Aires';
@@ -164,7 +166,9 @@ class Appointment extends Model
                     'specialty' => $professional->role,
                     'starts_at' => $startsAt,
                     'ends_at' => $startsAt->copy()->addMinutes($schedule->slot_duration_minutes ?: 30),
-                    'status' => 'confirmed',
+                    // Reservado por el paciente = ya confirmado (lo eligió él). Reservado por el
+                    // admin = queda pendiente hasta que el paciente lo confirme por WhatsApp.
+                    'status' => $bookedBy === 'patient' ? 'confirmed' : 'pending',
                     'booked_by' => $bookedBy,
                     'notes' => $notes,
                 ]);

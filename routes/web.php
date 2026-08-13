@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\DataExportController;
 use App\Http\Controllers\Admin\PatientAdherenceController;
+use App\Http\Controllers\AppointmentActionController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Coordinator;
 use App\Http\Controllers\Coordinator\InbodyController as CoordinatorInbodyController;
@@ -59,6 +60,12 @@ Route::get('/debug-patient-group/{groupId}/{userId}', function ($groupId, $userI
 // QR Group Join
 Route::get('/grupo/{token}', [GroupJoinController::class, 'show'])->name('group.join');
 Route::post('/grupo/{token}', [GroupJoinController::class, 'join'])->name('group.join.post')->middleware('auth');
+
+// Confirmar/cancelar turno desde el link firmado que llega por WhatsApp (sin necesidad de login)
+Route::get('/turnos/{appointment}/confirmar', [AppointmentActionController::class, 'confirm'])
+    ->name('turnos.public.confirm')->middleware('signed');
+Route::get('/turnos/{appointment}/cancelar', [AppointmentActionController::class, 'cancel'])
+    ->name('turnos.public.cancel')->middleware('signed');
 
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -121,6 +128,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/whatsapp/connect', [Admin\WhatsAppController::class, 'connect'])->name('whatsapp.connect');
     Route::post('/whatsapp/send', [Admin\WhatsAppController::class, 'send'])->name('whatsapp.send');
     Route::delete('/whatsapp/disconnect', [Admin\WhatsAppController::class, 'disconnect'])->name('whatsapp.disconnect');
+
+    Route::get('/whatsapp/plantillas', [Admin\WhatsappTemplateController::class, 'index'])->name('whatsapp.templates.index');
+    Route::post('/whatsapp/plantillas', [Admin\WhatsappTemplateController::class, 'save'])->name('whatsapp.templates.save');
 
     Route::get('/attendances', [Admin\AttendanceController::class, 'index'])->name('attendances.index');
     Route::delete('/attendances/{attendance}', [Admin\AttendanceController::class, 'destroy'])->name('attendances.destroy');

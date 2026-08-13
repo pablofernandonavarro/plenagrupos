@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\User;
+use App\Services\AppointmentWhatsapp;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -66,7 +67,7 @@ class AppointmentController extends Controller
         return view('admin.turnos.create', compact('patients', 'professionals'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, AppointmentWhatsapp $notifier)
     {
         $data = $request->validate([
             'patient_id' => 'required|exists:users,id',
@@ -82,12 +83,14 @@ class AppointmentController extends Controller
         abort_unless($professional->isProfessional(), 422, 'El profesional seleccionado no es válido.');
 
         try {
-            Appointment::bookSlot($patient, $professional, Carbon::parse($data['starts_at']), 'admin', $data['notes'] ?? null);
+            $appointment = Appointment::bookSlot($patient, $professional, Carbon::parse($data['starts_at']), 'admin', $data['notes'] ?? null);
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         }
 
-        return redirect()->route('admin.turnos.index')->with('success', 'Turno creado correctamente.');
+        $notifier->notifyBooked($appointment);
+
+        return redirect()->route('admin.turnos.index')->with('success', 'Turno creado correctamente. Le pedimos confirmación al paciente por WhatsApp.');
     }
 
     public function edit(Appointment $appointment)
@@ -109,9 +112,10 @@ class AppointmentController extends Controller
         return back()->with('success', 'Turno actualizado.');
     }
 
-    public function destroy(Appointment $appointment)
+    public function destroy(Appointment $appointment, AppointmentWhatsapp $notifier)
     {
         $appointment->update(['status' => 'cancelled']);
+        $notifier->notifyCancelled($appointment);
 
         return back()->with('success', 'Turno cancelado.');
     }
