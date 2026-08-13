@@ -130,6 +130,8 @@ class GroupController extends Controller
             'description' => 'nullable|string',
             'meeting_days' => 'nullable|array',
             'meeting_days.*' => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'monthly_week_ordinal' => 'nullable|integer|in:1,2,3,4,5',
+            'monthly_weekday' => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
             'meeting_time' => 'nullable|date_format:H:i',
             'session_duration_minutes' => 'nullable|integer|min:15|max:480',
             'recurrence_type' => 'required|in:none,daily,weekly,monthly,yearly',
@@ -139,8 +141,7 @@ class GroupController extends Controller
             'coordinator_ids.*' => 'exists:users,id',
         ]);
 
-        $meetingDays = $data['recurrence_type'] === 'weekly' ? ($data['meeting_days'] ?? []) : null;
-        $meetingDay = ! empty($meetingDays) ? $meetingDays[0] : null;
+        [$meetingDays, $meetingDay, $monthlyWeekOrdinal] = $this->resolveRecurrenceFields($data);
 
         $group = Group::create([
             'name' => $data['name'],
@@ -154,6 +155,7 @@ class GroupController extends Controller
             'recurrence_type' => $data['recurrence_type'],
             'recurrence_interval' => $data['recurrence_interval'] ?? 1,
             'recurrence_end_date' => $data['recurrence_end_date'] ?? null,
+            'monthly_week_ordinal' => $monthlyWeekOrdinal,
             'auto_sessions' => $data['recurrence_type'] !== 'none',
             'admin_id' => auth()->id(),
             'active' => false,
@@ -183,6 +185,8 @@ class GroupController extends Controller
             'description' => 'nullable|string',
             'meeting_days' => 'nullable|array',
             'meeting_days.*' => 'in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
+            'monthly_week_ordinal' => 'nullable|integer|in:1,2,3,4,5',
+            'monthly_weekday' => 'nullable|in:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo',
             'meeting_time' => 'nullable|date_format:H:i,H:i:s',
             'session_duration_minutes' => 'nullable|integer|min:15|max:480',
             'recurrence_type' => 'required|in:none,daily,weekly,monthly,yearly',
@@ -192,8 +196,7 @@ class GroupController extends Controller
             'coordinator_ids.*' => 'exists:users,id',
         ]);
 
-        $meetingDays = $data['recurrence_type'] === 'weekly' ? ($data['meeting_days'] ?? []) : null;
-        $meetingDay = ! empty($meetingDays) ? $meetingDays[0] : null;
+        [$meetingDays, $meetingDay, $monthlyWeekOrdinal] = $this->resolveRecurrenceFields($data);
 
         $group->update([
             'name' => $data['name'],
@@ -207,12 +210,31 @@ class GroupController extends Controller
             'recurrence_type' => $data['recurrence_type'],
             'recurrence_interval' => $data['recurrence_interval'] ?? 1,
             'recurrence_end_date' => $data['recurrence_end_date'] ?? null,
+            'monthly_week_ordinal' => $monthlyWeekOrdinal,
             'auto_sessions' => $data['recurrence_type'] !== 'none',
         ]);
 
         $group->coordinators()->sync($data['coordinator_ids'] ?? []);
 
         return redirect()->route('admin.groups.show', $group)->with('success', 'Grupo actualizado.');
+    }
+
+    /**
+     * @return array{0: ?array, 1: ?string, 2: ?int} [meetingDays, meetingDay, monthlyWeekOrdinal]
+     */
+    private function resolveRecurrenceFields(array $data): array
+    {
+        if ($data['recurrence_type'] === 'weekly') {
+            $meetingDays = $data['meeting_days'] ?? [];
+
+            return [$meetingDays, $meetingDays[0] ?? null, null];
+        }
+
+        if ($data['recurrence_type'] === 'monthly' && ! empty($data['monthly_week_ordinal']) && ! empty($data['monthly_weekday'])) {
+            return [[$data['monthly_weekday']], $data['monthly_weekday'], (int) $data['monthly_week_ordinal']];
+        }
+
+        return [null, null, null];
     }
 
     public function show(Request $request, Group $group)

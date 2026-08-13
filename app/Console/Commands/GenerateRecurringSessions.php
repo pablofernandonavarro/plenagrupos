@@ -85,8 +85,11 @@ class GenerateRecurringSessions extends Command
                 return (int)$ref->startOfWeek()->diffInWeeks($tomorrow->copy()->startOfWeek()) % $interval === 0;
 
             case 'monthly':
-                if ($tomorrow->day !== $ref->day) return false;
-                return (int)$ref->diffInMonths($tomorrow) % $interval === 0;
+                if ((int)$ref->diffInMonths($tomorrow) % $interval !== 0) return false;
+                if ($group->monthly_week_ordinal) {
+                    return $this->isNthWeekdayOfMonth($group, $tomorrow, (int)$group->monthly_week_ordinal);
+                }
+                return $tomorrow->day === $ref->day;
 
             case 'yearly':
                 if ($tomorrow->month !== $ref->month || $tomorrow->day !== $ref->day) return false;
@@ -94,5 +97,20 @@ class GenerateRecurringSessions extends Command
         }
 
         return false;
+    }
+
+    /** True cuando $date es la N-ésima ocurrencia (1-4, o 5 = última) del día de semana en meeting_days[0]. */
+    private function isNthWeekdayOfMonth(Group $group, Carbon $date, int $ordinal): bool
+    {
+        $days = $group->meeting_days ?? [];
+        $targetDay = self::DAY_MAP[$days[0] ?? ''] ?? null;
+        if ($targetDay === null || $date->dayOfWeek !== $targetDay) {
+            return false;
+        }
+        if ($ordinal === 5) {
+            return $date->copy()->addDays(7)->month !== $date->month;
+        }
+
+        return intdiv($date->day - 1, 7) + 1 === $ordinal;
     }
 }

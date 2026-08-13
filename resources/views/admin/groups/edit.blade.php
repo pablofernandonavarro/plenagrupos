@@ -107,6 +107,52 @@
                 @error('meeting_days')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
+            {{-- Monthly mode (monthly only) --}}
+            @php $oldOrdinal = old('monthly_week_ordinal', $group->monthly_week_ordinal); @endphp
+            <div id="rec-monthly" class="hidden space-y-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Repetir por</label>
+                <div class="flex gap-2 mb-2">
+                    <div class="relative flex-1">
+                        <input type="radio" id="mm-day" name="monthly_mode" value="day" class="sr-only peer"
+                            {{ $oldOrdinal ? '' : 'checked' }} onchange="updateMonthlyModeUI()">
+                        <label for="mm-day"
+                            class="block text-center px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
+                            peer-checked:border-teal-600 peer-checked:bg-teal-600 peer-checked:text-white
+                            hover:border-teal-400 transition select-none cursor-pointer">Mismo día del mes</label>
+                    </div>
+                    <div class="relative flex-1">
+                        <input type="radio" id="mm-weekday" name="monthly_mode" value="weekday" class="sr-only peer"
+                            {{ $oldOrdinal ? 'checked' : '' }} onchange="updateMonthlyModeUI()">
+                        <label for="mm-weekday"
+                            class="block text-center px-3 py-2 rounded-lg text-sm font-medium border border-gray-300
+                            peer-checked:border-teal-600 peer-checked:bg-teal-600 peer-checked:text-white
+                            hover:border-teal-400 transition select-none cursor-pointer">Día de la semana (ej: 2do miércoles)</label>
+                    </div>
+                </div>
+                <div id="rec-monthly-weekday" class="hidden grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Ocurrencia</label>
+                        <select name="monthly_week_ordinal" id="mm-ordinal"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                            @foreach([1=>'1º',2=>'2º',3=>'3º',4=>'4º',5=>'Último'] as $val => $label)
+                                <option value="{{ $val }}" {{ (int) $oldOrdinal === $val ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">Día</label>
+                        <select name="monthly_weekday" id="mm-weekday-select"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                            @php $defaultMonthlyWeekday = $group->monthly_week_ordinal ? ($group->meeting_days[0] ?? null) : null; @endphp
+                            @foreach(['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] as $day)
+                                <option value="{{ $day }}" {{ old('monthly_weekday', $defaultMonthlyWeekday) === $day ? 'selected' : '' }}>{{ $day }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                @error('monthly_week_ordinal')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+
             {{-- Time + interval (hidden when none) --}}
             <div id="rec-options" class="hidden space-y-3">
                 <div class="grid grid-cols-2 gap-3">
@@ -146,9 +192,17 @@
             function updateRecUI() {
                 const t = document.getElementById('rec-type').value;
                 document.getElementById('rec-day').classList.toggle('hidden', t !== 'weekly');
+                document.getElementById('rec-monthly').classList.toggle('hidden', t !== 'monthly');
                 document.getElementById('rec-options').classList.toggle('hidden', t === 'none');
                 const u = document.getElementById('rec-unit');
                 if (u && recUnits[t]) u.textContent = recUnits[t];
+                updateMonthlyModeUI();
+            }
+            function updateMonthlyModeUI() {
+                const weekdayMode = document.getElementById('mm-weekday')?.checked;
+                document.getElementById('rec-monthly-weekday').classList.toggle('hidden', !weekdayMode);
+                document.getElementById('mm-ordinal').disabled = !weekdayMode;
+                document.getElementById('mm-weekday-select').disabled = !weekdayMode;
             }
             updateRecUI();
             </script>

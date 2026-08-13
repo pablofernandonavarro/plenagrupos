@@ -16,7 +16,7 @@ class Group extends Model
     protected $fillable = [
         'name', 'modality', 'group_type', 'description', 'meeting_day', 'meeting_days', 'meeting_time',
         'session_duration_minutes',
-        'recurrence_type', 'recurrence_interval', 'recurrence_end_date',
+        'recurrence_type', 'recurrence_interval', 'recurrence_end_date', 'monthly_week_ordinal',
         'auto_sessions', 'admin_id', 'qr_token', 'active', 'started_at', 'ended_at',
     ];
 
@@ -24,6 +24,7 @@ class Group extends Model
         'active' => 'boolean',
         'auto_sessions' => 'boolean',
         'recurrence_interval' => 'integer',
+        'monthly_week_ordinal' => 'integer',
         'recurrence_end_date' => 'date',
         'session_duration_minutes' => 'integer',
         'meeting_days' => 'array',
@@ -249,8 +250,16 @@ class Group extends Model
         }
 
         if ($type === 'monthly') {
-            return $date->day === $ref->day &&
-                   (int) $ref->diffInMonths($date) % $interval === 0;
+            if ((int) $ref->diffInMonths($date) % $interval !== 0) {
+                return false;
+            }
+
+            $ordinal = $this->attributes['monthly_week_ordinal'] ?? null;
+            if ($ordinal) {
+                return $this->isNthWeekdayOfMonth($date, (int) $ordinal);
+            }
+
+            return $date->day === $ref->day;
         }
 
         if ($type === 'yearly') {
@@ -259,6 +268,25 @@ class Group extends Model
         }
 
         return false;
+    }
+
+    /**
+     * True cuando $date es la N-ésima ocurrencia (1-4, o 5 = última) del día de la semana
+     * guardado en meeting_days[0] dentro de su mes. P. ej. "2do miércoles de cada mes".
+     */
+    private function isNthWeekdayOfMonth(Carbon $date, int $ordinal): bool
+    {
+        $days = $this->meeting_days ?? [];
+        $dayMap = ['Domingo' => 0, 'Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6];
+        $targetDay = $dayMap[$days[0] ?? ''] ?? null;
+        if ($targetDay === null || $date->dayOfWeek !== $targetDay) {
+            return false;
+        }
+        if ($ordinal === 5) {
+            return $date->copy()->addDays(7)->month !== $date->month;
+        }
+
+        return intdiv($date->day - 1, 7) + 1 === $ordinal;
     }
 
     /**
@@ -376,10 +404,23 @@ class Group extends Model
 
         return match ($this->attributes['recurrence_type'] ?? 'none') {
             'daily' => $n > 1 ? "Cada {$n} días" : 'Diario',
-            'monthly' => $n > 1 ? "Cada {$n} meses" : 'Mensual',
+            'monthly' => $this->monthlyRecurrenceLabel($n),
             'yearly' => $n > 1 ? "Cada {$n} años" : 'Anual',
             default => 'Sin repetición',
         };
+    }
+
+    private function monthlyRecurrenceLabel(int $n): string
+    {
+        $prefix = $n > 1 ? "Cada {$n} meses" : 'Mensual';
+        $ordinal = $this->attributes['monthly_week_ordinal'] ?? null;
+        if (! $ordinal) {
+            return $prefix;
+        }
+        $ordinalLabels = [1 => '1er', 2 => '2do', 3 => '3er', 4 => '4to', 5 => 'último'];
+        $days = $this->meeting_days ?? [];
+
+        return $prefix.(count($days) ? ' · '.($ordinalLabels[(int) $ordinal] ?? '').' '.$days[0] : '');
     }
 
     private function formatDaysLabel(array $days): string
@@ -456,10 +497,52 @@ class Group extends Model
                 return collect($candidates)->sortBy(fn ($c) => $c->timestamp)->first();
 
             case 'monthly':
+                $ordinal = $this->attributes['monthly_week_ordinal'] ?? null;
+                if ($ordinal) {
+                    return $this->nextNthWeekdayOfMonth((int) $ordinal, (int) $hour, (int) $minute);
+                }
+
                 return $now->copy()->addMonth()->setTime((int) $hour, (int) $minute);
 
             case 'yearly':
                 return $now->copy()->addYear()->setTime((int) $hour, (int) $minute);
+        }
+
+        return null;
+    }
+
+    /** Próxima fecha en que cae el N-ésimo (1-4, o 5 = último) día de semana del mes, ej. "2do miércoles". */
+    private function nextNthWeekdayOfMonth(int $ordinal, int $hour, int $minute): ?Carbon
+    {
+        $days = $this->meeting_days ?? [];
+        $dayMap = [
+            'Domingo' => Carbon::SUNDAY,  'Lunes' => Carbon::MONDAY,
+            'Martes' => Carbon::TUESDAY, 'Miércoles' => Carbon::WEDNESDAY,
+            'Jueves' => Carbon::THURSDAY, 'Viernes' => Carbon::FRIDAY,
+            'Sábado' => Carbon::SATURDAY,
+        ];
+        $targetDay = $dayMap[$days[0] ?? ''] ?? null;
+        if ($targetDay === null) {
+            return null;
+        }
+
+        $tz = 'America/Argentina/Buenos_Aires';
+        $now = Carbon::now($tz);
+
+        for ($i = 0; $i < 13; $i++) {
+            $month = $now->copy()->addMonthsNoOverflow($i)->startOfMonth();
+            $candidate = $ordinal === 5
+                ? $month->copy()->lastOfMonth($targetDay)
+                : $month->copy()->nthOfMonth($ordinal, $targetDay);
+
+            if (! $candidate) {
+                continue; // ej. no hay 5to miércoles este mes
+            }
+
+            $candidate->setTime($hour, $minute);
+            if ($candidate->gt($now)) {
+                return $candidate;
+            }
         }
 
         return null;
