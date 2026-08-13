@@ -106,6 +106,32 @@
         <span class="inline-flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-purple-400"></span> InBody &gt; {{ $alertDaysInbody }}d</span>
     </div>
 
+    {{-- Buscador --}}
+    <form method="get" action="{{ route('admin.adherence.index') }}" class="flex gap-2">
+        <input type="hidden" name="alert_days_att" value="{{ $alertDaysAtt }}">
+        <input type="hidden" name="alert_days_weight" value="{{ $alertDaysWeight }}">
+        <input type="hidden" name="alert_days_inbody" value="{{ $alertDaysInbody }}">
+        @if($onlyAlerts)<input type="hidden" name="solo_alertas" value="1">@endif
+        <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+            </svg>
+            <input type="text" name="search" value="{{ $search }}"
+                placeholder="Buscar paciente por nombre o email..."
+                class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white">
+        </div>
+        <button type="submit"
+            class="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-xl transition">
+            Buscar
+        </button>
+        @if($search !== '')
+            <a href="{{ route('admin.adherence.index', request()->except('search')) }}"
+               class="px-4 py-2.5 border border-gray-200 text-gray-500 text-sm rounded-xl hover:bg-gray-50 transition">
+                ✕
+            </a>
+        @endif
+    </form>
+
     {{-- Tabla --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
         <table class="min-w-full text-sm">

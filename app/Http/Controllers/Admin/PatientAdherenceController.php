@@ -19,6 +19,7 @@ class PatientAdherenceController extends Controller
         $alertDaysWeight = max(1, min(365, (int) $request->input('alert_days_weight', 14)));
         $alertDaysInbody = max(1, min(365, (int) $request->input('alert_days_inbody', 30)));
         $onlyAlerts      = $request->boolean('solo_alertas');
+        $search          = trim((string) $request->input('search', ''));
 
         $lastAtt = GroupAttendance::query()
             ->selectRaw('user_id, MAX(attended_at) as last_at')
@@ -40,6 +41,10 @@ class PatientAdherenceController extends Controller
 
         $rows = User::query()
             ->where('role', 'patient')
+            ->when($search !== '', fn ($q) => $q->where(fn ($q2) => $q2
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+            ))
             ->orderBy('name')
             ->get()
             ->map(function (User $patient) use ($lastAtt, $lastWeight, $lastInbody, $now, $alertDaysAtt, $alertDaysWeight, $alertDaysInbody, $tz) {
@@ -84,6 +89,7 @@ class PatientAdherenceController extends Controller
             'alertDaysWeight' => $alertDaysWeight,
             'alertDaysInbody' => $alertDaysInbody,
             'onlyAlerts'      => $onlyAlerts,
+            'search'          => $search,
         ]);
     }
 }
