@@ -3,9 +3,14 @@
 
 @section('content')
 <div class="space-y-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">Adherencia y completitud</h1>
-        <p class="text-gray-500 text-sm mt-1">Última visita grupal, último peso e InBody por paciente.</p>
+    <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Adherencia y completitud</h1>
+            <p class="text-gray-500 text-sm mt-1">Última visita grupal, último peso, InBody y turnos médicos por paciente.</p>
+        </div>
+        <a href="{{ route('admin.appointment-requirements.index') }}" class="text-sm text-teal-600 hover:underline whitespace-nowrap">
+            Configurar requisitos de turnos
+        </a>
     </div>
 
     {{-- Export CSV --}}
@@ -100,11 +105,9 @@
     </form>
 
     {{-- Leyenda --}}
-    <div class="flex flex-wrap gap-3 text-xs text-gray-500">
-        <span class="inline-flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-400"></span> Visita &gt; {{ $alertDaysAtt }}d</span>
-        <span class="inline-flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-400"></span> Peso &gt; {{ $alertDaysWeight }}d</span>
-        <span class="inline-flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-purple-400"></span> InBody &gt; {{ $alertDaysInbody }}d</span>
-    </div>
+    <p class="text-xs text-gray-500">
+        Se marca "atrasado" cuando pasan más de <strong>{{ $alertDaysAtt }} días</strong> sin visita, <strong>{{ $alertDaysWeight }}</strong> sin registrar peso, o <strong>{{ $alertDaysInbody }}</strong> sin InBody — o cuando no se cumple el mínimo mensual de turnos (médico: <strong>{{ $medicoRequired }}</strong>, nutricionista: <strong>{{ $nutriRequired }}</strong>).
+    </p>
 
     {{-- Buscador --}}
     <form method="get" action="{{ route('admin.adherence.index') }}" class="flex gap-2">
@@ -139,24 +142,26 @@
                 <tr class="bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide">
                     <th class="px-4 py-3 font-medium">Paciente</th>
                     <th class="px-4 py-3 font-medium">Estado</th>
-                    <th class="px-4 py-3 font-medium">Última visita</th>
-                    <th class="px-4 py-3 font-medium text-right">
-                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>Días sin visitar</span>
-                    </th>
-                    <th class="px-4 py-3 font-medium">Último peso</th>
-                    <th class="px-4 py-3 font-medium text-right">
-                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-orange-400 inline-block"></span>Días sin pesar</span>
-                    </th>
-                    <th class="px-4 py-3 font-medium">Último InBody</th>
-                    <th class="px-4 py-3 font-medium text-right">
-                        <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-400 inline-block"></span>Días sin InBody</span>
-                    </th>
-                    <th class="px-4 py-3 font-medium">Alertas</th>
+                    <th class="px-4 py-3 font-medium">Visita</th>
+                    <th class="px-4 py-3 font-medium">Peso</th>
+                    <th class="px-4 py-3 font-medium">InBody</th>
+                    <th class="px-4 py-3 font-medium text-center">Turno médico</th>
+                    <th class="px-4 py-3 font-medium text-center">Turno nutric.</th>
+                    <th class="px-4 py-3 font-medium">Seguimiento</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
                 @forelse($rows as $row)
-                    <tr class="{{ $row['needsAttention'] ? 'bg-amber-50/60' : 'hover:bg-gray-50/60' }}">
+                    @php
+                        $issueLabels = collect([
+                            $row['attStale'] ? ($row['lastAtt'] ? 'visita' : 'nunca visitó') : null,
+                            $row['weightStale'] ? ($row['lastWeight'] ? 'peso' : 'nunca se pesó') : null,
+                            $row['inbodyStale'] ? ($row['lastInbody'] ? 'InBody' : 'nunca hizo InBody') : null,
+                            $row['medicoStale'] ? 'turno médico' : null,
+                            $row['nutriStale'] ? 'turno nutricionista' : null,
+                        ])->filter()->values();
+                    @endphp
+                    <tr class="{{ $row['needsAttention'] ? 'bg-amber-50/50' : 'hover:bg-gray-50/60' }}">
                         {{-- Paciente --}}
                         <td class="px-4 py-3">
                             <p class="font-medium text-gray-800">{{ $row['patient']->name }}</p>
@@ -174,82 +179,69 @@
                             </span>
                         </td>
 
-                        {{-- Última visita --}}
-                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
-                            {{ $row['lastAtt'] ? $row['lastAtt']->format('d/m/Y H:i') : '—' }}
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            @if($row['daysAtt'] !== null)
-                                <span class="font-medium {{ $row['attStale'] ? 'text-blue-600' : 'text-gray-600' }}">
-                                    {{ $row['daysAtt'] }}
-                                </span>
+                        {{-- Visita --}}
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            @if($row['lastAtt'])
+                                <p class="text-gray-700">{{ $row['lastAtt']->format('d/m/Y') }}</p>
+                                <p class="text-xs {{ $row['attStale'] ? 'text-amber-700 font-medium' : 'text-gray-400' }}">hace {{ $row['daysAtt'] }} d</p>
                             @else
-                                <span class="font-medium text-blue-600">Nunca</span>
+                                <p class="text-sm font-medium text-amber-700">Nunca</p>
                             @endif
                         </td>
 
-                        {{-- Último peso --}}
-                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
-                            {{ $row['lastWeight'] ? $row['lastWeight']->format('d/m/Y H:i') : '—' }}
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            @if($row['daysW'] !== null)
-                                <span class="font-medium {{ $row['weightStale'] ? 'text-orange-600' : 'text-gray-600' }}">
-                                    {{ $row['daysW'] }}
-                                </span>
+                        {{-- Peso --}}
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            @if($row['lastWeight'])
+                                <p class="text-gray-700">{{ $row['lastWeight']->format('d/m/Y') }}</p>
+                                <p class="text-xs {{ $row['weightStale'] ? 'text-amber-700 font-medium' : 'text-gray-400' }}">hace {{ $row['daysW'] }} d</p>
                             @else
-                                <span class="font-medium text-orange-600">Nunca</span>
+                                <p class="text-sm font-medium text-amber-700">Nunca</p>
                             @endif
                         </td>
 
-                        {{-- Último InBody --}}
-                        <td class="px-4 py-3 text-gray-700 whitespace-nowrap">
-                            {{ $row['lastInbody'] ? $row['lastInbody']->format('d/m/Y') : '—' }}
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            @if($row['daysIn'] !== null)
-                                <span class="font-medium {{ $row['inbodyStale'] ? 'text-purple-600' : 'text-gray-600' }}">
-                                    {{ $row['daysIn'] }}
-                                </span>
+                        {{-- InBody --}}
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            @if($row['lastInbody'])
+                                <p class="text-gray-700">{{ $row['lastInbody']->format('d/m/Y') }}</p>
+                                <p class="text-xs {{ $row['inbodyStale'] ? 'text-amber-700 font-medium' : 'text-gray-400' }}">hace {{ $row['daysIn'] }} d</p>
                             @else
-                                <span class="font-medium text-purple-600">Nunca</span>
+                                <p class="text-sm font-medium text-amber-700">Nunca</p>
                             @endif
                         </td>
 
-                        {{-- Alertas --}}
-                        <td class="px-4 py-3">
+                        {{-- Turno médico --}}
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <span class="{{ $row['medicoStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
+                                {{ $row['medicoCount'] }}/{{ $medicoRequired }}
+                            </span>
+                        </td>
+
+                        {{-- Turno nutricionista --}}
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <span class="{{ $row['nutriStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
+                                {{ $row['nutriCount'] }}/{{ $nutriRequired }}
+                            </span>
+                        </td>
+
+                        {{-- Seguimiento (resumen) --}}
+                        <td class="px-4 py-3 whitespace-nowrap">
                             @if(! $row['needsAttention'])
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700">
-                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-700">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                                     Al día
                                 </span>
                             @else
-                                <div class="flex flex-col gap-1">
-                                    @if($row['attStale'])
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 whitespace-nowrap">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block"></span>
-                                            {{ $row['lastAtt'] ? 'Visita atrasada' : 'Sin visita' }}
-                                        </span>
-                                    @endif
-                                    @if($row['weightStale'])
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 whitespace-nowrap">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block"></span>
-                                            {{ $row['lastWeight'] ? 'Peso atrasado' : 'Sin peso' }}
-                                        </span>
-                                    @endif
-                                    @if($row['inbodyStale'])
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-50 text-purple-700 whitespace-nowrap">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block"></span>
-                                            {{ $row['lastInbody'] ? 'InBody atrasado' : 'Sin InBody' }}
-                                        </span>
-                                    @endif
-                                </div>
+                                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 cursor-help"
+                                    title="Pendiente: {{ $issueLabels->join(', ') }}">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                    {{ $issueLabels->count() }} {{ $issueLabels->count() === 1 ? 'pendiente' : 'pendientes' }}
+                                </span>
                             @endif
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="px-4 py-10 text-center text-gray-400">No hay pacientes que coincidan con el filtro.</td>
+                        <td colspan="8" class="px-4 py-10 text-center text-gray-400">No hay pacientes que coincidan con el filtro.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -258,7 +250,8 @@
 
     <p class="text-xs text-gray-400">
         Mostrando {{ $rows->count() }} paciente(s).
-        Umbrales activos: visita {{ $alertDaysAtt }}d · peso {{ $alertDaysWeight }}d · InBody {{ $alertDaysInbody }}d.
+        Umbrales activos: visita {{ $alertDaysAtt }}d · peso {{ $alertDaysWeight }}d · InBody {{ $alertDaysInbody }}d ·
+        turno médico {{ $medicoRequired }}/mes · turno nutricionista {{ $nutriRequired }}/mes.
     </p>
 </div>
 @endsection
