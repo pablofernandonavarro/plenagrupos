@@ -25,14 +25,14 @@ return new class extends Migration
         DB::table('whatsapp_templates')->insert([
             [
                 'key' => 'appointment_booked',
-                'body' => "Hola {paciente}! 👋 Se reservó tu turno de *{especialidad}* con {profesional} el {fecha} a las {hora}.\n\nConfirmar: {link_confirmar}\nCancelar: {link_cancelar}",
+                'body' => "Hola {paciente}! 👋 Se reservó tu turno de *{especialidad}* con {profesional} el {fecha} a las {hora}.\n\n✅ *Confirmar turno:*\n{link_confirmar}\n\n❌ *Cancelar turno:*\n{link_cancelar}",
                 'active' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
             [
                 'key' => 'appointment_reminder',
-                'body' => "Hola {paciente}! Te recordamos tu turno de *{especialidad}* con {profesional} mañana {fecha} a las {hora}.\n\nConfirmar: {link_confirmar}\nCancelar: {link_cancelar}",
+                'body' => "Hola {paciente}! Te recordamos tu turno de *{especialidad}* con {profesional} mañana {fecha} a las {hora}.\n\n✅ *Confirmar turno:*\n{link_confirmar}\n\n❌ *Cancelar turno:*\n{link_cancelar}",
                 'active' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
