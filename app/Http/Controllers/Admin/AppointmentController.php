@@ -100,14 +100,20 @@ class AppointmentController extends Controller
         return view('admin.turnos.edit', compact('appointment'));
     }
 
-    public function update(Request $request, Appointment $appointment)
+    public function update(Request $request, Appointment $appointment, AppointmentWhatsapp $notifier)
     {
         $data = $request->validate([
             'status' => 'required|in:pending,confirmed,completed,cancelled,no_show',
             'notes' => 'nullable|string|max:1000',
         ]);
 
+        $wasCancelled = $appointment->status === 'cancelled';
+
         $appointment->update($data);
+
+        if ($data['status'] === 'cancelled' && ! $wasCancelled) {
+            $notifier->notifyCancelled($appointment);
+        }
 
         return back()->with('success', 'Turno actualizado.');
     }
