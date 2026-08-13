@@ -48,14 +48,14 @@ class AppointmentController extends Controller
 
         $colors = ['medico' => '#2563eb', 'nutricionista' => '#09cda6'];
 
-        return response()->json($appointments->map(fn ($a) => [
+        return response()->json($appointments->map(fn ($a) => array_filter([
             'id' => $a->id,
             'title' => ($a->patient->name ?? '—') . ' — ' . ($a->professional->name ?? '—'),
             'start' => $a->starts_at->toIso8601String(),
             'end' => $a->ends_at->toIso8601String(),
             'color' => $colors[$a->specialty] ?? '#6b7280',
             'url' => $isAdmin ? route('admin.turnos.edit', $a) : null,
-        ]));
+        ], fn ($v) => $v !== null)));
     }
 
     public function create()
