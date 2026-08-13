@@ -55,14 +55,14 @@ class PatientController extends Controller
         $lastWeight = $weightRecords->first()?->weight;
         $totalChange = ($firstWeight && $lastWeight) ? round($lastWeight - $firstWeight, 2) : null;
 
-        // Total minutes in groups (cast to int — Carbon 3 returns float from diffInMinutes)
-        $attendedGroupIds = $attendances->pluck('group_id')->unique();
-        $totalMinutes = (int) $groups->whereIn('id', $attendedGroupIds)->sum(function ($g) {
-            if ($g->started_at && $g->ended_at) {
-                return (int) $g->started_at->diffInMinutes($g->ended_at);
+        // Total minutes in groups: tiempo real de este paciente en sus asistencias,
+        // no el tiempo de vida del grupo (cast a int — Carbon 3 devuelve float en diffInMinutes).
+        $totalMinutes = (int) $attendances->sum(function ($a) {
+            if ($a->attended_at && $a->left_at) {
+                return (int) $a->attended_at->diffInMinutes($a->left_at);
             }
-            if ($g->started_at && $g->active) {
-                return (int) $g->started_at->diffInMinutes(now());
+            if ($a->attended_at && ! $a->left_at) {
+                return (int) $a->attended_at->diffInMinutes(now());
             }
 
             return 0;
