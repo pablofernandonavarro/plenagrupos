@@ -138,6 +138,27 @@
                                     </svg>
                                     Importar desde Excel
                                 </a>
+                            </div>
+                        </div>
+                        {{-- Turnos dropdown --}}
+                        <div class="relative" id="nav-turnos-wrap">
+                            <button id="nav-turnos-btn"
+                                class="flex items-center gap-1 text-sm text-gray-300 transition"
+                                onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">
+                                Turnos
+                                <svg class="w-3 h-3 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div id="nav-turnos-menu"
+                                class="hidden absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                                <a href="{{ route('admin.turnos.calendar') }}"
+                                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    Calendario de turnos
+                                </a>
                                 <a href="{{ route('admin.professionals.index') }}"
                                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
                                     <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,8 +175,6 @@
                                 </a>
                             </div>
                         </div>
-                        <a href="{{ route('admin.turnos.calendar') }}" class="text-sm text-gray-300 transition"
-                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Turnos</a>
                         <a href="{{ route('admin.ai-documents.index') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Bibliografía IA</a>
                         <a href="{{ route('admin.plan-rules.index') }}" class="text-sm text-gray-300 transition"
@@ -345,6 +364,17 @@
                 usuariosMenu.classList.toggle('hidden');
             });
             document.addEventListener('click', () => usuariosMenu.classList.add('hidden'));
+        }
+
+        // Turnos dropdown
+        const turnosBtn  = document.getElementById('nav-turnos-btn');
+        const turnosMenu = document.getElementById('nav-turnos-menu');
+        if (turnosBtn) {
+            turnosBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                turnosMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => turnosMenu.classList.add('hidden'));
         }
     </script>
 
