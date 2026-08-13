@@ -133,6 +133,21 @@ class Appointment extends Model
             $startsAt = $startsAt->copy()->timezone(self::TZ);
             $dayName = array_search($startsAt->dayOfWeek, self::DAY_MAP, true);
 
+            $specialty = $professional->role;
+            $required = AppointmentRequirement::requiredCountFor($specialty);
+            $alreadyBooked = self::where('patient_id', $patient->id)
+                ->where('specialty', $specialty)
+                ->whereIn('status', ['pending', 'confirmed', 'completed'])
+                ->whereBetween('starts_at', [$startsAt->copy()->startOfMonth(), $startsAt->copy()->endOfMonth()])
+                ->count();
+
+            if ($alreadyBooked >= $required) {
+                $label = $specialty === 'medico' ? 'médico clínico' : 'nutricionista';
+                throw ValidationException::withMessages([
+                    'starts_at' => "Ya alcanzó el límite de {$required} turno(s) de {$label} para este mes.",
+                ]);
+            }
+
             $schedule = ProfessionalSchedule::query()
                 ->where('professional_id', $professional->id)
                 ->where('day_of_week', $dayName)
