@@ -37,9 +37,11 @@ class AppointmentController extends Controller
     {
         $start = $request->query('start');
         $end = $request->query('end');
+        $isAdmin = auth()->user()->isAdmin();
 
         $appointments = Appointment::with(['patient', 'professional'])
             ->where('status', '!=', 'cancelled')
+            ->when(! $isAdmin, fn ($q) => $q->where('professional_id', auth()->id()))
             ->when($start, fn ($q) => $q->where('starts_at', '>=', $start))
             ->when($end, fn ($q) => $q->where('starts_at', '<=', $end))
             ->get();
@@ -52,7 +54,7 @@ class AppointmentController extends Controller
             'start' => $a->starts_at->toIso8601String(),
             'end' => $a->ends_at->toIso8601String(),
             'color' => $colors[$a->specialty] ?? '#6b7280',
-            'url' => route('admin.turnos.edit', $a),
+            'url' => $isAdmin ? route('admin.turnos.edit', $a) : null,
         ]));
     }
 

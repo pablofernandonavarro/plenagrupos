@@ -21,6 +21,7 @@ Route::get('/', function () {
     return match (auth()->user()->role) {
         'admin' => redirect()->route('admin.dashboard'),
         'coordinator' => redirect()->route('coordinator.dashboard'),
+        'medico', 'nutricionista' => redirect()->route('admin.turnos.calendar'),
         default => redirect()->route('patient.dashboard'),
     };
 });
@@ -126,8 +127,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::prefix('turnos')->name('turnos.')->group(function () {
         Route::get('/', [Admin\AppointmentController::class, 'index'])->name('index');
-        Route::get('/calendario', [Admin\AppointmentController::class, 'calendar'])->name('calendar');
-        Route::get('/calendario/eventos', [Admin\AppointmentController::class, 'calendarEvents'])->name('calendar.events');
         Route::get('/crear', [Admin\AppointmentController::class, 'create'])->name('create');
         Route::post('/', [Admin\AppointmentController::class, 'store'])->name('store');
         Route::get('/disponibilidad', [Admin\AppointmentController::class, 'availableSlots'])->name('available-slots');
@@ -147,6 +146,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/requisitos-turnos', [Admin\AppointmentRequirementController::class, 'index'])->name('appointment-requirements.index');
     Route::post('/requisitos-turnos', [Admin\AppointmentRequirementController::class, 'save'])->name('appointment-requirements.save');
+});
+
+// Calendario de turnos: admin ve todo, médico/nutricionista ven (y aterrizan en) su propia agenda
+Route::middleware(['auth', 'role:admin,medico,nutricionista'])->prefix('admin/turnos')->name('admin.turnos.')->group(function () {
+    Route::get('/calendario', [Admin\AppointmentController::class, 'calendar'])->name('calendar');
+    Route::get('/calendario/eventos', [Admin\AppointmentController::class, 'calendarEvents'])->name('calendar.events');
 });
 
 // Coordinator routes

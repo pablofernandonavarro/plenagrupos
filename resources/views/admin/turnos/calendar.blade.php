@@ -4,7 +4,8 @@
 @section('content')
 <div class="space-y-6">
     <div class="flex justify-between items-center flex-wrap gap-3">
-        <h1 class="text-2xl font-bold text-gray-800">Calendario de turnos</h1>
+        <h1 class="text-2xl font-bold text-gray-800">{{ auth()->user()->isAdmin() ? 'Calendario de turnos' : 'Mi agenda' }}</h1>
+        @if(auth()->user()->isAdmin())
         <div class="flex gap-2">
             <a href="{{ route('admin.turnos.index') }}" class="border border-gray-200 text-gray-600 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition">
                 Ver listado
@@ -13,6 +14,7 @@
                 + Nuevo turno
             </a>
         </div>
+        @endif
     </div>
 
     <div class="flex items-center gap-4 text-xs text-gray-500">
