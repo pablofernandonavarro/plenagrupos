@@ -202,19 +202,19 @@
                                     @if($row['attStale'])
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 whitespace-nowrap">
                                             <span class="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block"></span>
-                                            Sin visita
+                                            {{ $row['lastAtt'] ? 'Visita atrasada' : 'Sin visita' }}
                                         </span>
                                     @endif
                                     @if($row['weightStale'])
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 whitespace-nowrap">
                                             <span class="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block"></span>
-                                            Sin peso
+                                            {{ $row['lastWeight'] ? 'Peso atrasado' : 'Sin peso' }}
                                         </span>
                                     @endif
                                     @if($row['inbodyStale'])
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-50 text-purple-700 whitespace-nowrap">
                                             <span class="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block"></span>
-                                            Sin InBody
+                                            {{ $row['lastInbody'] ? 'InBody atrasado' : 'Sin InBody' }}
                                         </span>
                                     @endif
                                 </div>
