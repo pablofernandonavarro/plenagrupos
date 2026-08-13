@@ -117,10 +117,13 @@ class DashboardController extends Controller
             'techo'   => $techo ? (float) $techo : null,
         ];
 
+        $medicoDone = $user->hasCompletedMonthlyRequirement('medico');
+        $nutriDone = $user->hasCompletedMonthlyRequirement('nutricionista');
+
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'sessionHistory', 'weightHistory',
             'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
-            'attendanceStats', 'todayAttendances'
+            'attendanceStats', 'todayAttendances', 'medicoDone', 'nutriDone'
         ));
     }
 

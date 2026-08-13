@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Group;
 use App\Models\GroupAttendance;
+use App\Models\ProfessionalSchedule;
 use App\Models\User;
 use App\Models\WeightRecord;
 use Illuminate\Database\Seeder;
@@ -37,6 +38,34 @@ class DatabaseSeeder extends Seeder
             'phone' => '+54 9 11 8765-4321',
             'password' => Hash::make('password'),
         ]);
+
+        // Professionals (medico + nutricionista), with a default weekly schedule so they're bookable
+        $medico = User::create([
+            'name' => 'Dr. Juan Sosa',
+            'email' => 'medico1@plena.com',
+            'role' => 'medico',
+            'password' => Hash::make('password'),
+        ]);
+
+        $nutricionista = User::create([
+            'name' => 'Lic. Sofía Ramírez',
+            'email' => 'nutricionista1@plena.com',
+            'role' => 'nutricionista',
+            'password' => Hash::make('password'),
+        ]);
+
+        foreach ([$medico, $nutricionista] as $professional) {
+            foreach (['Lunes', 'Miércoles', 'Viernes'] as $day) {
+                ProfessionalSchedule::create([
+                    'professional_id' => $professional->id,
+                    'day_of_week' => $day,
+                    'start_time' => '09:00',
+                    'end_time' => '13:00',
+                    'slot_duration_minutes' => 30,
+                    'active' => true,
+                ]);
+            }
+        }
 
         // Patients
         $patientData = [
@@ -90,9 +119,11 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $this->command->info('✓ Admin:        admin@plena.com / password');
-        $this->command->info('✓ Coordinador:  maria@plena.com / password');
-        $this->command->info('✓ Paciente:     paciente1@plena.com / password');
+        $this->command->info('✓ Admin:          admin@plena.com / password');
+        $this->command->info('✓ Coordinador:    maria@plena.com / password');
+        $this->command->info('✓ Paciente:       paciente1@plena.com / password');
+        $this->command->info('✓ Médico:         medico1@plena.com / password');
+        $this->command->info('✓ Nutricionista:  nutricionista1@plena.com / password');
         $this->command->info('✓ QR del grupo: /grupo/'.$group->qr_token);
     }
 }

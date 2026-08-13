@@ -33,7 +33,21 @@ class UserController extends Controller
             ))
             ->latest()->get();
 
-        return view('admin.users.index', compact('coordinators', 'patients'));
+        $medicos = User::where('role', 'medico')
+            ->when($search, fn ($q) => $q->where(fn ($q) => $q
+                ->where('name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%")
+            ))
+            ->latest()->get();
+
+        $nutricionistas = User::where('role', 'nutricionista')
+            ->when($search, fn ($q) => $q->where(fn ($q) => $q
+                ->where('name', 'like', "%$search%")
+                ->orWhere('email', 'like', "%$search%")
+            ))
+            ->latest()->get();
+
+        return view('admin.users.index', compact('coordinators', 'patients', 'medicos', 'nutricionistas'));
     }
 
     public function create(Request $request)
@@ -49,7 +63,7 @@ class UserController extends Controller
             'name'           => 'required|string|max:255',
             'email'          => ['required', 'email', Rule::unique('users')->whereNull('deleted_at')],
             'phone'          => ['nullable', 'string', 'max:20', new WhatsappPhone],
-            'role'           => 'required|in:coordinator,patient',
+            'role'           => 'required|in:coordinator,patient,medico,nutricionista',
             'plan'           => 'nullable|in:descenso,mantenimiento,mantenimiento_pleno',
             'plan_start_date'=> 'nullable|date',
             'birth_date'     => 'nullable|date|before:today',

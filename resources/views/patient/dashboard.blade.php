@@ -32,6 +32,32 @@
         Registrar peso manualmente
     </a>
 
+    {{-- Turnos: cumplimiento mensual --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between">
+            <div>
+                <p class="text-sm font-semibold text-gray-700">Turno médico clínico</p>
+                <p class="text-xs text-gray-400">Este mes</p>
+            </div>
+            @if($medicoDone)
+                <span class="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+            @else
+                <a href="{{ route('patient.turnos.create', ['specialty' => 'medico']) }}" class="text-xs px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition">Sacar turno</a>
+            @endif
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between">
+            <div>
+                <p class="text-sm font-semibold text-gray-700">Turno nutricionista</p>
+                <p class="text-xs text-gray-400">Este mes</p>
+            </div>
+            @if($nutriDone)
+                <span class="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+            @else
+                <a href="{{ route('patient.turnos.create', ['specialty' => 'nutricionista']) }}" class="text-xs px-3 py-1.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium transition">Sacar turno</a>
+            @endif
+        </div>
+    </div>
+
     {{-- Scanner modal --}}
     <div id="scanner-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/70" id="modal-backdrop"></div>

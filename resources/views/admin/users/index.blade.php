@@ -37,6 +37,12 @@
             <a href="{{ route('admin.users.create', ['role' => 'patient']) }}" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
                 + Paciente
             </a>
+            <a href="{{ route('admin.users.create', ['role' => 'medico']) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                + Médico
+            </a>
+            <a href="{{ route('admin.users.create', ['role' => 'nutricionista']) }}" class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                + Nutricionista
+            </a>
         </div>
     </div>
 
@@ -124,6 +130,74 @@
                 </div>
             @empty
                 <p class="px-5 py-4 text-sm text-gray-400">Sin coordinadores.</p>
+            @endforelse
+        </div>
+    </details>
+
+    {{-- Médicos --}}
+    <details class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <summary class="px-5 py-4 cursor-pointer list-none flex items-center justify-between gap-3 hover:bg-gray-50/80 transition [&::-webkit-details-marker]:hidden">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                <h2 class="font-semibold text-gray-800">Médicos ({{ $medicos->count() }})</h2>
+            </span>
+            <svg class="w-5 h-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="divide-y divide-gray-50 border-t border-gray-100">
+            @forelse($medicos as $user)
+                <div class="px-5 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <x-avatar :user="$user" size="sm" />
+                        <div>
+                            <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
+                            <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="{{ route('admin.professionals.schedule.edit', $user) }}" class="text-sm text-indigo-600 hover:underline">Horarios</a>
+                        <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
+                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Mover este usuario a la papelera?')">
+                            @csrf @method('DELETE')
+                            <button class="text-sm text-red-400 hover:text-red-600">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            @empty
+                <p class="px-5 py-4 text-sm text-gray-400">Sin médicos.</p>
+            @endforelse
+        </div>
+    </details>
+
+    {{-- Nutricionistas --}}
+    <details class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <summary class="px-5 py-4 cursor-pointer list-none flex items-center justify-between gap-3 hover:bg-gray-50/80 transition [&::-webkit-details-marker]:hidden">
+            <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                <h2 class="font-semibold text-gray-800">Nutricionistas ({{ $nutricionistas->count() }})</h2>
+            </span>
+            <svg class="w-5 h-5 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </summary>
+        <div class="divide-y divide-gray-50 border-t border-gray-100">
+            @forelse($nutricionistas as $user)
+                <div class="px-5 py-3 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <x-avatar :user="$user" size="sm" />
+                        <div>
+                            <p class="font-medium text-gray-800 text-sm">{{ $user->name }}</p>
+                            <p class="text-xs text-gray-400">{{ $user->email }} @if($user->phone)· {{ $user->phone }}@endif</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="{{ route('admin.professionals.schedule.edit', $user) }}" class="text-sm text-indigo-600 hover:underline">Horarios</a>
+                        <a href="{{ route('admin.users.edit', $user) }}" class="text-sm text-teal-600 hover:underline">Editar</a>
+                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('¿Mover este usuario a la papelera?')">
+                            @csrf @method('DELETE')
+                            <button class="text-sm text-red-400 hover:text-red-600">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            @empty
+                <p class="px-5 py-4 text-sm text-gray-400">Sin nutricionistas.</p>
             @endforelse
         </div>
     </details>

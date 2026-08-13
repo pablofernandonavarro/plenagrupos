@@ -123,6 +123,30 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/attendances', [Admin\AttendanceController::class, 'index'])->name('attendances.index');
     Route::delete('/attendances/{attendance}', [Admin\AttendanceController::class, 'destroy'])->name('attendances.destroy');
+
+    Route::prefix('turnos')->name('turnos.')->group(function () {
+        Route::get('/', [Admin\AppointmentController::class, 'index'])->name('index');
+        Route::get('/calendario', [Admin\AppointmentController::class, 'calendar'])->name('calendar');
+        Route::get('/calendario/eventos', [Admin\AppointmentController::class, 'calendarEvents'])->name('calendar.events');
+        Route::get('/crear', [Admin\AppointmentController::class, 'create'])->name('create');
+        Route::post('/', [Admin\AppointmentController::class, 'store'])->name('store');
+        Route::get('/disponibilidad', [Admin\AppointmentController::class, 'availableSlots'])->name('available-slots');
+        Route::get('/cumplimiento', [Admin\AppointmentController::class, 'compliance'])->name('compliance');
+        Route::get('/{appointment}/editar', [Admin\AppointmentController::class, 'edit'])->name('edit');
+        Route::put('/{appointment}', [Admin\AppointmentController::class, 'update'])->name('update');
+        Route::delete('/{appointment}', [Admin\AppointmentController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('profesionales')->name('professionals.')->group(function () {
+        Route::get('/', [Admin\ProfessionalController::class, 'index'])->name('index');
+        Route::get('/{professional}/horarios', [Admin\ProfessionalController::class, 'edit'])->name('schedule.edit');
+        Route::put('/{professional}/horarios', [Admin\ProfessionalController::class, 'updateSchedule'])->name('schedule.update');
+        Route::post('/{professional}/ausencias', [Admin\ProfessionalController::class, 'storeUnavailability'])->name('unavailabilities.store');
+        Route::delete('/ausencias/{unavailability}', [Admin\ProfessionalController::class, 'destroyUnavailability'])->name('unavailabilities.destroy');
+    });
+
+    Route::get('/requisitos-turnos', [Admin\AppointmentRequirementController::class, 'index'])->name('appointment-requirements.index');
+    Route::post('/requisitos-turnos', [Admin\AppointmentRequirementController::class, 'save'])->name('appointment-requirements.save');
 });
 
 // Coordinator routes
@@ -171,4 +195,12 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient')->name('patient.')
     Route::get('/inbody/{record}/editar', [Patient\InbodyController::class, 'edit'])->name('inbody.edit');
     Route::put('/inbody/{record}', [Patient\InbodyController::class, 'update'])->name('inbody.update');
     Route::delete('/inbody/{record}', [Patient\InbodyController::class, 'destroy'])->name('inbody.destroy');
+
+    Route::prefix('turnos')->name('turnos.')->group(function () {
+        Route::get('/', [Patient\AppointmentController::class, 'index'])->name('index');
+        Route::get('/sacar', [Patient\AppointmentController::class, 'create'])->name('create');
+        Route::get('/disponibilidad', [Patient\AppointmentController::class, 'availableSlots'])->name('available-slots');
+        Route::post('/', [Patient\AppointmentController::class, 'store'])->name('store');
+        Route::delete('/{appointment}', [Patient\AppointmentController::class, 'destroy'])->name('destroy');
+    });
 });

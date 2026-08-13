@@ -133,8 +133,24 @@
                                     </svg>
                                     Importar desde Excel
                                 </a>
+                                <a href="{{ route('admin.professionals.index') }}"
+                                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Horarios de profesionales
+                                </a>
+                                <a href="{{ route('admin.appointment-requirements.index') }}"
+                                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    Requisitos de turnos
+                                </a>
                             </div>
                         </div>
+                        <a href="{{ route('admin.turnos.calendar') }}" class="text-sm text-gray-300 transition"
+                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Turnos</a>
                         <a href="{{ route('admin.ai-documents.index') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Bibliografía IA</a>
                         <a href="{{ route('admin.plan-rules.index') }}" class="text-sm text-gray-300 transition"
@@ -163,6 +179,8 @@
                     @else
                         <a href="{{ route('patient.dashboard') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Inicio</a>
+                        <a href="{{ route('patient.turnos.index') }}" class="text-sm text-gray-300 transition"
+                           onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">Turnos</a>
                         <a href="{{ route('patient.inbody.create') }}" class="text-sm text-gray-300 transition"
                            onmouseover="this.style.color='#09cda6'" onmouseout="this.style.color='#d1d5db'">InBody</a>
                         <a href="{{ route('patient.profile') }}" class="text-sm text-gray-300 transition"
@@ -229,6 +247,9 @@
                     <a href="{{ route('admin.users.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Usuarios</a>
                     <a href="{{ route('admin.attendances.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Control de asistencias</a>
                     <a href="{{ route('admin.users.import') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Importar desde Excel</a>
+                    <a href="{{ route('admin.turnos.calendar') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Turnos</a>
+                    <a href="{{ route('admin.professionals.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Horarios de profesionales</a>
+                    <a href="{{ route('admin.appointment-requirements.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Requisitos de turnos</a>
                     <a href="{{ route('admin.ai-documents.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Bibliografía IA</a>
                     <a href="{{ route('admin.plan-rules.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Reglas</a>
                     <a href="{{ route('admin.whatsapp.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">WhatsApp</a>
@@ -240,6 +261,7 @@
                     <a href="{{ route('coordinator.help') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">📖 Guía</a>
                 @else
                     <a href="{{ route('patient.dashboard') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Inicio</a>
+                    <a href="{{ route('patient.turnos.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Turnos</a>
                     <a href="{{ route('patient.inbody.create') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">InBody</a>
                     <a href="{{ route('patient.profile') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Mi perfil</a>
                     <a href="{{ route('patient.help') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">📖 Ayuda</a>

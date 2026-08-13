@@ -123,6 +123,59 @@ class User extends Authenticatable
         return $this->role === 'patient';
     }
 
+    public function isMedico(): bool
+    {
+        return $this->role === 'medico';
+    }
+
+    public function isNutricionista(): bool
+    {
+        return $this->role === 'nutricionista';
+    }
+
+    public function isProfessional(): bool
+    {
+        return $this->isMedico() || $this->isNutricionista();
+    }
+
+    public function professionalSchedules()
+    {
+        return $this->hasMany(ProfessionalSchedule::class, 'professional_id');
+    }
+
+    public function professionalUnavailabilities()
+    {
+        return $this->hasMany(ProfessionalUnavailability::class, 'professional_id');
+    }
+
+    public function appointmentsAsPatient()
+    {
+        return $this->hasMany(Appointment::class, 'patient_id');
+    }
+
+    public function appointmentsAsProfessional()
+    {
+        return $this->hasMany(Appointment::class, 'professional_id');
+    }
+
+    /**
+     * Turnos completados/confirmados este mes calendario, por especialidad.
+     * Deliberadamente independiente de currentPlanCycle() (ciclo de 30 días de grupos).
+     */
+    public function turnosThisMonth(string $specialty): int
+    {
+        return $this->appointmentsAsPatient()
+            ->where('specialty', $specialty)
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->whereBetween('starts_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->count();
+    }
+
+    public function hasCompletedMonthlyRequirement(string $specialty): bool
+    {
+        return $this->turnosThisMonth($specialty) >= AppointmentRequirement::requiredCountFor($specialty);
+    }
+
     public function belongingGroup()
     {
         return $this->belongsTo(Group::class, 'belonging_group_id');
