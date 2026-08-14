@@ -13,6 +13,23 @@
         <x-avatar :user="auth()->user()" size="md" />
     </div>
 
+    {{-- Turnos pendientes de confirmación --}}
+    @if($pendingAppointments->isNotEmpty())
+        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 space-y-2">
+            <p class="text-sm font-semibold text-amber-800">
+                ⏳ Tenés {{ $pendingAppointments->count() === 1 ? 'un turno pendiente de confirmación' : $pendingAppointments->count() . ' turnos pendientes de confirmación' }}
+            </p>
+            @foreach($pendingAppointments as $a)
+                <p class="text-xs text-amber-700">
+                    {{ $a->specialty === 'medico' ? 'Médico clínico' : 'Nutricionista' }}
+                    @if($a->professional?->name) · {{ $a->professional->name }} @endif
+                    · {{ $a->starts_at->format('d/m/Y') }} a las {{ $a->starts_at->format('H:i') }} hs
+                </p>
+            @endforeach
+            <p class="text-xs text-amber-600">Confirmalo desde el mensaje de WhatsApp que te enviamos, o cancelalo si no podés asistir.</p>
+        </div>
+    @endif
+
     {{-- Scan QR button --}}
     <button id="btn-scan"
         class="w-full flex items-center justify-center gap-3 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold py-4 rounded-2xl shadow-md transition text-base">
@@ -39,8 +56,10 @@
                 <p class="text-sm font-semibold text-gray-700">Turno médico clínico</p>
                 <p class="text-xs text-gray-400">Este mes</p>
             </div>
-            @if($medicoDone)
+            @if($medicoState === 'completed')
                 <span class="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+            @elseif($medicoState === 'scheduled')
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
             @else
                 <a href="{{ route('patient.turnos.create', ['specialty' => 'medico']) }}" class="text-xs px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition">Sacar turno</a>
             @endif
@@ -50,8 +69,10 @@
                 <p class="text-sm font-semibold text-gray-700">Turno nutricionista</p>
                 <p class="text-xs text-gray-400">Este mes</p>
             </div>
-            @if($nutriDone)
+            @if($nutriState === 'completed')
                 <span class="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+            @elseif($nutriState === 'scheduled')
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
             @else
                 <a href="{{ route('patient.turnos.create', ['specialty' => 'nutricionista']) }}" class="text-xs px-3 py-1.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium transition">Sacar turno</a>
             @endif

@@ -11,8 +11,10 @@
                 <p class="text-sm font-semibold text-gray-700">Médico clínico</p>
                 <p class="text-xs text-gray-400">Este mes</p>
             </div>
-            @if($medicoDone)
+            @if($medicoState === 'completed')
                 <span class="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+            @elseif($medicoState === 'scheduled')
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
             @else
                 <a href="{{ route('patient.turnos.create', ['specialty' => 'medico']) }}" class="text-xs px-3 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition">Sacar turno</a>
             @endif
@@ -22,8 +24,10 @@
                 <p class="text-sm font-semibold text-gray-700">Nutricionista</p>
                 <p class="text-xs text-gray-400">Este mes</p>
             </div>
-            @if($nutriDone)
+            @if($nutriState === 'completed')
                 <span class="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+            @elseif($nutriState === 'scheduled')
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
             @else
                 <a href="{{ route('patient.turnos.create', ['specialty' => 'nutricionista']) }}" class="text-xs px-3 py-1.5 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-medium transition">Sacar turno</a>
             @endif

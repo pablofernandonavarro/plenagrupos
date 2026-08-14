@@ -151,8 +151,8 @@ class AppointmentController extends Controller
             ->get()
             ->map(fn ($p) => (object) [
                 'user' => $p,
-                'medico_done' => $p->hasCompletedMonthlyRequirement('medico'),
-                'nutricionista_done' => $p->hasCompletedMonthlyRequirement('nutricionista'),
+                'medico_state' => $p->monthlyTurnoState('medico'),
+                'nutricionista_state' => $p->monthlyTurnoState('nutricionista'),
             ]);
 
         return view('admin.turnos.compliance', compact('patients'));

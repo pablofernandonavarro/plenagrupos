@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Patient;
 
 use App\Http\Controllers\Controller;
+use App\Models\Appointment;
 use App\Models\Group;
 use App\Models\GroupAttendance;
 use App\Models\GroupMembershipLog;
@@ -117,13 +118,20 @@ class DashboardController extends Controller
             'techo'   => $techo ? (float) $techo : null,
         ];
 
-        $medicoDone = $user->hasCompletedMonthlyRequirement('medico');
-        $nutriDone = $user->hasCompletedMonthlyRequirement('nutricionista');
+        $medicoState = $user->monthlyTurnoState('medico');
+        $nutriState = $user->monthlyTurnoState('nutricionista');
+
+        $pendingAppointments = Appointment::where('patient_id', $user->id)
+            ->where('status', 'pending')
+            ->where('starts_at', '>=', now())
+            ->with('professional')
+            ->orderBy('starts_at')
+            ->get();
 
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'sessionHistory', 'weightHistory',
             'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
-            'attendanceStats', 'todayAttendances', 'medicoDone', 'nutriDone'
+            'attendanceStats', 'todayAttendances', 'medicoState', 'nutriState', 'pendingAppointments'
         ));
     }
 

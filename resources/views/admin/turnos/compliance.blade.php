@@ -29,15 +29,19 @@
                             </div>
                         </td>
                         <td class="px-5 py-3">
-                            @if($row->medico_done)
+                            @if($row->medico_state === 'completed')
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+                            @elseif($row->medico_state === 'scheduled')
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
                             @else
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Pendiente</span>
                             @endif
                         </td>
                         <td class="px-5 py-3">
-                            @if($row->nutricionista_done)
+                            @if($row->nutricionista_state === 'completed')
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+                            @elseif($row->nutricionista_state === 'scheduled')
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
                             @else
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Pendiente</span>
                             @endif

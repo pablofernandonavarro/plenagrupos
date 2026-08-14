@@ -2,7 +2,7 @@
 $labels = [
     'pending'   => 'Pendiente',
     'confirmed' => 'Confirmado',
-    'completed' => 'Completado',
+    'completed' => 'Asistió',
     'cancelled' => 'Cancelado',
     'no_show'   => 'No asistió',
 ];

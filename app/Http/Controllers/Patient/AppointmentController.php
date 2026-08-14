@@ -30,10 +30,10 @@ class AppointmentController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $medicoDone = $user->hasCompletedMonthlyRequirement('medico');
-        $nutriDone = $user->hasCompletedMonthlyRequirement('nutricionista');
+        $medicoState = $user->monthlyTurnoState('medico');
+        $nutriState = $user->monthlyTurnoState('nutricionista');
 
-        return view('patient.turnos.index', compact('upcoming', 'history', 'medicoDone', 'nutriDone'));
+        return view('patient.turnos.index', compact('upcoming', 'history', 'medicoState', 'nutriState'));
     }
 
     public function create(Request $request)

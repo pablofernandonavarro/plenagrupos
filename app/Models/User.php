@@ -177,9 +177,32 @@ class User extends Authenticatable
             ->count();
     }
 
-    public function hasCompletedMonthlyRequirement(string $specialty): bool
+    /**
+     * Estado del turno de $specialty en el ciclo actual: 'completed' (asistió),
+     * 'scheduled' (tiene turno reservado pero todavía no se marcó como completado)
+     * o 'none' (no reservó nada este ciclo).
+     */
+    public function monthlyTurnoState(string $specialty): string
     {
-        return $this->turnosThisMonth($specialty) >= AppointmentRequirement::requiredCountFor($specialty);
+        [$cycleStart, $cycleEnd] = $this->currentPlanCycle();
+
+        $hasCompleted = $this->appointmentsAsPatient()
+            ->where('specialty', $specialty)
+            ->where('status', 'completed')
+            ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+            ->exists();
+
+        if ($hasCompleted) {
+            return 'completed';
+        }
+
+        $hasScheduled = $this->appointmentsAsPatient()
+            ->where('specialty', $specialty)
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+            ->exists();
+
+        return $hasScheduled ? 'scheduled' : 'none';
     }
 
     public function belongingGroup()
