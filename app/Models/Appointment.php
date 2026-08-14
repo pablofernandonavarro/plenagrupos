@@ -134,7 +134,7 @@ class Appointment extends Model
             $dayName = array_search($startsAt->dayOfWeek, self::DAY_MAP, true);
 
             $specialty = $professional->role;
-            $required = AppointmentRequirement::requiredCountFor($specialty);
+            $required = AppointmentRequirement::requiredCountFor($specialty, $patient->plan);
             [$cycleStart, $cycleEnd] = $patient->currentPlanCycle($startsAt);
             $alreadyBooked = self::where('patient_id', $patient->id)
                 ->where('specialty', $specialty)

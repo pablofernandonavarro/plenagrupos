@@ -37,8 +37,7 @@ class PatientAdherenceController extends Controller
             ->groupBy('user_id')
             ->pluck('last_at', 'user_id');
 
-        $medicoRequired = AppointmentRequirement::requiredCountFor('medico');
-        $nutriRequired  = AppointmentRequirement::requiredCountFor('nutricionista');
+        $allRequirements = AppointmentRequirement::all()->keyBy(fn ($r) => $r->patient_plan.'.'.$r->specialty);
 
         $tz  = 'America/Argentina/Buenos_Aires';
         $now = Carbon::now($tz)->startOfDay();
@@ -53,8 +52,11 @@ class PatientAdherenceController extends Controller
             ->get()
             ->map(function (User $patient) use (
                 $lastAtt, $lastWeight, $lastInbody, $now, $alertDaysAtt, $alertDaysWeight, $alertDaysInbody, $tz,
-                $medicoRequired, $nutriRequired
+                $allRequirements
             ) {
+                $plan = $patient->plan;
+                $medicoRequired = (int) ($allRequirements->get("{$plan}.medico")?->monthly_required_count ?? 1);
+                $nutriRequired  = (int) ($allRequirements->get("{$plan}.nutricionista")?->monthly_required_count ?? 1);
                 $attAt = $lastAtt[$patient->id] ?? null;
                 $wAt   = $lastWeight[$patient->id] ?? null;
                 $inAt  = $lastInbody[$patient->id] ?? null;
@@ -77,21 +79,23 @@ class PatientAdherenceController extends Controller
                 $nutriStale  = $nutriCount  < $nutriRequired;
 
                 return [
-                    'patient'        => $patient,
-                    'lastAtt'        => $attCarbon,
-                    'lastWeight'     => $wCarbon,
-                    'lastInbody'     => $inCarbon,
-                    'daysAtt'        => $daysAtt,
-                    'daysW'          => $daysW,
-                    'daysIn'         => $daysIn,
-                    'attStale'       => $attStale,
-                    'weightStale'    => $weightStale,
-                    'inbodyStale'    => $inbodyStale,
-                    'medicoCount'    => $medicoCount,
-                    'nutriCount'     => $nutriCount,
-                    'medicoStale'    => $medicoStale,
-                    'nutriStale'     => $nutriStale,
-                    'needsAttention' => $attStale || $weightStale || $inbodyStale || $medicoStale || $nutriStale,
+                    'patient'         => $patient,
+                    'lastAtt'         => $attCarbon,
+                    'lastWeight'      => $wCarbon,
+                    'lastInbody'      => $inCarbon,
+                    'daysAtt'         => $daysAtt,
+                    'daysW'           => $daysW,
+                    'daysIn'          => $daysIn,
+                    'attStale'        => $attStale,
+                    'weightStale'     => $weightStale,
+                    'inbodyStale'     => $inbodyStale,
+                    'medicoCount'     => $medicoCount,
+                    'nutriCount'      => $nutriCount,
+                    'medicoRequired'  => $medicoRequired,
+                    'nutriRequired'   => $nutriRequired,
+                    'medicoStale'     => $medicoStale,
+                    'nutriStale'      => $nutriStale,
+                    'needsAttention'  => $attStale || $weightStale || $inbodyStale || $medicoStale || $nutriStale,
                 ];
             });
 
@@ -106,8 +110,6 @@ class PatientAdherenceController extends Controller
             'alertDaysInbody' => $alertDaysInbody,
             'onlyAlerts'      => $onlyAlerts,
             'search'          => $search,
-            'medicoRequired'  => $medicoRequired,
-            'nutriRequired'   => $nutriRequired,
         ]);
     }
 }

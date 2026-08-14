@@ -106,7 +106,7 @@
 
     {{-- Leyenda --}}
     <p class="text-xs text-gray-500">
-        Se marca "atrasado" cuando pasan más de <strong>{{ $alertDaysAtt }} días</strong> sin visita, <strong>{{ $alertDaysWeight }}</strong> sin registrar peso, o <strong>{{ $alertDaysInbody }}</strong> sin InBody — o cuando no se cumple el mínimo mensual de turnos (médico: <strong>{{ $medicoRequired }}</strong>, nutricionista: <strong>{{ $nutriRequired }}</strong>).
+        Se marca "atrasado" cuando pasan más de <strong>{{ $alertDaysAtt }} días</strong> sin visita, <strong>{{ $alertDaysWeight }}</strong> sin registrar peso, o <strong>{{ $alertDaysInbody }}</strong> sin InBody — o cuando no se cumple el mínimo mensual de turnos según plan contratado (configurado en Requisitos de turnos).
     </p>
 
     {{-- Buscador --}}
@@ -212,14 +212,14 @@
                         {{-- Turno médico --}}
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <span class="{{ $row['medicoStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
-                                {{ $row['medicoCount'] }}/{{ $medicoRequired }}
+                                {{ $row['medicoCount'] }}/{{ $row['medicoRequired'] }}
                             </span>
                         </td>
 
                         {{-- Turno nutricionista --}}
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <span class="{{ $row['nutriStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
-                                {{ $row['nutriCount'] }}/{{ $nutriRequired }}
+                                {{ $row['nutriCount'] }}/{{ $row['nutriRequired'] }}
                             </span>
                         </td>
 
@@ -251,7 +251,7 @@
     <p class="text-xs text-gray-400">
         Mostrando {{ $rows->count() }} paciente(s).
         Umbrales activos: visita {{ $alertDaysAtt }}d · peso {{ $alertDaysWeight }}d · InBody {{ $alertDaysInbody }}d ·
-        turno médico {{ $medicoRequired }}/mes · turno nutricionista {{ $nutriRequired }}/mes.
+        turnos médico/nutricionista según plan contratado.
     </p>
 </div>
 @endsection

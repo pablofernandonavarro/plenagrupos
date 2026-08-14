@@ -9,24 +9,28 @@ use Illuminate\Http\Request;
 class AppointmentRequirementController extends Controller
 {
     private const SPECIALTIES = ['medico', 'nutricionista'];
+    private const PLANS = ['descenso', 'mantenimiento', 'mantenimiento_pleno'];
 
     public function index()
     {
         $specialties = self::SPECIALTIES;
-        $requirements = AppointmentRequirement::all()->keyBy('specialty');
+        $plans       = self::PLANS;
+        $requirements = AppointmentRequirement::all()->keyBy(fn ($r) => $r->patient_plan.'.'.$r->specialty);
 
-        return view('admin.appointment-requirements.index', compact('specialties', 'requirements'));
+        return view('admin.appointment-requirements.index', compact('specialties', 'plans', 'requirements'));
     }
 
     public function save(Request $request)
     {
-        foreach (self::SPECIALTIES as $specialty) {
-            $count = max(0, (int) $request->input("required.{$specialty}", 1));
+        foreach (self::PLANS as $plan) {
+            foreach (self::SPECIALTIES as $specialty) {
+                $count = max(0, (int) $request->input("required.{$plan}.{$specialty}", 1));
 
-            AppointmentRequirement::updateOrCreate(
-                ['specialty' => $specialty],
-                ['monthly_required_count' => $count]
-            );
+                AppointmentRequirement::updateOrCreate(
+                    ['patient_plan' => $plan, 'specialty' => $specialty],
+                    ['monthly_required_count' => $count]
+                );
+            }
         }
 
         return back()->with('success', 'Requisitos mensuales guardados.');
