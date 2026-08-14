@@ -47,7 +47,7 @@ Respondé ÚNICAMENTE con un objeto JSON válido, sin texto adicional, con exact
 }
 
 Importante:
-- "test_date" debe ser la fecha del estudio (no hoy), formato YYYY-MM-DD
+- "test_date" debe ser la fecha del estudio (no hoy). En el reporte aparece como "Fecha / Hora del test" en formato día.mes.año (ej: "11.08.2026" es el 11 de agosto de 2026, NO el 8 de noviembre). Convertila a YYYY-MM-DD
 - Todos los pesos y masas en kg
 - "basal_metabolic_rate" en kcal (número entero)
 - "inbody_score" es el puntaje InBody (0-100, número entero)
