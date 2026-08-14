@@ -55,6 +55,12 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <x-appointment-status-badge :status="$a->status" />
+                        @if($a->status === 'pending')
+                            <form action="{{ route('patient.turnos.confirm', $a) }}" method="POST">
+                                @csrf @method('PATCH')
+                                <button class="text-sm text-amber-600 hover:text-amber-800 font-medium">Confirmar</button>
+                            </form>
+                        @endif
                         <form action="{{ route('patient.turnos.destroy', $a) }}" method="POST" onsubmit="return confirm('¿Cancelar este turno?')">
                             @csrf @method('DELETE')
                             <button class="text-sm text-red-400 hover:text-red-600">Cancelar</button>

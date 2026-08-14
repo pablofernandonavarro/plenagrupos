@@ -20,13 +20,19 @@
                 ⏳ Tenés {{ $pendingAppointments->count() === 1 ? 'un turno pendiente de confirmación' : $pendingAppointments->count() . ' turnos pendientes de confirmación' }}
             </p>
             @foreach($pendingAppointments as $a)
-                <p class="text-xs text-amber-700">
-                    {{ $a->specialty === 'medico' ? 'Médico clínico' : 'Nutricionista' }}
-                    @if($a->professional?->name) · {{ $a->professional->name }} @endif
-                    · {{ $a->starts_at->format('d/m/Y') }} a las {{ $a->starts_at->format('H:i') }} hs
-                </p>
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <p class="text-xs text-amber-700">
+                        {{ $a->specialty === 'medico' ? 'Médico clínico' : 'Nutricionista' }}
+                        @if($a->professional?->name) · {{ $a->professional->name }} @endif
+                        · {{ $a->starts_at->format('d/m/Y') }} a las {{ $a->starts_at->format('H:i') }} hs
+                    </p>
+                    <form action="{{ route('patient.turnos.confirm', $a) }}" method="POST">
+                        @csrf @method('PATCH')
+                        <button class="text-xs px-3 py-1.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white font-medium transition">Confirmar</button>
+                    </form>
+                </div>
             @endforeach
-            <p class="text-xs text-amber-600">Confirmalo desde el mensaje de WhatsApp que te enviamos, o cancelalo si no podés asistir.</p>
+            <p class="text-xs text-amber-600">O cancelalo desde «Mis turnos» si no podés asistir.</p>
         </div>
     @endif
 

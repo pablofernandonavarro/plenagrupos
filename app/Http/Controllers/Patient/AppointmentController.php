@@ -84,6 +84,17 @@ class AppointmentController extends Controller
         return redirect()->route('patient.turnos.index')->with('success', 'Turno reservado correctamente.');
     }
 
+    public function confirm(Appointment $appointment)
+    {
+        abort_if($appointment->patient_id !== auth()->id(), 403);
+
+        if ($appointment->status === 'pending') {
+            $appointment->update(['status' => 'confirmed']);
+        }
+
+        return back()->with('success', 'Turno confirmado.');
+    }
+
     public function destroy(Appointment $appointment, AppointmentWhatsapp $notifier)
     {
         abort_if($appointment->patient_id !== auth()->id(), 403);

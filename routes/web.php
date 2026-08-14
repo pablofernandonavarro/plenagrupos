@@ -223,6 +223,7 @@ Route::middleware(['auth', 'role:patient'])->prefix('patient')->name('patient.')
         Route::get('/sacar', [Patient\AppointmentController::class, 'create'])->name('create');
         Route::get('/disponibilidad', [Patient\AppointmentController::class, 'availableSlots'])->name('available-slots');
         Route::post('/', [Patient\AppointmentController::class, 'store'])->name('store');
+        Route::patch('/{appointment}/confirmar', [Patient\AppointmentController::class, 'confirm'])->name('confirm');
         Route::delete('/{appointment}', [Patient\AppointmentController::class, 'destroy'])->name('destroy');
     });
 });
