@@ -33,8 +33,10 @@
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
                             @elseif($row->medico_state === 'scheduled')
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
+                            @elseif($row->medico_state === 'pending')
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">⏳ Por confirmar</span>
                             @else
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Pendiente</span>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Sin turno</span>
                             @endif
                         </td>
                         <td class="px-5 py-3">
@@ -42,8 +44,10 @@
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
                             @elseif($row->nutricionista_state === 'scheduled')
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
+                            @elseif($row->nutricionista_state === 'pending')
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">⏳ Por confirmar</span>
                             @else
-                                <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Pendiente</span>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Sin turno</span>
                             @endif
                         </td>
                     </tr>

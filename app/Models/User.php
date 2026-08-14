@@ -179,7 +179,8 @@ class User extends Authenticatable
 
     /**
      * Estado del turno de $specialty en el ciclo actual: 'completed' (asistió),
-     * 'scheduled' (tiene turno reservado pero todavía no se marcó como completado)
+     * 'scheduled' (reservado y confirmado por el paciente), 'pending' (reservado
+     * por un admin, todavía espera que el paciente lo confirme por WhatsApp)
      * o 'none' (no reservó nada este ciclo).
      */
     public function monthlyTurnoState(string $specialty): string
@@ -196,9 +197,19 @@ class User extends Authenticatable
             return 'completed';
         }
 
+        $hasPending = $this->appointmentsAsPatient()
+            ->where('specialty', $specialty)
+            ->where('status', 'pending')
+            ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+            ->exists();
+
+        if ($hasPending) {
+            return 'pending';
+        }
+
         $hasScheduled = $this->appointmentsAsPatient()
             ->where('specialty', $specialty)
-            ->whereIn('status', ['pending', 'confirmed'])
+            ->where('status', 'confirmed')
             ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
             ->exists();
 
