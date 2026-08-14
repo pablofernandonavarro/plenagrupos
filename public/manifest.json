@@ -1,0 +1,15 @@
+{
+  "name": "Plena Grupos",
+  "short_name": "Plen@",
+  "description": "Grupo Terapéutico para el Descenso de Peso",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#252440",
+  "theme_color": "#252440",
+  "lang": "es",
+  "icons": [
+    { "src": "/logos/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logos/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

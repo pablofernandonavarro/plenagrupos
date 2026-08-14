@@ -12,7 +12,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png" sizes="32x32">
+    <link rel="icon" href="{{ asset('logos/favicon.ico') }}" sizes="any">
+    <link rel="icon" href="{{ asset('logos/favicon-32x32.png') }}" type="image/png" sizes="32x32">
+    <link rel="icon" href="{{ asset('logos/favicon-16x16.png') }}" type="image/png" sizes="16x16">
+    @include('partials.pwa-meta')
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -390,6 +393,8 @@
     </script>
 
     <script src="{{ asset('js/image-compress.js') }}"></script>
+
+    @include('partials.pwa-install-prompt')
 
 </body>
 </html>
