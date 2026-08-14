@@ -126,8 +126,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('ai-documents', Admin\AiDocumentController::class)
         ->except(['show']);
 
-    Route::get('/plan-rules', [Admin\PlanRuleController::class, 'index'])->name('plan-rules.index');
-    Route::post('/plan-rules', [Admin\PlanRuleController::class, 'save'])->name('plan-rules.save');
+    Route::get('/requisitos-turnos', [Admin\PlanRuleController::class, 'index'])->name('plan-rules.index');
+    Route::post('/requisitos-turnos', [Admin\PlanRuleController::class, 'save'])->name('plan-rules.save');
 
     Route::get('/whatsapp', [Admin\WhatsAppController::class, 'index'])->name('whatsapp.index');
     Route::get('/whatsapp/status', [Admin\WhatsAppController::class, 'status'])->name('whatsapp.status');

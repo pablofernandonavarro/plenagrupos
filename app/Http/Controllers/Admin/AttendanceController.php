@@ -75,7 +75,7 @@ class AttendanceController extends Controller
             ];
 
             foreach ($groupTypes as $gt) {
-                $fe = $patient->faseEfectiva();
+                $fe = $patient->plan;
                 $rule = $fe ? $rules->get("{$fe}.{$gt}") : null;
                 $used = (int) ($cycleCounts->get($gt)?->total ?? 0);
                 $limit = $rule?->monthly_limit;

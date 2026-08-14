@@ -115,8 +115,8 @@ class GroupJoinController extends Controller
             ->latest('attended_at')
             ->first();
 
-        // Límites según plan_rules: clave = fase efectiva (fase_actual o, si no hay, plan contratado)
-        $faseParaReglas = $user->faseEfectiva();
+        // Límites según plan_rules: clave = plan contratado
+        $faseParaReglas = $user->plan;
         if ($faseParaReglas) {
             $rule = PlanRule::where('patient_plan', $faseParaReglas)
                 ->where('group_type', $group->group_type)
@@ -142,7 +142,7 @@ class GroupJoinController extends Controller
                         $label = $typeLabels[$group->group_type] ?? $group->group_type;
 
                         return back()->with('error',
-                            "Llegaste al límite mensual de {$rule->monthly_limit} grupo(s) de {$label} para tu fase aplicable (fase clínica o plan contratado).");
+                            "Llegaste al límite mensual de {$rule->monthly_limit} grupo(s) de {$label} para tu plan contratado.");
                     }
                 }
             }
