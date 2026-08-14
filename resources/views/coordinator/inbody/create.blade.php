@@ -224,15 +224,17 @@
 const extractUrl = '{{ route("coordinator.patients.inbody.extract", $patient) }}';
 const csrfToken  = '{{ csrf_token() }}';
 
-function onPhotoChange(input) {
+async function onPhotoChange(input) {
     const file = input.files[0];
     if (!file) return;
 
+    const compressed = await replaceInputWithCompressed(input, file, { maxDim: 1600, quality: 0.8 });
+
     const reader = new FileReader();
     reader.onload = e => { document.getElementById('photo-thumb').src = e.target.result; };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(compressed);
 
-    document.getElementById('photo-name').textContent = file.name;
+    document.getElementById('photo-name').textContent = compressed.name;
     document.getElementById('photo-empty').classList.add('hidden');
     document.getElementById('photo-filled').classList.remove('hidden');
 }

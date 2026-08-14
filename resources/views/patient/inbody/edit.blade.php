@@ -97,7 +97,7 @@
                         <a href="{{ Storage::url($record->image_path) }}" target="_blank" class="text-teal-600 hover:underline ml-1">Ver imagen actual</a>
                     @endif
                 </label>
-                <input type="file" name="images[]" accept="image/*" multiple
+                <input type="file" name="images[]" id="images-input" accept="image/*" multiple
                     class="block w-full text-sm text-gray-600
                            file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
                            file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-600
@@ -120,4 +120,11 @@
     </form>
 
 </div>
+
+<script>
+document.getElementById('images-input')?.addEventListener('change', async (e) => {
+    const input = e.target;
+    if (input.files.length) await compressInputFilesInPlace(input, { maxDim: 1600, quality: 0.8 });
+});
+</script>
 @endsection

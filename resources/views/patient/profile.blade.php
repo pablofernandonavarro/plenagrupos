@@ -39,7 +39,7 @@
                         </span>
                         <p class="text-[11px] text-gray-400 mt-1">Tu plan lo asigna el equipo de coordinación.</p>
                         <label class="block text-xs text-gray-500 mt-2 mb-1">Cambiar foto</label>
-                        <input type="file" name="avatar" accept="image/*"
+                        <input type="file" name="avatar" id="avatar-input" accept="image/*"
                             class="block w-full text-sm text-gray-500
                                    file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0
                                    file:text-xs file:font-medium file:bg-teal-50 file:text-teal-700
@@ -189,4 +189,11 @@
     </div>
 
 </div>
+
+<script>
+document.getElementById('avatar-input')?.addEventListener('change', async (e) => {
+    const input = e.target;
+    if (input.files[0]) await replaceInputWithCompressed(input, input.files[0], { maxDim: 500 });
+});
+</script>
 @endsection

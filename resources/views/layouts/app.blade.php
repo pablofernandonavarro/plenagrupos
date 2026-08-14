@@ -389,5 +389,7 @@
         }
     </script>
 
+    <script src="{{ asset('js/image-compress.js') }}"></script>
+
 </body>
 </html>
