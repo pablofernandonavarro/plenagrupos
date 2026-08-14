@@ -84,9 +84,14 @@ class User extends Authenticatable
         }
 
         $start = $this->plan_start_date->copy();
-        // Advance in 30-day increments until the cycle containing $date is found
+        // Step in 30-day increments (forward or backward) until the cycle containing $date is found.
+        // plan_start_date can end up in the future relative to $date (e.g. a plan renewal scheduled
+        // in advance), so this must handle both directions, not just forward.
         while ($start->copy()->addDays(30)->lte($date)) {
             $start->addDays(30);
+        }
+        while ($start->gt($date)) {
+            $start->subDays(30);
         }
 
         return [$start->startOfDay(), $start->copy()->addDays(29)->endOfDay()];
