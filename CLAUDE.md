@@ -28,6 +28,8 @@ Cinco roles posibles en la columna string `users.role` (`admin`, `coordinator`, 
 
 Un grupo es no-recurrente (`recurrence_type = 'none'`, iniciado/detenido manualmente vía `active`/`started_at`/`ended_at`) o recurrente (`daily|weekly|monthly|yearly`, calculado a partir de `meeting_days`/`meeting_time`/`session_duration_minutes`/`recurrence_interval`, sin necesidad de cron para cambiar de estado — todo se deriva en el momento de leer). `TESTING_LIVE_SESSION.md` documenta la tabla de verdad esperada para `isLiveSessionNow()` en todos estos casos y es una referencia útil al modificar esta lógica.
 
+Otros métodos públicos relevantes del modelo: `meetsOnDate(?Carbon)` (si el grupo tiene sesión programada en esa fecha), `isProgramVigente()` / `isProgramClosed()` / `isProgramPending()` (estado del programa para vistas de administración). El accessor `auto_sessions` es backwards-compat para código antiguo que leía ese campo — equivale a `recurrence_type !== 'none'`.
+
 ### Flujo de check-in por QR
 `GroupJoinController` (`/grupo/{token}`) es el camino de check-in en vivo: valida que el grupo esté activo, aplica los límites mensuales de visitas vía `PlanRule` (indexado por `patient_plan` = `User::faseEfectiva()`, es decir `fase_actual` con fallback a `plan`, y `group_type`: `descenso|mantenimiento|mantenimiento_pleno`), y luego crea o reutiliza un `GroupAttendance` del día. `GroupSession` es una fila por día calendario (zona AR) por grupo (`Group::findOrCreateSessionForDate`), usada para agrupar asistencias y derivar un número de secuencia global. `group_patient` es una tabla pivot con seguimiento de ingreso/salida y columnas de atribución UTM.
 
@@ -35,6 +37,8 @@ Un grupo es no-recurrente (`recurrence_type = 'none'`, iniciado/detenido manualm
 
 ### Ciclo de vida del paciente
 `users.patient_status` tiene tres valores: `active` (en programa), `pause` (suspendido temporalmente) y `exited` (egresado). El cambio de estado lo registra el admin vía `UserController` y queda auditado automáticamente en `GroupMembershipLog` (tabla `group_membership_logs`, `timestamps = false`, campos `joined_at`/`left_at`/`join_source`) cuando el usuario es agregado o removido de un grupo. `WeightRecord` puede estar vinculado opcionalmente a una `GroupAttendance` vía `attendance_id` (nullable desde la migración del 2026-08-04).
+
+Campos adicionales en `users`: `clinical_profile` (texto libre editable por coordinador vía `PATCH /coordinator/pacientes/{patient}/clinical-profile`) y `coordinator_notes` en `group_attendances` (nota por asistencia individual, editable vía `PATCH /coordinator/asistencias/{attendance}/notes`). El campo `patient_status_at`/`patient_status_note` registra cuándo y por qué cambió el estado.
 
 **Código legacy/muerto**: `TherapeuticSession`, `SessionAttendance` y `SessionJoinController` implementan un modelo de sesión QR más viejo y paralelo. No hay ninguna ruta registrada para `SessionJoinController` en `routes/web.php` — el flujo en vivo es enteramente `Group`/`GroupAttendance`/`GroupSession` vía `GroupJoinController`. No extender el camino de `TherapeuticSession` asumiendo que está activo.
 
@@ -46,6 +50,18 @@ Las confirmaciones/cancelaciones desde WhatsApp usan links firmados (`middleware
 ### Extracción de InBody con IA
 `Coordinator\InbodyController` y `Patient\InbodyController` envían fotos de reportes InBody a la API de visión de Groq (`config/services.php` → `groq.key` / `GROQ_API_KEY`) con un prompt fijo, parseando la respuesta JSON hacia los campos de `InbodyRecord` (peso, grasa corporal, masa muscular esquelética, etc.).
 
+### Análisis IA de pacientes
+`CoordinatorPatientController::aiAnalysis()` (`POST /coordinator/pacientes/{patient}/ai-analysis`) es un endpoint distinto: envía un resumen clínico completo del paciente (asistencias, pesos, InBody, perfil) a Groq junto con los `AiDocument` activos como contexto, y devuelve recomendaciones de coaching en JSON. El resultado se cachea 6 horas con una clave que combina el hash de los documentos y el estado actual del paciente.
+
+### Exportaciones e importación masiva
+`Admin\DataExportController` genera descargas CSV/Excel de asistencias, pesos, InBody y pacientes-por-grupo (rutas bajo `/admin/exports/`). `Admin\UserImportController` permite importación masiva de pacientes desde una planilla Excel, con descarga de plantilla (`/admin/users/import/template`). Ambos usan `phpoffice/phpspreadsheet`.
+
+### Analytics
+El admin tiene cuatro vistas de analítica bajo `/admin/analytics/`: general (`index`), por grupos (`groups`), InBody (`inbody`) y cohortes (`cohorts`), más una vista separada de adherencia en `/admin/adherencia`. `Admin\AnalyticsController` y `Admin\PatientAdherenceController` leen directamente desde modelos sin capa de servicio adicional. El trait `App\Http\Controllers\Concerns\BuildsGroupHistorial` encapsula la lógica de estadísticas de rango de peso y es compartido entre vistas de historial de admin y coordinator.
+
+### Soft deletes y papelera
+`User` y `Group` usan `SoftDeletes`. El admin dispone de vistas de papelera (`/admin/users/papelera`, `/admin/groups/papelera`) con rutas de restauración y eliminación permanente forzada. El comando `purge:soft-deleted` (diario) elimina permanentemente los registros soft-deleted con más de 30 días.
+
 ### Scheduling
 Cinco comandos programados en `routes/console.php`, cuatro de ellos fijados a la zona horaria `America/Argentina/Buenos_Aires`: `sessions:generate-recurring` (diario a las 08:00, pre-genera los `GroupSession` del día siguiente), `attendances:auto-close` (cada 5 min, cierra asistencias una vez pasada la ventana horaria de la sesión), `purge:soft-deleted` (diario, purga permanentemente usuarios/grupos soft-deleted con más de 30 días), `turnos:enviar-recordatorios` (diario a las 10:00, recordatorio por WhatsApp de turnos del día siguiente) y `pulse:check` (cada minuto, sin timezone AR, agrega datos para Laravel Pulse).
 
@@ -54,3 +70,6 @@ Cinco comandos programados en `routes/console.php`, cuatro de ellos fijados a la
 
 ### Deploy
 `.github/workflows/deploy.yml` sincroniza el repo directamente a un servidor de producción por SSH (rsync) en cada push a `main` (sin correr tests en el pipeline), y luego ejecuta `migrate --force` y resiembra `AiDocumentSeeder`.
+
+### Tests y cuentas de desarrollo
+La suite de tests está casi vacía (`tests/Feature/ExampleTest.php`, `tests/Unit/ExampleTest.php` son stubs). No hay tests que cubran la lógica de negocio — los cambios se validan manualmente en el navegador. Las cuentas que crea `DatabaseSeeder` para desarrollo local son: `admin@plena.com`, `maria@plena.com`, `carlos@plena.com` (coordinadoras) — todas con contraseña `password`.
