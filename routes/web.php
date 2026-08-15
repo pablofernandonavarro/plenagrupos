@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PatientAdherenceController;
 use App\Http\Controllers\AppointmentActionController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Coordinator;
+use App\Http\Controllers\Coordinator\AiChatController;
 use App\Http\Controllers\Coordinator\InbodyController as CoordinatorInbodyController;
 use App\Http\Controllers\Coordinator\PatientController as CoordinatorPatientController;
 use App\Http\Controllers\GroupJoinController;
@@ -200,6 +201,9 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
     Route::patch('/pacientes/{patient}/clinical-profile', [CoordinatorPatientController::class, 'updateClinicalProfile'])->name('patients.clinical-profile');
     Route::patch('/asistencias/{attendance}/notes', [CoordinatorPatientController::class, 'updateAttendanceNotes'])->name('attendances.notes');
     Route::post('/pacientes/{patient}/ai-analysis', [CoordinatorPatientController::class, 'aiAnalysis'])->name('patients.ai-analysis');
+
+    Route::get('/pacientes/{patient}/chat', [AiChatController::class, 'index'])->name('patients.chat.index');
+    Route::post('/pacientes/{patient}/chat', [AiChatController::class, 'store'])->middleware('throttle:20,1')->name('patients.chat.store');
 
     Route::get('/pacientes/{patient}/inbody/crear', [CoordinatorInbodyController::class, 'create'])->name('patients.inbody.create');
     Route::post('/pacientes/{patient}/inbody/extraer', [CoordinatorInbodyController::class, 'extract'])->name('patients.inbody.extract');

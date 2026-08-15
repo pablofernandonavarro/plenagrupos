@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\AiDocument;
 use App\Models\GroupAttendance;
 use App\Models\User;
+use App\Services\AiCompletionProvider;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 
 class PatientController extends Controller
 {
@@ -186,7 +187,7 @@ class PatientController extends Controller
         return back()->with('success', 'Fase clínica actualizada. El plan de facturación no cambia; los límites de asistencia siguen la nueva fase efectiva.');
     }
 
-    public function aiAnalysis(User $patient): JsonResponse
+    public function aiAnalysis(User $patient, AiCompletionProvider $ai): JsonResponse
     {
         $incGeneral = request()->boolean('inc_general', true);
         $incInbody  = request()->boolean('inc_inbody',  true);
@@ -202,7 +203,7 @@ class PatientController extends Controller
             Cache::forget($cacheKey);
         }
 
-        $analysis = Cache::remember($cacheKey, 3600 * 6, function () use ($patient, $incGeneral, $incInbody, $incPatient) {
+        $analysis = Cache::remember($cacheKey, 3600 * 6, function () use ($patient, $incGeneral, $incInbody, $incPatient, $ai) {
             $records = $patient->weightRecords()->with('group')->orderBy('recorded_at')->get();
             $attendances = $patient->attendances()->with('group')->orderBy('attended_at')->get();
             $groups = $patient->patientGroups()->get();
@@ -407,18 +408,14 @@ class PatientController extends Controller
                 "Incluí en tu análisis:\n".
                 $instructions;
 
-            $response = Http::withToken(config('services.groq.key'))
-                ->post('https://api.groq.com/openai/v1/chat/completions', [
-                    'model' => 'llama-3.3-70b-versatile',
-                    'max_tokens' => 600,
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user',   'content' => $prompt],
-                    ],
+            try {
+                return $ai->complete([
+                    ['role' => 'system', 'content' => $systemPrompt],
+                    ['role' => 'user',   'content' => $prompt],
                 ]);
-
-            return $response->json('choices.0.message.content')
-                ?? 'No se pudo generar el análisis. Intentá nuevamente.';
+            } catch (RequestException $e) {
+                return 'No se pudo generar el análisis. Intentá nuevamente.';
+            }
         });
 
         return response()->json(['analysis' => $analysis]);

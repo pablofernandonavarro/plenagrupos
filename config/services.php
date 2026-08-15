@@ -39,6 +39,14 @@ return [
         'key' => env('GROQ_API_KEY'),
     ],
 
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+    ],
+
+    'ai_chat' => [
+        'enabled' => env('AI_CHAT_ENABLED', false),
+    ],
+
     'waha' => [
         'url' => env('WAHA_URL'),
         'key' => env('WAHA_API_KEY'),

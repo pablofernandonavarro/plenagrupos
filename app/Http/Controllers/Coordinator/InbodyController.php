@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Coordinator;
 use App\Http\Controllers\Controller;
 use App\Models\InbodyRecord;
 use App\Models\User;
+use App\Services\AiCompletionProvider;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 class InbodyController extends Controller
@@ -21,7 +22,7 @@ class InbodyController extends Controller
     /**
      * Receive one or more InBody images, send all to Groq vision, return extracted JSON.
      */
-    public function extract(Request $request, User $patient): JsonResponse
+    public function extract(Request $request, User $patient, AiCompletionProvider $ai): JsonResponse
     {
         $request->validate(['images' => 'required|array|min:1|max:5', 'images.*' => 'image|max:10240']);
 
@@ -66,24 +67,18 @@ PROMPT;
             $content[]  = ['type' => 'image_url', 'image_url' => ['url' => "data:{$mimeType};base64,{$base64}"]];
         }
 
-        $response = Http::withToken(config('services.groq.key'))
-            ->timeout(90)
-            ->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model'            => 'qwen/qwen3.6-27b',
-                'max_tokens'       => 600,
-                'reasoning_effort' => 'none',
-                'messages'         => [['role' => 'user', 'content' => $content]],
-            ]);
-
-        // Clean up temp files
-        foreach ($tmpPaths as $p) Storage::disk('local')->delete($p);
-
-        if ($response->failed()) {
-            $groqError = $response->json('error.message') ?? $response->body();
-            return response()->json(['error' => "Error de Groq ({$response->status()}): {$groqError}"], 502);
+        try {
+            $raw = $ai->complete(
+                [['role' => 'user', 'content' => $content]],
+                ['model' => 'qwen/qwen3.6-27b', 'reasoning_effort' => 'none', 'timeout' => 90]
+            );
+        } catch (RequestException $e) {
+            $groqError = $e->response->json('error.message') ?? $e->response->body();
+            return response()->json(['error' => "Error de Groq ({$e->response->status()}): {$groqError}"], 502);
+        } finally {
+            // Clean up temp files
+            foreach ($tmpPaths as $p) Storage::disk('local')->delete($p);
         }
-
-        $raw = $response->json('choices.0.message.content') ?? '';
 
         // Extract JSON block if model wraps it in markdown
         if (preg_match('/```(?:json)?\s*([\s\S]+?)\s*```/', $raw, $m)) {

@@ -447,6 +447,30 @@
         </div>
     </div>
 
+    {{-- AI Chat --}}
+    @if(config('services.ai_chat.enabled'))
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Preguntale a la IA sobre este paciente</h2>
+            <p class="text-xs text-gray-400 mt-0.5">
+                Responde solo con los datos de {{ $patient->name }} (peso, asistencia, InBody, turnos y notas). No reemplaza el criterio profesional.
+            </p>
+        </div>
+        <div id="chat-messages" class="px-5 py-4 space-y-3 max-h-96 overflow-y-auto">
+            <p id="chat-empty" class="text-sm text-gray-400 italic">Todavía no hay preguntas. Escribí una abajo.</p>
+        </div>
+        <form id="chat-form" onsubmit="return sendChatMessage(event)" class="px-5 py-3 border-t border-gray-100 flex gap-2">
+            <input type="text" id="chat-input" maxlength="1000" autocomplete="off"
+                placeholder="Ej: ¿cómo viene la adherencia últimamente?"
+                class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+            <button type="submit" id="chat-send"
+                class="shrink-0 flex items-center gap-1.5 text-xs bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white px-3 py-2 rounded-lg transition font-medium">
+                Enviar
+            </button>
+        </form>
+    </div>
+    @endif
+
     {{-- Timeline --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
         <div class="px-5 py-4 border-b border-gray-100">
@@ -693,6 +717,87 @@ async function loadAiAnalysis(force = false) {
     }
     btn.disabled = false;
     btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Regenerar';
+}
+
+function renderChatMessages(messages) {
+    const box = document.getElementById('chat-messages');
+    const empty = document.getElementById('chat-empty');
+    if (!messages.length) {
+        box.innerHTML = '';
+        box.appendChild(empty);
+        return;
+    }
+    box.innerHTML = messages.map(m => {
+        const isUser = m.role === 'user';
+        return `<div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+            <div class="max-w-[85%] rounded-xl px-3 py-2 text-sm ${isUser ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-700'}">
+                ${m.content.replace(/</g, '&lt;').replace(/\n/g, '<br>')}
+            </div>
+        </div>`;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+}
+
+async function loadChatHistory() {
+    try {
+        const res = await fetch('{{ route("coordinator.patients.chat.index", $patient) }}', {
+            headers: { 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        renderChatMessages(data.messages || []);
+    } catch {
+        // Silencioso: si falla, el chat queda vacío y el coordinador puede reintentar preguntando.
+    }
+}
+
+async function sendChatMessage(event) {
+    event.preventDefault();
+    const input = document.getElementById('chat-input');
+    const send  = document.getElementById('chat-send');
+    const question = input.value.trim();
+    if (!question) return false;
+
+    const box = document.getElementById('chat-messages');
+    document.getElementById('chat-empty')?.remove();
+    box.insertAdjacentHTML('beforeend', `<div class="flex justify-end">
+        <div class="max-w-[85%] rounded-xl px-3 py-2 text-sm bg-teal-600 text-white">${question.replace(/</g, '&lt;')}</div>
+    </div>`);
+    box.insertAdjacentHTML('beforeend', `<div class="flex justify-start" id="chat-pending">
+        <div class="max-w-[85%] rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-400 italic">Pensando...</div>
+    </div>`);
+    box.scrollTop = box.scrollHeight;
+
+    input.value = '';
+    input.disabled = true;
+    send.disabled = true;
+
+    try {
+        const res = await fetch('{{ route("coordinator.patients.chat.store", $patient) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ question }),
+        });
+        const data = await res.json();
+        renderChatMessages(data.messages || []);
+    } catch {
+        document.getElementById('chat-pending')?.remove();
+        box.insertAdjacentHTML('beforeend', `<div class="flex justify-start">
+            <div class="max-w-[85%] rounded-xl px-3 py-2 text-sm bg-red-50 text-red-500 italic">Error al conectar. Intentá nuevamente.</div>
+        </div>`);
+    }
+
+    input.disabled = false;
+    send.disabled = false;
+    input.focus();
+    return false;
+}
+
+if (document.getElementById('chat-messages')) {
+    loadChatHistory();
 }
 </script>
 
