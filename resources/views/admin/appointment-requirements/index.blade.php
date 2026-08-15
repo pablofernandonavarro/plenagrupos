@@ -21,7 +21,7 @@
     </div>
 
     <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-700">
-        Definí cuántos turnos por mes debe completar cada paciente con cada especialidad según su <strong>plan contratado</strong>. Este mínimo se usa como indicador de cumplimiento — no bloquea ningún otro flujo de la app.
+        Definí cuántos turnos, y cada cuántos días, debe completar cada paciente con cada especialidad según su <strong>plan contratado</strong>. Este mínimo se usa como indicador de cumplimiento — no bloquea ningún otro flujo de la app, salvo el tope de reservas dentro de ese período.
     </div>
 
     <form method="POST" action="{{ route('admin.appointment-requirements.save') }}" class="space-y-4">
@@ -41,23 +41,52 @@
             </div>
 
             <div class="divide-y divide-gray-50">
-                @foreach($specialties as $specialty)
-                @php $req = $requirements->get("{$plan}.{$specialty}"); @endphp
-                <div class="px-5 py-4 flex items-center gap-4">
-                    <div class="w-36 shrink-0">
-                        <span class="text-xs px-2 py-0.5 rounded-full {{ $specialty === 'medico' ? 'bg-indigo-50 text-indigo-700' : 'bg-purple-50 text-purple-700' }} font-medium">
-                            {{ $specialtyLabels[$specialty] }}
-                        </span>
+                @if(in_array($plan, $combinedPlans, true))
+                    @php $req = $requirements->get("{$plan}.cualquiera"); @endphp
+                    <div class="px-5 py-4 flex items-center gap-4">
+                        <div class="w-36 shrink-0">
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 font-medium">
+                                Turno de control
+                            </span>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Médico o nutricionista, no ambos</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="required[{{ $plan }}][cualquiera]"
+                                min="0" max="99"
+                                value="{{ $req?->monthly_required_count ?? 1 }}"
+                                class="w-16 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-teal-500 outline-none">
+                            <span class="text-xs text-gray-500">turno(s) cada</span>
+                            <input type="number" name="cycle[{{ $plan }}][cualquiera]"
+                                min="1" max="365"
+                                value="{{ $req?->cycle_days ?? 60 }}"
+                                class="w-16 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-teal-500 outline-none">
+                            <span class="text-xs text-gray-500">días</span>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <input type="number" name="required[{{ $plan }}][{{ $specialty }}]"
-                            min="0" max="99"
-                            value="{{ $req?->monthly_required_count ?? 1 }}"
-                            class="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-teal-500 outline-none">
-                        <span class="text-xs text-gray-500">por mes</span>
+                @else
+                    @foreach($specialties as $specialty)
+                    @php $req = $requirements->get("{$plan}.{$specialty}"); @endphp
+                    <div class="px-5 py-4 flex items-center gap-4">
+                        <div class="w-36 shrink-0">
+                            <span class="text-xs px-2 py-0.5 rounded-full {{ $specialty === 'medico' ? 'bg-indigo-50 text-indigo-700' : 'bg-purple-50 text-purple-700' }} font-medium">
+                                {{ $specialtyLabels[$specialty] }}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="required[{{ $plan }}][{{ $specialty }}]"
+                                min="0" max="99"
+                                value="{{ $req?->monthly_required_count ?? 1 }}"
+                                class="w-16 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-teal-500 outline-none">
+                            <span class="text-xs text-gray-500">turno(s) cada</span>
+                            <input type="number" name="cycle[{{ $plan }}][{{ $specialty }}]"
+                                min="1" max="365"
+                                value="{{ $req?->cycle_days ?? 30 }}"
+                                class="w-16 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-teal-500 outline-none">
+                            <span class="text-xs text-gray-500">días</span>
+                        </div>
                     </div>
-                </div>
-                @endforeach
+                    @endforeach
+                @endif
             </div>
         </div>
         @endforeach

@@ -159,6 +159,7 @@
                             $row['inbodyStale'] ? ($row['lastInbody'] ? 'InBody' : 'nunca hizo InBody') : null,
                             $row['medicoStale'] ? 'turno médico' : null,
                             $row['nutriStale'] ? 'turno nutricionista' : null,
+                            $row['combinedStale'] ? 'turno de control' : null,
                         ])->filter()->values();
                     @endphp
                     <tr class="{{ $row['needsAttention'] ? 'bg-amber-50/50' : 'hover:bg-gray-50/60' }}">
@@ -209,6 +210,15 @@
                             @endif
                         </td>
 
+                        @if($row['combinedTurnos'])
+                            {{-- Turno de control (médico o nutricionista, cupo compartido) --}}
+                            <td class="px-4 py-3 text-center whitespace-nowrap" colspan="2">
+                                <span class="{{ $row['combinedStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
+                                    {{ $row['combinedCount'] }}/{{ $row['combinedRequired'] }}
+                                </span>
+                                <span class="text-[11px] text-gray-400 ml-1">control (médico o nutric.)</span>
+                            </td>
+                        @else
                         {{-- Turno médico --}}
                         <td class="px-4 py-3 text-center whitespace-nowrap">
                             <span class="{{ $row['medicoStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
@@ -222,6 +232,7 @@
                                 {{ $row['nutriCount'] }}/{{ $row['nutriRequired'] }}
                             </span>
                         </td>
+                        @endif
 
                         {{-- Seguimiento (resumen) --}}
                         <td class="px-4 py-3 whitespace-nowrap">

@@ -134,20 +134,34 @@ class Appointment extends Model
             $dayName = array_search($startsAt->dayOfWeek, self::DAY_MAP, true);
 
             $specialty = $professional->role;
-            $required = AppointmentRequirement::requiredCountFor($specialty, $patient->plan);
-            [$cycleStart, $cycleEnd] = $patient->currentPlanCycle($startsAt);
-            $alreadyBooked = self::where('patient_id', $patient->id)
-                ->where('specialty', $specialty)
-                ->whereIn('status', ['pending', 'confirmed', 'completed'])
-                ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
-                ->count();
+
+            if ($patient->usesCombinedTurnoRequirement()) {
+                $requirement = AppointmentRequirement::combinedRequirementFor($patient->plan);
+                $required = $requirement->monthly_required_count;
+                [$cycleStart, $cycleEnd] = $patient->currentPlanCycle($startsAt, $requirement->cycle_days);
+                $alreadyBooked = self::where('patient_id', $patient->id)
+                    ->whereIn('specialty', ['medico', 'nutricionista'])
+                    ->whereIn('status', ['pending', 'confirmed', 'completed'])
+                    ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+                    ->count();
+                $label = 'de control (médico o nutricionista)';
+            } else {
+                $requirement = AppointmentRequirement::requirementFor($specialty, $patient->plan);
+                $required = $requirement->monthly_required_count;
+                [$cycleStart, $cycleEnd] = $patient->currentPlanCycle($startsAt, $requirement->cycle_days);
+                $alreadyBooked = self::where('patient_id', $patient->id)
+                    ->where('specialty', $specialty)
+                    ->whereIn('status', ['pending', 'confirmed', 'completed'])
+                    ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+                    ->count();
+                $label = 'de ' . ($specialty === 'medico' ? 'médico clínico' : 'nutricionista');
+            }
 
             if ($alreadyBooked >= $required) {
-                $label = $specialty === 'medico' ? 'médico clínico' : 'nutricionista';
                 $desde = $cycleStart->format('d/m/Y');
                 $hasta = $cycleEnd->format('d/m/Y');
                 throw ValidationException::withMessages([
-                    'starts_at' => "Ya alcanzó el límite de {$required} turno(s) de {$label} para el período del {$desde} al {$hasta}.",
+                    'starts_at' => "Ya alcanzó el límite de {$required} turno(s) {$label} para el período del {$desde} al {$hasta}.",
                 ]);
             }
 

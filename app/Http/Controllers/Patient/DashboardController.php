@@ -118,8 +118,10 @@ class DashboardController extends Controller
             'techo'   => $techo ? (float) $techo : null,
         ];
 
-        $medicoState = $user->monthlyTurnoState('medico');
-        $nutriState = $user->monthlyTurnoState('nutricionista');
+        $combinedTurnos = $user->usesCombinedTurnoRequirement();
+        $turnoState = $combinedTurnos ? $user->combinedMonthlyTurnoState() : null;
+        $medicoState = $combinedTurnos ? null : $user->monthlyTurnoState('medico');
+        $nutriState = $combinedTurnos ? null : $user->monthlyTurnoState('nutricionista');
 
         $pendingAppointments = Appointment::where('patient_id', $user->id)
             ->where('status', 'pending')
@@ -131,7 +133,8 @@ class DashboardController extends Controller
         return view('patient.dashboard', compact(
             'weightRecords', 'latestWeight', 'totalLoss', 'groups', 'sessionHistory', 'weightHistory',
             'trend', 'progressPct', 'inRange', 'chartData', 'piso', 'techo', 'enrolledGroupIds',
-            'attendanceStats', 'todayAttendances', 'medicoState', 'nutriState', 'pendingAppointments'
+            'attendanceStats', 'todayAttendances', 'medicoState', 'nutriState', 'pendingAppointments',
+            'combinedTurnos', 'turnoState'
         ));
     }
 

@@ -149,8 +149,13 @@ class AppointmentController extends Controller
             ->where('patient_status', 'active')
             ->orderBy('name')
             ->get()
-            ->map(fn ($p) => (object) [
+            ->map(fn ($p) => $p->usesCombinedTurnoRequirement() ? (object) [
                 'user' => $p,
+                'combined' => true,
+                'combined_state' => $p->combinedMonthlyTurnoState(),
+            ] : (object) [
+                'user' => $p,
+                'combined' => false,
                 'medico_state' => $p->monthlyTurnoState('medico'),
                 'nutricionista_state' => $p->monthlyTurnoState('nutricionista'),
             ]);

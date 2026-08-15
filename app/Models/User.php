@@ -72,10 +72,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Returns [cycleStart, cycleEnd] for the patient's 30-day billing period containing $date
-     * (defaults to now). Falls back to $date's calendar month if no plan_start_date is set.
+     * Returns [cycleStart, cycleEnd] for the patient's $days-long billing period containing
+     * $date (defaults to now, $days defaults to 30). Falls back to $date's calendar month if
+     * no plan_start_date is set.
      */
-    public function currentPlanCycle(?Carbon $date = null): array
+    public function currentPlanCycle(?Carbon $date = null, int $days = 30): array
     {
         $date = $date ?? now();
 
@@ -84,17 +85,17 @@ class User extends Authenticatable
         }
 
         $start = $this->plan_start_date->copy();
-        // Step in 30-day increments (forward or backward) until the cycle containing $date is found.
+        // Step in $days increments (forward or backward) until the cycle containing $date is found.
         // plan_start_date can end up in the future relative to $date (e.g. a plan renewal scheduled
         // in advance), so this must handle both directions, not just forward.
-        while ($start->copy()->addDays(30)->lte($date)) {
-            $start->addDays(30);
+        while ($start->copy()->addDays($days)->lte($date)) {
+            $start->addDays($days);
         }
         while ($start->gt($date)) {
-            $start->subDays(30);
+            $start->subDays($days);
         }
 
-        return [$start->startOfDay(), $start->copy()->addDays(29)->endOfDay()];
+        return [$start->startOfDay(), $start->copy()->addDays($days - 1)->endOfDay()];
     }
 
     /**
@@ -167,13 +168,15 @@ class User extends Authenticatable
     }
 
     /**
-     * Turnos ya tomados (pendientes/confirmados/completados) en el ciclo de 30 días vigente
-     * (currentPlanCycle), por especialidad. Mismos estados que el tope de reserva en
-     * Appointment::bookSlot(), para que "cuántos ya tomó" sea consistente con "cuántos más puede tomar".
+     * Turnos ya tomados (pendientes/confirmados/completados) en el ciclo vigente de $specialty
+     * para el plan de este paciente (currentPlanCycle, con el largo configurado en
+     * AppointmentRequirement). Mismos estados que el tope de reserva en Appointment::bookSlot(),
+     * para que "cuántos ya tomó" sea consistente con "cuántos más puede tomar".
      */
     public function turnosThisMonth(string $specialty): int
     {
-        [$cycleStart, $cycleEnd] = $this->currentPlanCycle();
+        $requirement = AppointmentRequirement::requirementFor($specialty, $this->plan);
+        [$cycleStart, $cycleEnd] = $this->currentPlanCycle(null, $requirement->cycle_days);
 
         return $this->appointmentsAsPatient()
             ->where('specialty', $specialty)
@@ -190,7 +193,8 @@ class User extends Authenticatable
      */
     public function monthlyTurnoState(string $specialty): string
     {
-        [$cycleStart, $cycleEnd] = $this->currentPlanCycle();
+        $requirement = AppointmentRequirement::requirementFor($specialty, $this->plan);
+        [$cycleStart, $cycleEnd] = $this->currentPlanCycle(null, $requirement->cycle_days);
 
         $hasCompleted = $this->appointmentsAsPatient()
             ->where('specialty', $specialty)
@@ -214,6 +218,70 @@ class User extends Authenticatable
 
         $hasScheduled = $this->appointmentsAsPatient()
             ->where('specialty', $specialty)
+            ->where('status', 'confirmed')
+            ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+            ->exists();
+
+        return $hasScheduled ? 'scheduled' : 'none';
+    }
+
+    /**
+     * true si este paciente comparte un único cupo de turno entre médico y nutricionista
+     * (hoy solo Mantenimiento Pleno) en vez de un requisito independiente por especialidad.
+     */
+    public function usesCombinedTurnoRequirement(): bool
+    {
+        return $this->plan === 'mantenimiento_pleno';
+    }
+
+    /**
+     * Turnos ya tomados (de cualquiera de las 2 especialidades) en el ciclo combinado vigente.
+     * Análogo a turnosThisMonth() pero sin filtrar por especialidad — para pacientes con
+     * usesCombinedTurnoRequirement().
+     */
+    public function combinedTurnosThisMonth(): int
+    {
+        $requirement = AppointmentRequirement::combinedRequirementFor($this->plan);
+        [$cycleStart, $cycleEnd] = $this->currentPlanCycle(null, $requirement->cycle_days);
+
+        return $this->appointmentsAsPatient()
+            ->whereIn('specialty', ['medico', 'nutricionista'])
+            ->whereIn('status', ['pending', 'confirmed', 'completed'])
+            ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+            ->count();
+    }
+
+    /**
+     * Análogo a monthlyTurnoState() pero combinando ambas especialidades en un solo estado —
+     * para pacientes con usesCombinedTurnoRequirement().
+     */
+    public function combinedMonthlyTurnoState(): string
+    {
+        $requirement = AppointmentRequirement::combinedRequirementFor($this->plan);
+        [$cycleStart, $cycleEnd] = $this->currentPlanCycle(null, $requirement->cycle_days);
+
+        $hasCompleted = $this->appointmentsAsPatient()
+            ->whereIn('specialty', ['medico', 'nutricionista'])
+            ->where('status', 'completed')
+            ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+            ->exists();
+
+        if ($hasCompleted) {
+            return 'completed';
+        }
+
+        $hasPending = $this->appointmentsAsPatient()
+            ->whereIn('specialty', ['medico', 'nutricionista'])
+            ->where('status', 'pending')
+            ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
+            ->exists();
+
+        if ($hasPending) {
+            return 'pending';
+        }
+
+        $hasScheduled = $this->appointmentsAsPatient()
+            ->whereIn('specialty', ['medico', 'nutricionista'])
             ->where('status', 'confirmed')
             ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
             ->exists();

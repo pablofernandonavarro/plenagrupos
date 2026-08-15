@@ -28,6 +28,20 @@
                                 <span class="font-medium text-gray-800">{{ $row->user->name }}</span>
                             </div>
                         </td>
+                        @if($row->combined)
+                            <td class="px-5 py-3" colspan="2">
+                                @if($row->combined_state === 'completed')
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+                                @elseif($row->combined_state === 'scheduled')
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
+                                @elseif($row->combined_state === 'pending')
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">⏳ Por confirmar</span>
+                                @else
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Sin turno</span>
+                                @endif
+                                <span class="text-[11px] text-gray-400 ml-1">turno de control (médico o nutricionista)</span>
+                            </td>
+                        @else
                         <td class="px-5 py-3">
                             @if($row->medico_state === 'completed')
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
@@ -50,6 +64,7 @@
                                 <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">Sin turno</span>
                             @endif
                         </td>
+                        @endif
                     </tr>
                 @empty
                     <tr><td colspan="3" class="px-5 py-4 text-gray-400">Sin pacientes activos.</td></tr>

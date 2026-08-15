@@ -55,8 +55,6 @@ class PatientAdherenceController extends Controller
                 $allRequirements
             ) {
                 $plan = $patient->plan;
-                $medicoRequired = (int) ($allRequirements->get("{$plan}.medico")?->monthly_required_count ?? 1);
-                $nutriRequired  = (int) ($allRequirements->get("{$plan}.nutricionista")?->monthly_required_count ?? 1);
                 $attAt = $lastAtt[$patient->id] ?? null;
                 $wAt   = $lastWeight[$patient->id] ?? null;
                 $inAt  = $lastInbody[$patient->id] ?? null;
@@ -73,10 +71,24 @@ class PatientAdherenceController extends Controller
                 $weightStale = $wCarbon   === null || $daysW   > $alertDaysWeight;
                 $inbodyStale = $inCarbon  === null || $daysIn  > $alertDaysInbody;
 
-                $medicoCount = $patient->turnosThisMonth('medico');
-                $nutriCount  = $patient->turnosThisMonth('nutricionista');
-                $medicoStale = $medicoCount < $medicoRequired;
-                $nutriStale  = $nutriCount  < $nutriRequired;
+                $combinedTurnos = $patient->usesCombinedTurnoRequirement();
+
+                if ($combinedTurnos) {
+                    $combinedRequired = (int) ($allRequirements->get("{$plan}.cualquiera")?->monthly_required_count ?? 1);
+                    $combinedCount = $patient->combinedTurnosThisMonth();
+                    $combinedStale = $combinedCount < $combinedRequired;
+                    $medicoCount = $nutriCount = $medicoRequired = $nutriRequired = null;
+                    $medicoStale = $nutriStale = false;
+                } else {
+                    $medicoRequired = (int) ($allRequirements->get("{$plan}.medico")?->monthly_required_count ?? 1);
+                    $nutriRequired  = (int) ($allRequirements->get("{$plan}.nutricionista")?->monthly_required_count ?? 1);
+                    $medicoCount = $patient->turnosThisMonth('medico');
+                    $nutriCount  = $patient->turnosThisMonth('nutricionista');
+                    $medicoStale = $medicoCount < $medicoRequired;
+                    $nutriStale  = $nutriCount  < $nutriRequired;
+                    $combinedRequired = $combinedCount = null;
+                    $combinedStale = false;
+                }
 
                 return [
                     'patient'         => $patient,
@@ -89,13 +101,17 @@ class PatientAdherenceController extends Controller
                     'attStale'        => $attStale,
                     'weightStale'     => $weightStale,
                     'inbodyStale'     => $inbodyStale,
+                    'combinedTurnos'  => $combinedTurnos,
                     'medicoCount'     => $medicoCount,
                     'nutriCount'      => $nutriCount,
                     'medicoRequired'  => $medicoRequired,
                     'nutriRequired'   => $nutriRequired,
                     'medicoStale'     => $medicoStale,
                     'nutriStale'      => $nutriStale,
-                    'needsAttention'  => $attStale || $weightStale || $inbodyStale || $medicoStale || $nutriStale,
+                    'combinedCount'   => $combinedCount,
+                    'combinedRequired'=> $combinedRequired,
+                    'combinedStale'   => $combinedStale,
+                    'needsAttention'  => $attStale || $weightStale || $inbodyStale || $medicoStale || $nutriStale || $combinedStale,
                 ];
             });
 

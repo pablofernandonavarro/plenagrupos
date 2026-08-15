@@ -56,6 +56,23 @@
     </a>
 
     {{-- Turnos: cumplimiento mensual --}}
+    @if($combinedTurnos)
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between">
+            <div>
+                <p class="text-sm font-semibold text-gray-700">Turno de control</p>
+                <p class="text-xs text-gray-400">Médico clínico o nutricionista</p>
+            </div>
+            @if($turnoState === 'completed')
+                <span class="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>
+            @elseif($turnoState === 'scheduled')
+                <span class="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>
+            @elseif($turnoState === 'pending')
+                <span class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700 font-medium">⏳ Por confirmar</span>
+            @else
+                <a href="{{ route('patient.turnos.create') }}" class="text-xs px-3 py-1.5 rounded-full bg-teal-600 hover:bg-teal-700 text-white font-medium transition">Sacar turno</a>
+            @endif
+        </div>
+    @else
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between">
             <div>
@@ -88,6 +105,7 @@
             @endif
         </div>
     </div>
+    @endif
 
     {{-- Scanner modal --}}
     <div id="scanner-modal" class="fixed inset-0 z-50 hidden">
