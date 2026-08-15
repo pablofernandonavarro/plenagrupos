@@ -176,6 +176,13 @@
                                     </svg>
                                     Requisitos de turnos
                                 </a>
+                                <a href="{{ route('admin.holidays.index') }}"
+                                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2zM9 16h.01M13 16h.01"/>
+                                    </svg>
+                                    Feriados
+                                </a>
                             </div>
                         </div>
                         <a href="{{ route('admin.ai-documents.index') }}" class="text-sm text-gray-300 transition"
@@ -282,6 +289,7 @@
                     <a href="{{ route('admin.turnos.calendar') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Turnos</a>
                     <a href="{{ route('admin.professionals.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Horarios de profesionales</a>
                     <a href="{{ route('admin.appointment-requirements.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Requisitos de turnos</a>
+                    <a href="{{ route('admin.holidays.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Feriados</a>
                     <a href="{{ route('admin.ai-documents.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Bibliografía IA</a>
                     <a href="{{ route('admin.plan-rules.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">Reglas</a>
                     <a href="{{ route('admin.whatsapp.index') }}" class="block py-2 px-3 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition">WhatsApp</a>

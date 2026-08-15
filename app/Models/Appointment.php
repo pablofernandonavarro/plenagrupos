@@ -59,6 +59,10 @@ class Appointment extends Model
             return collect();
         }
 
+        if (Holiday::fallsOn($date)) {
+            return collect();
+        }
+
         $schedules = ProfessionalSchedule::query()
             ->where('professional_id', $professional->id)
             ->where('day_of_week', $dayName)
@@ -154,7 +158,7 @@ class Appointment extends Model
                     ->whereIn('status', ['pending', 'confirmed', 'completed'])
                     ->whereBetween('starts_at', [$cycleStart, $cycleEnd])
                     ->count();
-                $label = 'de ' . ($specialty === 'medico' ? 'médico clínico' : 'nutricionista');
+                $label = 'de '.($specialty === 'medico' ? 'médico clínico' : 'nutricionista');
             }
 
             if ($alreadyBooked >= $required) {

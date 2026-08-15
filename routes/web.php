@@ -11,6 +11,8 @@ use App\Http\Controllers\Coordinator\InbodyController as CoordinatorInbodyContro
 use App\Http\Controllers\Coordinator\PatientController as CoordinatorPatientController;
 use App\Http\Controllers\GroupJoinController;
 use App\Http\Controllers\Patient;
+use App\Models\Group;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 // Redirect root based on role
@@ -44,8 +46,8 @@ Route::get('/debug-patient-group/{groupId}/{userId}', function ($groupId, $userI
         ->where('user_id', $userId)
         ->first();
 
-    $user = \App\Models\User::find($userId);
-    $group = \App\Models\Group::find($groupId);
+    $user = User::find($userId);
+    $group = Group::find($groupId);
 
     return response()->json([
         'user' => $user ? ['id' => $user->id, 'name' => $user->name, 'email' => $user->email] : null,
@@ -77,7 +79,7 @@ Route::post('/turnos/{appointment}/cancelar', [AppointmentActionController::clas
 // Admin routes
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/ayuda', fn() => view('admin.help'))->name('help');
+    Route::get('/ayuda', fn () => view('admin.help'))->name('help');
 
     Route::prefix('analytics')->name('analytics.')->group(function () {
         Route::get('/', [AnalyticsController::class, 'index'])->name('index');
@@ -163,6 +165,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/requisitos-turnos', [Admin\AppointmentRequirementController::class, 'index'])->name('appointment-requirements.index');
     Route::post('/requisitos-turnos', [Admin\AppointmentRequirementController::class, 'save'])->name('appointment-requirements.save');
+
+    Route::get('/feriados', [Admin\HolidayController::class, 'index'])->name('holidays.index');
+    Route::post('/feriados', [Admin\HolidayController::class, 'store'])->name('holidays.store');
+    Route::delete('/feriados/{holiday}', [Admin\HolidayController::class, 'destroy'])->name('holidays.destroy');
 });
 
 // Calendario de turnos: admin ve todo, médico/nutricionista ven (y aterrizan en) su propia agenda
@@ -174,7 +180,7 @@ Route::middleware(['auth', 'role:admin,medico,nutricionista'])->prefix('admin/tu
 // Coordinator routes
 Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('coordinator.')->group(function () {
     Route::get('/dashboard', [Coordinator\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/ayuda', fn() => view('coordinator.help'))->name('help');
+    Route::get('/ayuda', fn () => view('coordinator.help'))->name('help');
     Route::get('/grupos/{group}', [Coordinator\DashboardController::class, 'showGroup'])->name('groups.show');
     Route::get('/grupos/{group}/asistencia', [Coordinator\DashboardController::class, 'liveAttendances'])->name('groups.live');
     Route::patch('/grupos/{group}/asistencias/{attendance}/checkout', [Coordinator\DashboardController::class, 'checkoutAttendance'])->name('groups.attendance.checkout');
@@ -204,7 +210,7 @@ Route::middleware(['auth', 'role:coordinator'])->prefix('coordinator')->name('co
 // Patient routes
 Route::middleware(['auth', 'role:patient'])->prefix('patient')->name('patient.')->group(function () {
     Route::get('/dashboard', [Patient\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/ayuda', fn() => view('patient.help'))->name('help');
+    Route::get('/ayuda', fn () => view('patient.help'))->name('help');
     Route::get('/perfil', [Patient\DashboardController::class, 'profile'])->name('profile');
     Route::post('/perfil', [Patient\DashboardController::class, 'updateProfile'])->name('profile.update');
     Route::get('/peso/registrar', [Patient\WeightController::class, 'create'])->name('weight.create');
