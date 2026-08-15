@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,7 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE appointment_requirements MODIFY specialty ENUM('medico','nutricionista','cualquiera') NOT NULL");
+        Schema::table('appointment_requirements', function (Blueprint $table) {
+            $table->enum('specialty', ['medico', 'nutricionista', 'cualquiera'])->change();
+        });
 
         DB::table('appointment_requirements')->where('patient_plan', 'mantenimiento_pleno')->delete();
 
@@ -37,6 +41,8 @@ return new class extends Migration
             ['patient_plan' => 'mantenimiento_pleno', 'specialty' => 'nutricionista', 'monthly_required_count' => 1, 'cycle_days' => 30, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
-        DB::statement("ALTER TABLE appointment_requirements MODIFY specialty ENUM('medico','nutricionista') NOT NULL");
+        Schema::table('appointment_requirements', function (Blueprint $table) {
+            $table->enum('specialty', ['medico', 'nutricionista'])->change();
+        });
     }
 };
