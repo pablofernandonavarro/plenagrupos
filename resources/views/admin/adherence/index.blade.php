@@ -210,12 +210,23 @@
                             @endif
                         </td>
 
+                        @php
+                            $turnoStateBadge = fn ($state) => match ($state) {
+                                'completed' => '<span class="text-xs px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 font-medium">✓ Cumplido</span>',
+                                'scheduled' => '<span class="text-xs px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">📅 Agendado</span>',
+                                'pending'   => '<span class="text-xs px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">⏳ Por confirmar</span>',
+                                default     => null,
+                            };
+                        @endphp
                         @if($row['combinedTurnos'])
                             {{-- Turno de control (médico o nutricionista, cupo compartido) --}}
                             <td class="px-4 py-3 text-center whitespace-nowrap" colspan="2">
                                 <span class="{{ $row['combinedStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
                                     {{ $row['combinedCount'] }}/{{ $row['combinedRequired'] }}
                                 </span>
+                                @if($badge = $turnoStateBadge($row['combinedState']))
+                                    <span class="ml-1.5">{!! $badge !!}</span>
+                                @endif
                                 <span class="text-[11px] text-gray-400 ml-1">control (médico o nutric.)</span>
                             </td>
                         @else
@@ -224,6 +235,9 @@
                             <span class="{{ $row['medicoStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
                                 {{ $row['medicoCount'] }}/{{ $row['medicoRequired'] }}
                             </span>
+                            @if($badge = $turnoStateBadge($row['medicoState']))
+                                <br><span class="mt-0.5 inline-block">{!! $badge !!}</span>
+                            @endif
                         </td>
 
                         {{-- Turno nutricionista --}}
@@ -231,6 +245,9 @@
                             <span class="{{ $row['nutriStale'] ? 'text-amber-700 font-semibold' : 'text-gray-600' }}">
                                 {{ $row['nutriCount'] }}/{{ $row['nutriRequired'] }}
                             </span>
+                            @if($badge = $turnoStateBadge($row['nutriState']))
+                                <br><span class="mt-0.5 inline-block">{!! $badge !!}</span>
+                            @endif
                         </td>
                         @endif
 

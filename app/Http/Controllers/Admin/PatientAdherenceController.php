@@ -77,7 +77,9 @@ class PatientAdherenceController extends Controller
                     $combinedRequired = (int) ($allRequirements->get("{$plan}.cualquiera")?->monthly_required_count ?? 1);
                     $combinedCount = $patient->combinedTurnosThisMonth();
                     $combinedStale = $combinedCount < $combinedRequired;
+                    $combinedState = $patient->combinedMonthlyTurnoState();
                     $medicoCount = $nutriCount = $medicoRequired = $nutriRequired = null;
+                    $medicoState = $nutriState = null;
                     $medicoStale = $nutriStale = false;
                 } else {
                     $medicoRequired = (int) ($allRequirements->get("{$plan}.medico")?->monthly_required_count ?? 1);
@@ -86,7 +88,9 @@ class PatientAdherenceController extends Controller
                     $nutriCount  = $patient->turnosThisMonth('nutricionista');
                     $medicoStale = $medicoCount < $medicoRequired;
                     $nutriStale  = $nutriCount  < $nutriRequired;
-                    $combinedRequired = $combinedCount = null;
+                    $medicoState = $patient->monthlyTurnoState('medico');
+                    $nutriState  = $patient->monthlyTurnoState('nutricionista');
+                    $combinedRequired = $combinedCount = $combinedState = null;
                     $combinedStale = false;
                 }
 
@@ -108,9 +112,12 @@ class PatientAdherenceController extends Controller
                     'nutriRequired'   => $nutriRequired,
                     'medicoStale'     => $medicoStale,
                     'nutriStale'      => $nutriStale,
+                    'medicoState'     => $medicoState,
+                    'nutriState'      => $nutriState,
                     'combinedCount'   => $combinedCount,
                     'combinedRequired'=> $combinedRequired,
                     'combinedStale'   => $combinedStale,
+                    'combinedState'   => $combinedState,
                     'needsAttention'  => $attStale || $weightStale || $inbodyStale || $medicoStale || $nutriStale || $combinedStale,
                 ];
             });
