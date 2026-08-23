@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 class GroqCompletionProvider implements AiCompletionProvider
 {
     private const ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
-    private const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
+    private const DEFAULT_MODEL = 'openai/gpt-oss-120b';
     private const DEFAULT_MAX_TOKENS = 600;
     private const DEFAULT_TIMEOUT = 30;
 
