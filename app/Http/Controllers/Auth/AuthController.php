@@ -66,7 +66,7 @@ class AuthController extends Controller
 
         $token = $request->query('session_token');
         if ($token) {
-            return redirect()->route('session.join', $token);
+            return redirect()->route('group.join', $token);
         }
 
         return redirect()->route('patient.dashboard');
