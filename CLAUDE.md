@@ -47,11 +47,22 @@ Subsistema separado del scheduling de grupos, con su propio modelo de dominio en
 
 Las confirmaciones/cancelaciones desde WhatsApp usan links firmados (`middleware('signed')`) a `AppointmentActionController` — el GET solo muestra la pantalla (para no disparar la acción con el preview automático que genera WhatsApp), el POST es el que aplica el cambio. Los mensajes salen por `AppointmentWhatsapp` (best-effort, nunca debe romper el flujo de reservar/cancelar) usando plantillas de `WhatsappTemplate` sobre `WahaClient`, un cliente delgado de la API HTTP de WAHA (`config/services.php` → `waha.url`/`waha.key`/`waha.session`). El comando `turnos:enviar-recordatorios` (`SendAppointmentReminders`) dispara los recordatorios previos a la cita (ver Scheduling).
 
+`Holiday` (CRUD en `Admin\HolidayController`, bajo Turnos → Feriados) guarda fechas bloqueadas globalmente: `Appointment::availableSlotsFor()` no devuelve huecos en una fecha feriado, lo que también bloquea `bookSlot()` a través de su revalidación existente — aplica a todos los profesionales y ambas especialidades sin necesidad de cargar ausencias por profesional.
+
 ### Extracción de InBody con IA
 `Coordinator\InbodyController` y `Patient\InbodyController` envían fotos de reportes InBody a la API de visión de Groq (`config/services.php` → `groq.key` / `GROQ_API_KEY`) con un prompt fijo, parseando la respuesta JSON hacia los campos de `InbodyRecord` (peso, grasa corporal, masa muscular esquelética, etc.).
 
 ### Análisis IA de pacientes
 `CoordinatorPatientController::aiAnalysis()` (`POST /coordinator/pacientes/{patient}/ai-analysis`) es un endpoint distinto: envía un resumen clínico completo del paciente (asistencias, pesos, InBody, perfil) a Groq junto con los `AiDocument` activos como contexto, y devuelve recomendaciones de coaching en JSON. El resultado se cachea 6 horas con una clave que combina el hash de los documentos y el estado actual del paciente.
+
+### Chat IA por paciente (RAG)
+`Coordinator\AiChatController` (rutas bajo `/coordinator/pacientes/{patient}/chat`, gateadas por el flag `services.ai_chat.enabled` / `AI_CHAT_ENABLED`, off por defecto) deja que el coordinador le haga preguntas en lenguaje natural sobre un paciente puntual. `RagService::ask()` arma cada respuesta combinando dos fuentes, siempre acotadas a `$patient->id`:
+- **Contexto estructurado** (`StructuredContextBuilder`): resumen SQL directo de peso, asistencia, InBody y turnos.
+- **Búsqueda semántica** (`VectorSearchService` + `RagContextBuilder`): similitud coseno (calculada en PHP, no hay extensión vectorial en la DB) sobre `PatientEmbedding`, filas de texto libre embebido (notas de peso/InBody/coordinador/turnos/objetivo) por paciente.
+
+Los embeddings se mantienen sincronizados vía observers (`WeightRecordObserver`, `InbodyRecordObserver`, `GroupAttendanceObserver`, `AppointmentObserver`, `UserObserver`, registrados en `AppServiceProvider::boot()`) que llaman a `EmbeddingSyncService` cuando cambia el texto libre relevante; `php artisan` `BackfillEmbeddings` genera los embeddings faltantes para datos preexistentes. `AiConversation`/`AiMessage` persisten el historial (hasta 12 mensajes previos se reinyectan como contexto en cada pregunta nueva).
+
+Los proveedores de IA están detrás de interfaces (`AiCompletionProvider` → `GroqCompletionProvider`, `EmbeddingProvider` → `OpenAiEmbeddingProvider`, bindeadas en `AppServiceProvider::register()`) para poder cambiar de proveedor sin tocar a quien los consume — son también el punto que deduplica las llamadas a Groq que antes estaban inline en InBody/análisis IA.
 
 ### Exportaciones e importación masiva
 `Admin\DataExportController` genera descargas CSV/Excel de asistencias, pesos, InBody y pacientes-por-grupo (rutas bajo `/admin/exports/`). `Admin\UserImportController` permite importación masiva de pacientes desde una planilla Excel, con descarga de plantilla (`/admin/users/import/template`). Ambos usan `phpoffice/phpspreadsheet`.
@@ -72,4 +83,4 @@ Cinco comandos programados en `routes/console.php`, cuatro de ellos fijados a la
 `.github/workflows/deploy.yml` sincroniza el repo directamente a un servidor de producción por SSH (rsync) en cada push a `main` (sin correr tests en el pipeline), y luego ejecuta `migrate --force` y resiembra `AiDocumentSeeder`.
 
 ### Tests y cuentas de desarrollo
-La suite de tests está casi vacía (`tests/Feature/ExampleTest.php`, `tests/Unit/ExampleTest.php` son stubs). No hay tests que cubran la lógica de negocio — los cambios se validan manualmente en el navegador. Las cuentas que crea `DatabaseSeeder` para desarrollo local son: `admin@plena.com`, `maria@plena.com`, `carlos@plena.com` (coordinadoras) — todas con contraseña `password`.
+La suite de tests es mínima (`tests/Feature/ExampleTest.php`, `tests/Unit/ExampleTest.php` son stubs); casi toda la lógica de negocio se sigue validando manualmente en el navegador. `tests/Feature/HolidayBlocksAppointmentsTest.php` es la excepción — cubre que un feriado bloquee `bookSlot()`/`availableSlotsFor()` sin afectar otras fechas — y es el patrón a seguir si se agregan tests de negocio nuevos. Las cuentas que crea `DatabaseSeeder` para desarrollo local son: `admin@plena.com`, `maria@plena.com`, `carlos@plena.com` (coordinadoras) — todas con contraseña `password`.
