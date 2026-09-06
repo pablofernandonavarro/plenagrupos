@@ -50,7 +50,11 @@
         return days < DAYS_TO_HIDE;
     }
 
-    if (isStandalone() || wasDismissedRecently()) return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
+
+    if (!isMobile || isStandalone() || wasDismissedRecently()) return;
 
     const banner = document.getElementById('pwa-install-banner');
     const installBtn = document.getElementById('pwa-install-btn');
@@ -64,8 +68,6 @@
     }
 
     closeBtn.addEventListener('click', dismiss);
-
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     if (isIOS) {
         iosHint.classList.remove('hidden');
